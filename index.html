@@ -271,7 +271,7 @@ code { background: #ffe082; padding: 1px 5px; border-radius: 3px; font-size: 0.7
 
 <!-- TOP BAR -->
 <div id="top-bar">
-  <h1>🔥 Fire Life Protection – Work Order Form9</h1>
+  <h1>🔥 Fire Life Protection – Work Order Form10</h1>
   <div class="top-input">
     <label>API Key:</label>
     <input type="password" id="api-key" placeholder="AIzaSy...">
@@ -1090,11 +1090,6 @@ async function createDoc() {
       );
     }
 
-    // Post-process: convert ☑/☐ paragraphs to native Docs checklists
-    // This is just 2 API calls (1 read + 1 write) regardless of checkbox count
-    setStatus('submit-status', 'Applying checkboxes…', '');
-    await applyChecklists(newId);
-
     const url = `https://docs.google.com/document/d/${newId}/edit`;
     setStatus('submit-status', '✓ Work order saved!', 'ok');
     const lnk = document.getElementById('doc-link');
@@ -1106,126 +1101,6 @@ async function createDoc() {
     console.error(e);
   } finally {
     btn.disabled = false; btn.classList.remove('loading');
-  }
-}
-
-async function applyChecklists(docId) {
-  // Read the doc to find all paragraphs that start with ☑ (U+2611) or ☐ (U+2610)
-  const r = await apiFetch(`https://docs.googleapis.com/v1/documents/${docId}`);
-  if (!r.ok) return; // non-fatal
-  const doc = await r.json();
-
-  const requests = [];
-
-  function walkContent(elements) {
-    for (const el of elements || []) {
-      if (el.paragraph) {
-        const para = el.paragraph;
-        // Get full text of paragraph
-        const text = (para.elements || []).map(e => e.textRun?.content || '').join('');
-        const trimmed = text.trim();
-        // Match paragraphs containing ☑ or ☐ — may have leading whitespace from Drive import
-        const cbIdx = trimmed.search(/[\u2610\u2611]/);
-        if (cbIdx !== -1) {
-          const isChecked = trimmed.includes('\u2611');
-          const si = el.startIndex;
-          const ei = el.endIndex;
-
-          // 1. Apply CHECKED_ITEMS_DEFAULT bullet style to make it a checklist item
-          requests.push({
-            createParagraphBullets: {
-              range: { startIndex: si, endIndex: ei },
-              bulletPreset: 'BULLET_CHECKBOX'
-            }
-          });
-
-          // 2. If checked, mark it checked (Docs API: updateParagraphStyle checkboxState)
-          // Note: checked state is set via the paragraph's bullet checked property
-          // We set it by deleting the ☑/☐ character after converting to checklist
-          // and using the bullet's inherent checked state.
-          // The CHECKED_ITEMS_DEFAULT preset creates unchecked items by default.
-          // To pre-check: we need to find the bullet after creation — do in second pass
-          if (isChecked) {
-            // We'll strip the ☑ char and the bullet will show as unchecked initially
-            // Then set checked via a separate request
-            // Actually: delete just the first char (the ☑ symbol + space = 2 chars)
-            requests.push({
-              deleteContentRange: {
-                range: { startIndex: si, endIndex: si + 2 }
-              }
-            });
-          } else {
-            // Delete ☐ + space (2 chars)
-            requests.push({
-              deleteContentRange: {
-                range: { startIndex: si, endIndex: si + 2 }
-              }
-            });
-          }
-        }
-      }
-      if (el.table) {
-        for (const row of el.table.tableRows || []) {
-          for (const cell of row.tableCells || []) {
-            walkContent(cell.content);
-          }
-        }
-      }
-    }
-  }
-
-  walkContent(doc.body.content);
-
-  if (requests.length === 0) return;
-
-  // Must process in reverse order to avoid index drift from deletions
-  // Group: first all createParagraphBullets (no index change), then deletions in reverse
-  const bulletReqs = requests.filter(r => r.createParagraphBullets);
-  const deleteReqs = requests.filter(r => r.deleteContentRange)
-    .sort((a,b) => b.deleteContentRange.range.startIndex - a.deleteContentRange.range.startIndex);
-
-  // Send bullets first
-  if (bulletReqs.length) {
-    const r1 = await apiFetch(`https://docs.googleapis.com/v1/documents/${docId}:batchUpdate`,
-      'POST', { requests: bulletReqs });
-    if (!r1.ok) { console.warn('Bullet apply warn:', (await r1.json()).error?.message); return; }
-  }
-
-  // Then deletions in reverse index order
-  if (deleteReqs.length) {
-    // After bullet creation indices shift by +1 per bullet (bullet char inserted)
-    // So we need to re-read to get fresh indices
-    const r2 = await apiFetch(`https://docs.googleapis.com/v1/documents/${docId}`);
-    if (!r2.ok) return;
-    const doc2 = await r2.json();
-
-    const delReqs2 = [];
-    function walkForDelete(elements) {
-      for (const el of elements || []) {
-        if (el.paragraph) {
-          const text = (el.paragraph.elements||[]).map(e=>e.textRun?.content||'').join('');
-          if (text.includes('\u2611') || text.includes('\u2610')) {
-            const cbCharIdx = text.search(/[\u2610\u2611]/);
-            if (cbCharIdx !== -1) {
-              // startIndex is paragraph start; add offset to reach the ☑/☐ char
-              // +1 for the bullet char that was inserted by createParagraphBullets
-              const absStart = el.startIndex + cbCharIdx;
-              delReqs2.push({ deleteContentRange:{ range:{ startIndex:absStart, endIndex:absStart+2 } } });
-            }
-          }
-        }
-        if (el.table) for (const row of el.table.tableRows||[]) for (const cell of row.tableCells||[]) walkForDelete(cell.content);
-      }
-    }
-    walkForDelete(doc2.body.content);
-    // Sort descending so deletions don't shift each other
-    delReqs2.sort((a,b)=>b.deleteContentRange.range.startIndex-a.deleteContentRange.range.startIndex);
-    if (delReqs2.length) {
-      for (let i=0;i<delReqs2.length;i+=20) {
-        await apiFetch(`https://docs.googleapis.com/v1/documents/${docId}:batchUpdate`,
-          'POST', { requests: delReqs2.slice(i,i+20) });
-      }
-    }
   }
 }
 
@@ -1242,15 +1117,10 @@ function buildWorkOrderHTML(d) {
   const otherChecked   = document.getElementById('other-svc-cb')?.checked || false;
   const otherText      = d['OTHER SVC TEXT'] || '';
 
-  // Each checkbox is a <p> with a special class "flips-cb" so we can find it
-  // after upload and convert to native Docs checklist in one batchUpdate pass.
-  // checked=true  → pre-ticked when doc opens
-  // checked=false → empty, user can tick in Doc
-  const chk = (checked, label) => {
-    const mark = checked ? '\u2611' : '\u2610'; // ☑ or ☐ — visible if post-process fails
-    return `<p class="flips-cb" data-checked="${checked}" ` +
-           `style="margin:1px 0;padding:0;font-size:9pt;">${mark} ${label}</p>`;
-  };
+  // Checkbox rendering — Unicode ☑/☐ chars.
+  // These look correct on screen and in print. In the Google Doc, users can
+  // manually change ☐ to ☑ by clicking and typing, or use Find & Replace.
+  const chk = (checked, label) => (checked ? '☑ ' : '☐ ') + label;
 
   // Styles
   const S = {
