@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta http-equiv="Cross-Origin-Opener-Policy" content="same-origin-allow-popups">
-<title>Fire Life Protection – Work Order1</title>
+<title>Fire Life Protection – Work Order</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -271,7 +271,7 @@ code { background: #ffe082; padding: 1px 5px; border-radius: 3px; font-size: 0.7
 
 <!-- TOP BAR -->
 <div id="top-bar">
-  <h1>🔥 Fire Life Protection – Work Order Form</h1>
+  <h1>🔥 Fire Life Protection – Work Order Form1</h1>
   <div class="top-input">
     <label>API Key:</label>
     <input type="password" id="api-key" placeholder="AIzaSy...">
@@ -1032,45 +1032,64 @@ async function createDoc() {
   if (!accessToken) { toast('Connect to Google first'); return; }
 
   const data = collectForm();
-  const client  = data['CLIENT / COMPANY'] || 'Unknown';
-  const woNum   = data['WORK ORDER #'] || new Date().toISOString().slice(0,10);
-  const docName = `Work Order – ${client} – ${woNum}`;
+  const client = data['CLIENT / COMPANY'] || 'Unknown';
+  const woNum  = data['WORK ORDER #'] || new Date().toISOString().slice(0,10);
+  const docName = `Work Order – ${client} – WO-${woNum}`;
 
   const btn = document.getElementById('submit-btn');
   btn.disabled = true; btn.classList.add('loading');
-  setStatus('submit-status', 'Creating document…', '');
+  setStatus('submit-status', 'Building document…', '');
 
   try {
-    // 1. Create a fresh blank Google Doc
-    const createRes = await apiFetch(
-      'https://docs.googleapis.com/v1/documents',
-      'POST', { title: docName }
-    );
-    if (!createRes.ok) throw new Error((await createRes.json()).error?.message || 'Create failed');
-    const { documentId: newId } = await createRes.json();
+    // Build HTML representation of the work order
+    const html = buildWorkOrderHTML(data);
 
-    // 2. Move to same folder as template doc
+    // Upload as HTML to Drive — Drive converts it to a Google Doc in ONE call
+    // This avoids the Docs API write quota entirely
+    setStatus('submit-status', 'Uploading to Drive…', '');
+
+    const boundary = '-------314159265358979';
+    const metadata = JSON.stringify({ name: docName, mimeType: 'application/vnd.google-apps.document' });
+    const body = [
+      `--${boundary}`,
+      'Content-Type: application/json; charset=UTF-8',
+      '',
+      metadata,
+      `--${boundary}`,
+      'Content-Type: text/html; charset=UTF-8',
+      '',
+      html,
+      `--${boundary}--`
+    ].join('\r\n');
+
+    const uploadRes = await fetch(
+      'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,parents',
+      {
+        method: 'POST',
+        headers: {
+          'Authorization': 'Bearer ' + accessToken,
+          'Content-Type': `multipart/related; boundary="${boundary}"`
+        },
+        body
+      }
+    );
+    if (!uploadRes.ok) throw new Error((await uploadRes.json()).error?.message || 'Upload failed');
+    const { id: newId, parents } = await uploadRes.json();
+
+    // Move to same folder as template doc
     setStatus('submit-status', 'Moving to folder…', '');
     const tplMeta = await (await apiFetch(
       `https://www.googleapis.com/drive/v3/files/${TEMPLATE_DOC_ID}?fields=parents`
     )).json();
     const parent = tplMeta.parents?.[0];
-    if (parent) {
-      const newMeta = await (await apiFetch(
-        `https://www.googleapis.com/drive/v3/files/${newId}?fields=parents`
-      )).json();
-      const oldParents = (newMeta.parents || []).join(',');
+    if (parent && parent !== (parents?.[0])) {
+      const oldParents = (parents || []).join(',');
       await apiFetch(
         `https://www.googleapis.com/drive/v3/files/${newId}?addParents=${parent}&removeParents=${oldParents}`,
         'PATCH', null
       );
     }
 
-    // 3. Build all content via batchUpdate insertText requests
-    setStatus('submit-status', 'Writing content…', '');
-    await writeDocContent(newId, data);
-
-    // Done!
     const url = `https://docs.google.com/document/d/${newId}/edit`;
     setStatus('submit-status', '✓ Work order saved!', 'ok');
     const lnk = document.getElementById('doc-link');
@@ -1085,346 +1104,193 @@ async function createDoc() {
   }
 }
 
-// ─────────────────────────────────────────────────────────
-// WRITE DOC CONTENT
-// Inserts all work order data as formatted text into a
-// blank doc using batchUpdate. We build the text top-to-
-// bottom, then apply bold/color styling in a second pass.
-// ─────────────────────────────────────────────────────────
-async function writeDocContent(docId, d) {
-  // ── colours ──────────────────────────────────────────────────
-  const BLUE  = { red:0.18,  green:0.427, blue:0.643 }; // #2e6da4
-  const LBLUE = { red:0.290, green:0.525, blue:0.910 }; // #4a86e8
-  const LGRAY = { red:0.961, green:0.961, blue:0.961 }; // #f5f5f5
-  const WHITE = { red:1, green:1, blue:1 };
-  const BLACK = { red:0, green:0, blue:0 };
-  const DGRAY = { red:0.25,  green:0.25,  blue:0.25  };
-
-  // ── cell constructors ─────────────────────────────────────────
-  const hdr  = (t) => ({ text:t, bold:true,  fg:WHITE, bg:BLUE,  size:10, center:true });
-  const ehdr = (t) => ({ text:t, bold:true,  fg:WHITE, bg:LBLUE, size:9  });
-  const lbl  = (t) => ({ text:t, bold:true,  fg:DGRAY, bg:LGRAY, size:9  });
-  const v    = (t) => ({ text:t||'',          fg:BLACK, bg:WHITE, size:9  });
-  const cb   = (checked, label) => (checked ? '☑ ' : '☐ ') + label;
-
-  // ── what services are checked ─────────────────────────────────
+function buildWorkOrderHTML(d) {
+  // Checkbox helpers
   const checkedSvcs = new Set(
     [...document.querySelectorAll('input[name="svc"]:checked')].map(e => e.value)
   );
-  const svc = (val) => cb(checkedSvcs.has(val), val);
-
-  // ── page margins ──────────────────────────────────────────────
-  await apiFetch(`https://docs.googleapis.com/v1/documents/${docId}:batchUpdate`,'POST',{requests:[{
-    updateDocumentStyle:{ documentStyle:{
-      marginTop:{magnitude:36,unit:'PT'}, marginBottom:{magnitude:36,unit:'PT'},
-      marginLeft:{magnitude:36,unit:'PT'}, marginRight:{magnitude:36,unit:'PT'},
-      pageSize:{ height:{magnitude:792,unit:'PT'}, width:{magnitude:612,unit:'PT'} }
-    }, fields:'marginTop,marginBottom,marginLeft,marginRight,pageSize' }
-  }]});
-
-  const TW = 540; // usable width pts
-
-  // ═══════════════════════════════════════════════════════════════
-  // Core table builder
-  // cellData: array of rows; each row: array of cell objects
-  //   { text, bold, fg, bg, size, center, italic }
-  // colWidths: array of PT widths (must sum to TW)
-  // IMPORTANT: the Docs API does NOT support colspan in insertTable.
-  //   For full-width header rows, use a separate 1-col table.
-  // ═══════════════════════════════════════════════════════════════
-  async function tbl(cellData, colWidths) {
-    const nRows = cellData.length;
-    const nCols = colWidths.length;
-
-    // ── flush any pending paragraph inserts first ──────────────
-    // (we always operate on the doc end, so nothing pending here)
-
-    // Get current doc end
-    const docEnd = async () => {
-      const r = await apiFetch(`https://docs.googleapis.com/v1/documents/${docId}`);
-      const doc = await r.json();
-      return doc.body.content.slice(-1)[0].endIndex - 1;
-    };
-
-    const insertAt = await docEnd();
-
-    // Insert table structure
-    const tblRes = await apiFetch(`https://docs.googleapis.com/v1/documents/${docId}:batchUpdate`,'POST',{
-      requests:[{ insertTable:{ rows:nRows, columns:nCols, location:{index:insertAt} } }]
-    });
-    if (!tblRes.ok) throw new Error('insertTable failed: '+(await tblRes.json()).error?.message);
-
-    // Re-read to find cell positions
-    const r1 = await apiFetch(`https://docs.googleapis.com/v1/documents/${docId}`);
-    const doc1 = await r1.json();
-    const allTables = [];
-    (function walk(elems){ for(const e of elems||[]){ if(e.table) allTables.push(e); } })(doc1.body.content);
-    const myTbl = allTables[allTables.length-1];
-    if (!myTbl) throw new Error('Table not found');
-
-    // Build cell map: {ri_ci: {si, ei}}
-    const cellMap = {};
-    for (const [ri, row] of (myTbl.table.tableRows||[]).entries()) {
-      for (const [ci, cell] of (row.tableCells||[]).entries()) {
-        const para = (cell.content||[])[0];
-        if (para) cellMap[`${ri}_${ci}`] = { si: para.startIndex, ei: para.endIndex };
-      }
-    }
-
-    // Insert cell text in REVERSE order (avoids index drift)
-    const textReqs = [];
-    for (let ri = nRows-1; ri >= 0; ri--) {
-      for (let ci = (cellData[ri]?.length||0)-1; ci >= 0; ci--) {
-        const key = `${ri}_${ci}`;
-        const cell = cellData[ri]?.[ci];
-        const cp = cellMap[key];
-        if (!cp || !cell?.text) continue;
-        textReqs.push({ insertText:{ location:{index:cp.si}, text:cell.text } });
-      }
-    }
-    if (textReqs.length) {
-      for (let i=0;i<textReqs.length;i+=20) {
-        const r = await apiFetch(`https://docs.googleapis.com/v1/documents/${docId}:batchUpdate`,'POST',
-          {requests:textReqs.slice(i,i+20)});
-        if (!r.ok) console.warn('text insert warn:', (await r.json()).error?.message);
-      }
-    }
-
-    // Re-read for final positions after text inserted
-    const r2 = await apiFetch(`https://docs.googleapis.com/v1/documents/${docId}`);
-    const doc2 = await r2.json();
-    const allTables2 = [];
-    (function walk(elems){ for(const e of elems||[]){ if(e.table) allTables2.push(e); } })(doc2.body.content);
-    const myTbl2 = allTables2[allTables2.length-1];
-
-    // Style requests
-    const styleReqs = [];
-
-    for (const [ri, row] of (myTbl2.table.tableRows||[]).entries()) {
-      for (const [ci, cell] of (row.tableCells||[]).entries()) {
-        const cd = cellData[ri]?.[ci];
-        if (!cd) continue;
-        const para = (cell.content||[])[0];
-        if (!para) continue;
-        const si = para.startIndex;
-        const ei = para.endIndex - 1;
-
-        // Cell background
-        if (cd.bg) {
-          styleReqs.push({ updateTableCellStyle:{
-            tableRange:{ tableCellLocation:{ tableStartLocation:{index:myTbl2.startIndex}, rowIndex:ri, columnIndex:ci }, rowSpan:1, columnSpan:1 },
-            tableCellStyle:{ backgroundColor:{color:{rgbColor:cd.bg}} },
-            fields:'backgroundColor'
-          }});
-        }
-
-        if (si < ei) {
-          // Text style
-          const ts = {}; const fields = [];
-          if (cd.bold)   { ts.bold=true;  fields.push('bold'); }
-          if (cd.fg)     { ts.foregroundColor={color:{rgbColor:cd.fg}}; fields.push('foregroundColor'); }
-          if (cd.size)   { ts.fontSize={magnitude:cd.size,unit:'PT'}; fields.push('fontSize'); }
-          if (cd.italic) { ts.italic=true; fields.push('italic'); }
-          if (fields.length) styleReqs.push({ updateTextStyle:{range:{startIndex:si,endIndex:ei},textStyle:ts,fields:fields.join(',')} });
-          // Alignment
-          if (cd.center) styleReqs.push({ updateParagraphStyle:{range:{startIndex:si,endIndex:ei},paragraphStyle:{alignment:'CENTER'},fields:'alignment'} });
-        }
-      }
-    }
-
-    // Column widths
-    for (let ci=0; ci<colWidths.length; ci++) {
-      styleReqs.push({ updateTableColumnProperties:{
-        tableStartLocation:{index:myTbl2.startIndex},
-        columnIndices:[ci],
-        tableColumnProperties:{ widthType:'FIXED_WIDTH', width:{magnitude:colWidths[ci],unit:'PT'} },
-        fields:'widthType,width'
-      }});
-    }
-
-    // Flush styles in batches
-    for (let i=0;i<styleReqs.length;i+=50) {
-      const r = await apiFetch(`https://docs.googleapis.com/v1/documents/${docId}:batchUpdate`,'POST',
-        {requests:styleReqs.slice(i,i+50)});
-      if (!r.ok) console.warn('style warn:', (await r.json()).error?.message);
-    }
-
-    // Add trailing newline so next table has room
-    const endNow = await docEnd();
-    await apiFetch(`https://docs.googleapis.com/v1/documents/${docId}:batchUpdate`,'POST',
-      {requests:[{ insertText:{ location:{index:endNow}, text:'\n' } }]});
-  }
-
-  // Convenience: single-row full-width header table (avoids colspan issues)
-  async function hdrTbl(text, bg) {
-    await tbl([[ {text, bold:true, fg:WHITE, bg:bg||BLUE, size:10, center:true} ]], [TW]);
-  }
-
-  // ── col layouts ───────────────────────────────────────────────
-  const C4 = [TW*0.22, TW*0.28, TW*0.22, TW*0.28]; // standard 4-col
-  const C2 = [TW*0.35, TW*0.65];                    // 2-col wide
-
-  // ══════════════════════════════════════════════════════════════
-  // 1. Company header (3 separate 1-col tables for clean full width)
-  // ══════════════════════════════════════════════════════════════
-  await tbl([[ {text:'FIRE LIFE PROTECTION SYSTEMS', bold:true, fg:WHITE, bg:BLUE, size:14, center:true} ]], [TW]);
-  await tbl([[ {text:'Fire Inspection & Protection Services', bold:false, fg:WHITE, bg:BLUE, size:10, center:true} ]], [TW]);
-  await tbl([[ {text:'WORK ORDER', bold:true, fg:WHITE, bg:BLUE, size:12, center:true} ]], [TW]);
-
-  // ══════════════════════════════════════════════════════════════
-  // 2. Line #
-  // ══════════════════════════════════════════════════════════════
-  await tbl([
-    [ lbl('Line #:'), v(d['WORK ORDER #'] ? 'WO-'+d['WORK ORDER #'] : '') ]
-  ], [TW*0.3, TW*0.7]);
-
-  // ══════════════════════════════════════════════════════════════
-  // 3. Client & Property Information
-  // ══════════════════════════════════════════════════════════════
-  await hdrTbl('CLIENT & PROPERTY INFORMATION');
-  await tbl([
-    [ lbl('Client / Company:'),   v(d['CLIENT / COMPANY']),      lbl('Property Name:'),    v(d['PROPERTY NAME']) ],
-    [ lbl('Service Address:'),    {text:d['SERVICE ADDRESS']||'', fg:BLACK, bg:WHITE, size:9}, lbl('City / State / Zip:'), v(d['CITY / STATE / ZIP']) ],
-    [ lbl('Property Contact:'),   v(d['PROPERTY CONTACT']),      lbl('Contact Phone:'),    v(d['CONTACT PHONE']) ],
-    [ lbl('Contact Email:'),      v(d['CONTACT EMAIL']),          lbl('Billing Email:'),    v(d['BILLING EMAIL']) ],
-    [ lbl('Access / Entry Info:'), {text:d['ACCESS / ENTRY INFO']||'', fg:BLACK, bg:WHITE, size:9, italic:true}, lbl(''), v('') ],
-  ], C4);
-
-  // ══════════════════════════════════════════════════════════════
-  // 4. Scope of Work
-  // ══════════════════════════════════════════════════════════════
-  await hdrTbl('SCOPE OF WORK');
-
-  // Service type header row
-  await tbl([
-    [{ text:'Service Type(s) — check all that apply:', bold:true, fg:DGRAY, bg:LGRAY, size:9, center:false }]
-  ], [TW]);
-
-  // 4-col inspection checkboxes (just the main service name)
-  await tbl([[
-    v(cb(checkedSvcs.has('Fire Alarm – Annual')||checkedSvcs.has('Fire Alarm – Semi Annual')||checkedSvcs.has('Fire Alarm – Quarterly')||checkedSvcs.has('Fire Alarm – Monthly'), 'Fire Alarm Inspection')),
-    v(cb(checkedSvcs.has('Sprinkler – Annual')||checkedSvcs.has('Sprinkler – Semi Annual')||checkedSvcs.has('Sprinkler – Quarterly')||checkedSvcs.has('Sprinkler – Monthly'), 'Sprinkler Inspection')),
-    v(cb(checkedSvcs.has('Extinguisher – Annual')||checkedSvcs.has('Extinguisher – Semi Annual')||checkedSvcs.has('Extinguisher – Quarterly')||checkedSvcs.has('Extinguisher – Monthly'), 'Extinguisher Inspection')),
-    v(cb(checkedSvcs.has('Exit Light – Annual')||checkedSvcs.has('Exit Light – Semi Annual')||checkedSvcs.has('Exit Light – Quarterly')||checkedSvcs.has('Exit Light – Monthly'), 'Emergency Exit Light Inspection')),
-  ]], [TW*0.25, TW*0.25, TW*0.25, TW*0.25]);
-
-  // Frequency sub-rows for each inspection type
-  const freqRow = (prefix) => ['Annual','Semi Annual','Quarterly','Monthly']
-    .map(f => cb(checkedSvcs.has(`${prefix} – ${f}`), f)).join('\n');
-  await tbl([[
-    v(freqRow('Fire Alarm')),
-    v(freqRow('Sprinkler')),
-    v(freqRow('Extinguisher')),
-    v(freqRow('Exit Light')),
-  ]], [TW*0.25, TW*0.25, TW*0.25, TW*0.25]);
-
-  // Other services — 4 per row
-  const otherSvcs = [
-    '5-Year Internal Pipe Inspection', '5-Year FDC Hydrostatic Test', '3-Year Dry Pipe Test', 'Annual Backflow Prevention Test',
-    'Deficiency Correction', 'Repair / Service Call', 'New Installation', 'Compliance Report',
-    'Monitoring Setup / Change', 'Sub-Contractor Work', 'Walk-Through / Consultation', '__OTHER__'
-  ];
-  const otherChecked = document.getElementById('other-svc-cb')?.checked || false;
-  const otherText = d['OTHER SVC TEXT'] || '';
-  for (let i=0; i<otherSvcs.length; i+=4) {
-    const row = otherSvcs.slice(i,i+4).map(s => {
-      if (s === '__OTHER__') return v(cb(otherChecked, 'Other: ' + otherText));
-      return v(cb(checkedSvcs.has(s), s));
-    });
-    await tbl([row], [TW*0.25, TW*0.25, TW*0.25, TW*0.25]);
-  }
-
-  // Description of Work
-  await tbl([[ {text:'Description of Work Requested:', bold:true, fg:DGRAY, bg:LGRAY, size:9} ]], [TW]);
-  await tbl([[ v(d['DESCRIPTION OF WORK']||'') ]], [TW]);
-
-  // ══════════════════════════════════════════════════════════════
-  // 5. Work Order Information
-  // ══════════════════════════════════════════════════════════════
-  await hdrTbl('WORK ORDER INFORMATION');
-  await tbl([
-    [ lbl('Date Requested:'), v(d['DATE REQUESTED']), lbl('Date Required:'), v(d['DATE REQUIRED']) ],
-    [ lbl('Work Order #:'),   v(d['WORK ORDER #']),
-      lbl('Priority:'),       v(['Routine','Urgent','Emergency'].map(p=>cb(d['PRIORITY']===p,p)).join('  ')) ],
-    [ lbl('Requested By:'),   v(d['REQUESTED BY']),   lbl('Assigned Technician:'), v(d['ASSIGNED TECHNICIAN']) ],
-    [ lbl('PO Number:'),      v(d['PO NUMBER']),       lbl('Scheduled Date:'),      v(d['SCHEDULED DATE']) ],
-  ], C4);
-
-  // ══════════════════════════════════════════════════════════════
-  // 6. Fire System Information
-  // ══════════════════════════════════════════════════════════════
-  await hdrTbl('FIRE SYSTEM INFORMATION');
-  await tbl([
-    [ lbl('System Type:'),
-      v(['Wet','Dry','Pre-Action','Deluge','Glycol'].map(t=>cb(d['SYSTEM TYPE']===t,t)).join('  ')),
-      lbl('Panel Manufacturer:'), v(d['PANEL MANUFACTURER']) ],
-    [ lbl('Panel System Type:'),
-      v(['Conventional','Addressable'].map(t=>cb(d['PANEL SYSTEM TYPE']===t,t)).join('  ')),
-      lbl(''), v('') ],
-    [ lbl('Monitoring Company:'),    v(d['MONITORING COMPANY']),     lbl('Monitoring Account #:'), v(d['MONITORING ACCOUNT #']) ],
-    [ lbl('# of Sprinkler Heads:'),  v(d['# SPRINKLER HEADS']),      lbl('# of Fire Extinguishers:'), v(d['# FIRE EXTINGUISHERS']) ],
-    [ lbl('# of Hydrants:'),         v(d['# HYDRANTS']),             lbl('# of Backflows:'),          v(d['# BACKFLOWS']) ],
-    [ lbl('Last Inspection Date:'),  v(d['LAST INSPECTION DATE']),   lbl('Compliance Due Date:'),     v(d['COMPLIANCE DUE DATE']) ],
-  ], C4);
-
-  // ══════════════════════════════════════════════════════════════
-  // 7. Sub-Contractor
-  // ══════════════════════════════════════════════════════════════
-  await hdrTbl('SUB-CONTRACTOR (IF APPLICABLE)');
-  await tbl([
-    [ lbl('Sub-Contractor:'),         v(d['SUB-CONTRACTOR']),          lbl('Sub-Contractor Invoice #:'), v(d['SUB-CONTRACTOR INVOICE #']) ],
-    [ lbl('Sub-Contractor Contact:'), v(d['SUB-CONTRACTOR CONTACT']),  lbl('Sub-Contractor Amount:'),    v(d['SUB-CONTRACTOR AMOUNT']) ],
-  ], C4);
-
-  // ══════════════════════════════════════════════════════════════
-  // 8. Notes / Deficiencies
-  // ══════════════════════════════════════════════════════════════
-  await hdrTbl('NOTES / DEFICIENCIES FOUND');
-  await tbl([[ v(d['NOTES / DEFICIENCIES'] || '\n\n') ]], [TW]);
-
-  // ══════════════════════════════════════════════════════════════
-  // 9. FLIPS Expenses
-  // ══════════════════════════════════════════════════════════════
-  await hdrTbl('FLIPS EXPENSES');
-  await tbl([
-    [ ehdr('Expense Name'), ehdr('Description'), ehdr('Quantity'), ehdr('Total Amount') ],
-    [ lbl('Materials'),  v(d['MATERIALS DESCRIPTION']), v(d['MATERIALS QTY']), v(d['MATERIALS TOTAL']) ],
-    [ lbl('Labor Rate'),
-      v(['$85.00','$135.00'].map(r=>cb(d['LABOR RATE']===r, r+'/hr')).join('  ')),
-      v((d['LABOR HOURS']||'') + (d['LABOR HOURS']?' hrs':'')),
-      v(d['LABOR TOTAL']) ],
-    [ lbl('Trip Charge'), v(cb(d['TRIP CHARGE']==='$90.00','$90.00')), v(''), v(d['TRIP CHARGE']==='$90.00'?d['TRIP CHARGE']:'') ],
-    [ lbl('Misc'),        v(d['MISC DESCRIPTION']),  v(''), v(d['MISC TOTAL']) ],
-    [ {text:'Total to Invoice', bold:true, fg:DGRAY, bg:LGRAY, size:9},
-      {text:'=', bold:true, fg:DGRAY, bg:LGRAY, size:9},
-      {text:'', fg:BLACK, bg:WHITE, size:9},
-      {text:d['TOTAL TO INVOICE']||'', bold:true, fg:DGRAY, bg:LGRAY, size:10} ],
-  ], [TW*0.18, TW*0.40, TW*0.14, TW*0.28]);
-
-  // ══════════════════════════════════════════════════════════════
-  // 10. Completion & Billing
-  // ══════════════════════════════════════════════════════════════
-  await hdrTbl('COMPLETION & BILLING');
+  const cb  = (checked) => checked ? '&#9745;' : '&#9744;'; // ☑ ☐
+  const cbl = (checked, label) => `${cb(checked)}&nbsp;${label}`;
+  const hasSvc = (v) => checkedSvcs.has(v);
+  const hasAnySvc = (...vals) => vals.some(v => checkedSvcs.has(v));
   const trackerChecked = document.getElementById('tracker-updated')?.checked || false;
-  await tbl([
-    [ lbl('Date Completed:'),   v(d['DATE COMPLETED']),
-      lbl('Work Status:'),      v(['Complete','Incomplete','Follow-Up Needed'].map(o=>cb(d['WORK STATUS']===o,o)).join('  ')) ],
-    [ lbl('Report Submitted:'), v(['Yes','No','Pending'].map(o=>cb(d['REPORT SUBMITTED']===o,o)).join('  ')),
-      lbl('Invoice #:'),        v(d['INVOICE #']) ],
-    [ lbl('Invoice Date:'),     v(d['INVOICE DATE']),         lbl('Total Invoice Amount:'), v(d['TOTAL INVOICE AMOUNT']) ],
-    [ lbl('Payment Received:'), v(['Yes','No','Partial'].map(o=>cb(d['PAYMENT RECEIVED']===o,o)).join('  ')),
-      lbl('Payment Method:'),   v(['Check','ACH','Credit Card','Other'].map(o=>cb(d['PAYMENT METHOD']===o,o)).join('  ')) ],
-    [ lbl('Payment Date:'),     v(d['PAYMENT DATE']),         lbl('Entered into QuickBooks:'), v(d['ENTERED INTO QUICKBOOKS']) ],
-    [ lbl('Deposited Date:'),   v(d['DEPOSITED DATE']),
-      {text: cb(trackerChecked, 'Google Sheet Work Tracker Updated'), fg:BLACK, bg:WHITE, size:9},
-      v('') ],
-  ], C4);
+  const otherChecked   = document.getElementById('other-svc-cb')?.checked || false;
+  const otherText      = d['OTHER SVC TEXT'] || '';
 
-  // ══════════════════════════════════════════════════════════════
-  // Footer
-  // ══════════════════════════════════════════════════════════════
-  await tbl([[ {text:'Confidential — For Internal Use Only          Fire Life Protection Systems',
-    italic:true, fg:DGRAY, bg:WHITE, size:8, center:true} ]], [TW]);
+  // Styles
+  const S = {
+    page:   'font-family:Arial,sans-serif;font-size:9pt;color:#000;width:100%;border-collapse:collapse;',
+    hdr:    'background:#2e6da4;color:#fff;font-weight:bold;font-size:10pt;text-align:center;padding:5px 4px;',
+    ehdr:   'background:#4a86e8;color:#fff;font-weight:bold;font-size:9pt;padding:4px;',
+    lbl:    'background:#f5f5f5;font-weight:bold;color:#404040;font-size:9pt;padding:3px 5px;white-space:nowrap;width:22%;',
+    val:    'font-size:9pt;padding:3px 5px;width:28%;',
+    subhdr: 'background:#f5f5f5;font-weight:bold;color:#404040;font-size:9pt;padding:4px 5px;',
+  };
+
+  const tbl = (rows, style='') =>
+    `<table style="${S.page}${style}" cellpadding="0" cellspacing="0">${rows}</table>`;
+  const tr  = (...tds) => `<tr>${tds.join('')}</tr>`;
+  const th  = (t, colspan=1, style=S.hdr) =>
+    `<td colspan="${colspan}" style="${style}">${t}</td>`;
+  const td  = (t, style=S.val) => `<td style="${style}">${t||'&nbsp;'}</td>`;
+  const lbl = (t) => td(t, S.lbl);
+  const val = (t) => td(t||'&nbsp;', S.val);
+  const hdr = (t, colspan=4) => tr(th(t, colspan));
+  const v   = (t) => (t||'').toString().replace(/\n/g,'<br>') || '&nbsp;';
+
+  // Frequency row for inspection services
+  const freqRow = (prefix) => ['Annual','Semi Annual','Quarterly','Monthly']
+    .map(f => `${cb(hasSvc(`${prefix} – ${f}`))}&nbsp;${f}`).join('<br>');
+
+  let html = `<!DOCTYPE html><html><body style="margin:18px;">`;
+
+  // ── Company Header ─────────────────────────────────────────────
+  html += tbl(
+    tr(th('FIRE LIFE PROTECTION SYSTEMS', 1, `${S.hdr}font-size:14pt;`)) +
+    tr(th('Fire Inspection &amp; Protection Services', 1, `${S.hdr}font-size:10pt;font-weight:normal;`)) +
+    tr(th('WORK ORDER', 1, `${S.hdr}font-size:12pt;`))
+  );
+  html += '<br>';
+
+  // ── Line # ─────────────────────────────────────────────────────
+  html += tbl(tr(lbl('Line #:'), val(d['WORK ORDER #'] ? 'WO-'+d['WORK ORDER #'] : '')));
+  html += '<br>';
+
+  // ── Client & Property ──────────────────────────────────────────
+  html += tbl(
+    hdr('CLIENT &amp; PROPERTY INFORMATION') +
+    tr(lbl('Client / Company:'), val(v(d['CLIENT / COMPANY'])), lbl('Property Name:'), val(v(d['PROPERTY NAME']))) +
+    tr(lbl('Service Address:'), val(v(d['SERVICE ADDRESS'])), lbl('City / State / Zip:'), val(v(d['CITY / STATE / ZIP']))) +
+    tr(lbl('Property Contact:'), val(v(d['PROPERTY CONTACT'])), lbl('Contact Phone:'), val(v(d['CONTACT PHONE']))) +
+    tr(lbl('Contact Email:'), val(v(d['CONTACT EMAIL'])), lbl('Billing Email:'), val(v(d['BILLING EMAIL']))) +
+    tr(lbl('Access / Entry Info:'), `<td colspan="3" style="${S.val}font-style:italic;">${v(d['ACCESS / ENTRY INFO'])}</td>`)
+  );
+  html += '<br>';
+
+  // ── Scope of Work ──────────────────────────────────────────────
+  html += tbl(
+    hdr('SCOPE OF WORK') +
+    tr(th('Service Type(s) — check all that apply:', 4, S.subhdr)) +
+    // Main service checkboxes
+    tr(
+      td(cbl(hasAnySvc('Fire Alarm – Annual','Fire Alarm – Semi Annual','Fire Alarm – Quarterly','Fire Alarm – Monthly'), 'Fire Alarm Inspection')),
+      td(cbl(hasAnySvc('Sprinkler – Annual','Sprinkler – Semi Annual','Sprinkler – Quarterly','Sprinkler – Monthly'), 'Sprinkler Inspection')),
+      td(cbl(hasAnySvc('Extinguisher – Annual','Extinguisher – Semi Annual','Extinguisher – Quarterly','Extinguisher – Monthly'), 'Extinguisher Inspection')),
+      td(cbl(hasAnySvc('Exit Light – Annual','Exit Light – Semi Annual','Exit Light – Quarterly','Exit Light – Monthly'), 'Emergency Exit Light Inspection'))
+    ) +
+    // Frequency sub-rows
+    tr(
+      td(freqRow('Fire Alarm')),
+      td(freqRow('Sprinkler')),
+      td(freqRow('Extinguisher')),
+      td(freqRow('Exit Light'))
+    ) +
+    // Other services
+    tr(
+      td(cbl(hasSvc('5-Year Internal Pipe Inspection'), '5-Year Internal Pipe Inspection')),
+      td(cbl(hasSvc('5-Year FDC Hydrostatic Test'), '5-Year FDC Hydrostatic Test')),
+      td(cbl(hasSvc('3-Year Dry Pipe Test'), '3-Year Dry Pipe Test')),
+      td(cbl(hasSvc('Annual Backflow Prevention Test'), 'Annual Backflow Prevention Test'))
+    ) +
+    tr(
+      td(cbl(hasSvc('Deficiency Correction'), 'Deficiency Correction')),
+      td(cbl(hasSvc('Repair / Service Call'), 'Repair / Service Call')),
+      td(cbl(hasSvc('New Installation'), 'New Installation')),
+      td(cbl(hasSvc('Compliance Report'), 'Compliance Report'))
+    ) +
+    tr(
+      td(cbl(hasSvc('Monitoring Setup / Change'), 'Monitoring Setup / Change')),
+      td(cbl(hasSvc('Sub-Contractor Work'), 'Sub-Contractor Work')),
+      td(cbl(hasSvc('Walk-Through / Consultation'), 'Walk-Through / Consultation')),
+      td(cbl(otherChecked, 'Other: ' + (otherText||'')))
+    ) +
+    tr(th('Description of Work Requested:', 4, S.subhdr)) +
+    tr(`<td colspan="4" style="${S.val}">${v(d['DESCRIPTION OF WORK'])}</td>`)
+  );
+  html += '<br>';
+
+  // ── Work Order Information ─────────────────────────────────────
+  html += tbl(
+    hdr('WORK ORDER INFORMATION') +
+    tr(lbl('Date Requested:'), val(d['DATE REQUESTED']), lbl('Date Required:'), val(d['DATE REQUIRED'])) +
+    tr(lbl('Work Order #:'), val(d['WORK ORDER #']),
+       lbl('Priority:'), val(['Routine','Urgent','Emergency'].map(p=>cbl(d['PRIORITY']===p,p)).join('&nbsp;&nbsp;'))) +
+    tr(lbl('Requested By:'), val(d['REQUESTED BY']), lbl('Assigned Technician:'), val(d['ASSIGNED TECHNICIAN'])) +
+    tr(lbl('PO Number:'), val(d['PO NUMBER']), lbl('Scheduled Date:'), val(d['SCHEDULED DATE']))
+  );
+  html += '<br>';
+
+  // ── Fire System Information ────────────────────────────────────
+  html += tbl(
+    hdr('FIRE SYSTEM INFORMATION') +
+    tr(lbl('System Type:'),
+       val(['Wet','Dry','Pre-Action','Deluge','Glycol'].map(t=>cbl(d['SYSTEM TYPE']===t,t)).join('&nbsp;&nbsp;')),
+       lbl('Panel Manufacturer:'), val(d['PANEL MANUFACTURER'])) +
+    tr(lbl('Panel System Type:'),
+       val(['Conventional','Addressable'].map(t=>cbl(d['PANEL SYSTEM TYPE']===t,t)).join('&nbsp;&nbsp;')),
+       lbl(''), val('')) +
+    tr(lbl('Monitoring Company:'), val(d['MONITORING COMPANY']), lbl('Monitoring Account #:'), val(d['MONITORING ACCOUNT #'])) +
+    tr(lbl('# of Sprinkler Heads:'), val(d['# SPRINKLER HEADS']), lbl('# of Fire Extinguishers:'), val(d['# FIRE EXTINGUISHERS'])) +
+    tr(lbl('# of Hydrants:'), val(d['# HYDRANTS']), lbl('# of Backflows:'), val(d['# BACKFLOWS'])) +
+    tr(lbl('Last Inspection Date:'), val(d['LAST INSPECTION DATE']), lbl('Compliance Due Date:'), val(d['COMPLIANCE DUE DATE']))
+  );
+  html += '<br>';
+
+  // ── Sub-Contractor ─────────────────────────────────────────────
+  html += tbl(
+    hdr('SUB-CONTRACTOR (IF APPLICABLE)') +
+    tr(lbl('Sub-Contractor:'), val(d['SUB-CONTRACTOR']), lbl('Sub-Contractor Invoice #:'), val(d['SUB-CONTRACTOR INVOICE #'])) +
+    tr(lbl('Sub-Contractor Contact:'), val(d['SUB-CONTRACTOR CONTACT']), lbl('Sub-Contractor Amount:'), val(d['SUB-CONTRACTOR AMOUNT']))
+  );
+  html += '<br>';
+
+  // ── Notes / Deficiencies ───────────────────────────────────────
+  html += tbl(
+    hdr('NOTES / DEFICIENCIES FOUND', 1) +
+    tr(`<td style="${S.val}min-height:60px;">${v(d['NOTES / DEFICIENCIES'])}</td>`)
+  , 'width:100%;');
+  html += '<br>';
+
+  // ── FLIPS Expenses ─────────────────────────────────────────────
+  html += tbl(
+    hdr('FLIPS EXPENSES') +
+    tr(td('Expense Name',S.ehdr), td('Description',S.ehdr), td('Quantity',S.ehdr), td('Total Amount',S.ehdr)) +
+    tr(lbl('Materials'), val(d['MATERIALS DESCRIPTION']), val(d['MATERIALS QTY']), val(d['MATERIALS TOTAL'])) +
+    tr(lbl('Labor Rate'),
+       val(['$85.00','$135.00'].map(r=>cbl(d['LABOR RATE']===r,r+'/hr')).join('&nbsp;&nbsp;')),
+       val((d['LABOR HOURS']||'')+(d['LABOR HOURS']?' hrs':'')),
+       val(d['LABOR TOTAL'])) +
+    tr(lbl('Trip Charge'), val(cbl(d['TRIP CHARGE']==='$90.00','$90.00')), val(''), val(d['TRIP CHARGE']==='$90.00'?d['TRIP CHARGE']:'')) +
+    tr(lbl('Misc'), val(d['MISC DESCRIPTION']), val(''), val(d['MISC TOTAL'])) +
+    tr(`<td colspan="2" style="${S.lbl}">Total to Invoice</td>`,
+       `<td style="${S.lbl}text-align:center;">=</td>`,
+       `<td style="${S.lbl}font-size:10pt;">${d['TOTAL TO INVOICE']||'&nbsp;'}</td>`)
+  );
+  html += '<br>';
+
+  // ── Completion & Billing ───────────────────────────────────────
+  html += tbl(
+    hdr('COMPLETION &amp; BILLING') +
+    tr(lbl('Date Completed:'), val(d['DATE COMPLETED']),
+       lbl('Work Status:'), val(['Complete','Incomplete','Follow-Up Needed'].map(o=>cbl(d['WORK STATUS']===o,o)).join('&nbsp;&nbsp;'))) +
+    tr(lbl('Report Submitted:'), val(['Yes','No','Pending'].map(o=>cbl(d['REPORT SUBMITTED']===o,o)).join('&nbsp;&nbsp;')),
+       lbl('Invoice #:'), val(d['INVOICE #'])) +
+    tr(lbl('Invoice Date:'), val(d['INVOICE DATE']), lbl('Total Invoice Amount:'), val(d['TOTAL INVOICE AMOUNT'])) +
+    tr(lbl('Payment Received:'), val(['Yes','No','Partial'].map(o=>cbl(d['PAYMENT RECEIVED']===o,o)).join('&nbsp;&nbsp;')),
+       lbl('Payment Method:'), val(['Check','ACH','Credit Card','Other'].map(o=>cbl(d['PAYMENT METHOD']===o,o)).join('&nbsp;&nbsp;'))) +
+    tr(lbl('Payment Date:'), val(d['PAYMENT DATE']), lbl('Entered into QuickBooks:'), val(d['ENTERED INTO QUICKBOOKS'])) +
+    tr(lbl('Deposited Date:'), val(d['DEPOSITED DATE']),
+       `<td colspan="2" style="${S.val}">${cbl(trackerChecked,'Google Sheet Work Tracker Updated')}</td>`)
+  );
+  html += '<br>';
+
+  // ── Footer ─────────────────────────────────────────────────────
+  html += `<p style="text-align:center;font-size:8pt;color:#666;font-style:italic;">
+    Confidential &mdash; For Internal Use Only &nbsp;&nbsp;&nbsp; Fire Life Protection Systems
+  </p>`;
+
+  html += '</body></html>';
+  return html;
 }
 
 // ─────────────────────────────────────────────────────────
