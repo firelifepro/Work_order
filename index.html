@@ -271,7 +271,7 @@ code { background: #ffe082; padding: 1px 5px; border-radius: 3px; font-size: 0.7
 
 <!-- TOP BAR -->
 <div id="top-bar">
-  <h1>🔥 Fire Life Protection – Work Order Form</h1>
+  <h1>🔥 Fire Life Protection – Work Order Form22</h1>
   <div class="top-input">
     <label>API Key:</label>
     <input type="password" id="api-key" placeholder="AIzaSy...">
@@ -285,7 +285,7 @@ code { background: #ffe082; padding: 1px 5px; border-radius: 3px; font-size: 0.7
 </div>
 
 <!-- SETUP GUIDE -->
-<!-- <details id="setup-guide">
+<details id="setup-guide">
   <summary>⚙️ First-time Google setup — click to expand</summary>
   <div class="guide-body">
     <div class="step"><div class="step-n">1</div><div>Go to <a href="https://console.cloud.google.com" target="_blank">console.cloud.google.com</a>, sign in with the Google account that owns your Drive, and create a new project (e.g. <code>FLIPS Work Orders</code>).</div></div>
@@ -295,7 +295,7 @@ code { background: #ffe082; padding: 1px 5px; border-radius: 3px; font-size: 0.7
     <div class="step"><div class="step-n">5</div><div>Click <strong>Connect</strong>, sign in once, and the property dropdown will load from your Google Sheet automatically.</div></div>
     <div class="step"><div class="step-n">💡</div><div><strong>Running locally?</strong> Open Terminal and run: <code>python3 -m http.server 8080</code> in the folder containing this file, then open <code>http://localhost:8080/FireLifeProtection_WorkOrder_Master.html</code>. Add <code>http://localhost:8080</code> as an authorized origin in your OAuth Client ID.</div></div>
   </div>
-</details> -->
+</details>
 
 <!-- DOCUMENT -->
 <div id="doc-wrapper">
@@ -870,18 +870,108 @@ function onPropertySelect() {
     el.value = '';
   }
 
-  // Property Name is already set by the dropdown label
-  // Client/Company maps to Property Management Company Name
-  fill('client-company',   'property management','management company','management','client','company');
-  fill('service-address',  'address','service address','street','street address');
-  fill('city-state-zip',   'city','city/state','city / state','city, state','zip','city state zip');
-  fill('property-contact', 'contact','contact name','property contact','manager','on-site contact');
-  fill('contact-phone',    'phone','contact phone','phone number','mobile','cell');
-  fill('contact-email',    'email','contact email','e-mail','email address');
-  fill('billing-email',    'billing email');
-  fill('access-info',      'access','entry','lockbox','gate code','access info','entry info');
-  fill('monitoring-co',    'monitoring company','alarm company','monitoring');
-  // No monitoring account # auto-fill
+  // Standard fills
+  fill('client-company',  'property management','management company','management','client','company');
+  fill('billing-email',   'billing email');
+  fill('access-info',     'access','entry','lockbox','gate code','access info','entry info');
+  fill('monitoring-co',   'monitoring company','alarm company','monitoring');
+
+  // ── Service Address + City/State/Zip parsing ──────────────────
+  // Get the raw address field (may contain full address with city/state/zip inline)
+  const addrKey = Object.keys(d).find(h =>
+    ['address','service address','street address','street'].some(k => h.includes(k))
+  );
+  const rawAddr = addrKey ? d[addrKey] : '';
+
+  // Try to find a dedicated city/state/zip column first
+  const csvKey = Object.keys(d).find(h =>
+    ['city','city/state','city / state','city, state','zip','city state zip'].some(k => h.includes(k))
+  );
+  const rawCsv = csvKey ? d[csvKey] : '';
+
+  if (rawAddr) {
+    // Split on newlines first (some cells have street on line 1, city/state/zip on line 2)
+    const lines = rawAddr.split(/[\r\n]+/).map(l => l.trim()).filter(Boolean);
+    if (lines.length >= 2) {
+      // Multi-line: first line = street, last line = city/state/zip
+      document.getElementById('service-address').value = lines[0];
+      document.getElementById('city-state-zip').value  = rawCsv || lines[lines.length - 1];
+    } else {
+      // Single line — try to split on last comma that precedes a state abbreviation pattern
+      // e.g. "2620 W. Bellview Ave, Littleton, CO 80123"
+      const commaIdx = rawAddr.search(/,\s*[A-Z]{2}\s+\d{5}/);
+      if (commaIdx > 0) {
+        // Find the comma before the state
+        const prevComma = rawAddr.lastIndexOf(',', commaIdx - 1);
+        const splitAt = prevComma > 0 ? prevComma : commaIdx;
+        document.getElementById('service-address').value = rawAddr.slice(0, splitAt).trim();
+        document.getElementById('city-state-zip').value  = rawCsv || rawAddr.slice(splitAt + 1).trim();
+      } else if (rawAddr.includes(',')) {
+        // Fallback: split at last comma
+        const last = rawAddr.lastIndexOf(',');
+        document.getElementById('service-address').value = rawAddr.slice(0, last).trim();
+        document.getElementById('city-state-zip').value  = rawCsv || rawAddr.slice(last + 1).trim();
+      } else {
+        document.getElementById('service-address').value = rawAddr;
+        document.getElementById('city-state-zip').value  = rawCsv || '';
+      }
+    }
+  } else {
+    document.getElementById('service-address').value = '';
+    document.getElementById('city-state-zip').value  = rawCsv || '';
+  }
+
+  // ── Property Contact parsing ──────────────────────────────────
+  // Raw value may look like:
+  //   "Mark Best (Property Manager)\nmbest@lcpmanagement.net\n(720) 749-2223"
+  // or single-line with no separators, or missing fields entirely.
+  const contactKey = Object.keys(d).find(h =>
+    ['contact','contact name','property contact','manager','on-site contact'].some(k => h.includes(k))
+  );
+  const rawContact = contactKey ? d[contactKey] : '';
+
+  if (rawContact) {
+    // Tokenise: split on newlines, then also split off inline email/phone
+    const tokens = rawContact
+      .split(/[\r\n]+/)
+      .flatMap(t => t.split(/(?=\(?\d{3}\)?[\s.-]\d{3}[\s.-]\d{4})|(?=[a-zA-Z0-9._%+\-]+@)/))
+      .map(t => t.trim())
+      .filter(Boolean);
+
+    let name = '', phone = '', email = '';
+
+    for (const tok of tokens) {
+      if (!email && /[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}/.test(tok)) {
+        // Extract just the email in case it's glued to something
+        const m = tok.match(/[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}/);
+        email = m ? m[0] : tok;
+      } else if (!phone && /\(?\d{3}\)?[\s.\-]\d{3}[\s.\-]\d{4}/.test(tok)) {
+        phone = tok.replace(/[^\d()\-\s.+ext]/gi,'').trim();
+      } else if (!name) {
+        // Strip role in parens e.g. "(Property Manager)" — keep the name
+        name = tok.replace(/\s*\([^)]*\)\s*/g, '').trim();
+        // If name still has email/phone glued on, strip those
+        name = name.replace(/[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}/g,'').trim();
+        name = name.replace(/\(?\d{3}\)?[\s.\-]\d{3}[\s.\-]\d{4}/g,'').trim();
+      }
+    }
+
+    document.getElementById('property-contact').value = name;
+    if (phone) document.getElementById('contact-phone').value = phone;
+    if (email) document.getElementById('contact-email').value = email;
+
+    // Try dedicated phone/email columns as override if better data exists
+    const phoneKey = Object.keys(d).find(h => ['phone','contact phone','phone number','mobile','cell'].some(k => h.includes(k)));
+    const emailKey = Object.keys(d).find(h => ['email','contact email','e-mail','email address'].some(k => h.includes(k) && !h.includes('billing')));
+    if (phoneKey && d[phoneKey]) document.getElementById('contact-phone').value = d[phoneKey];
+    if (emailKey && d[emailKey]) document.getElementById('contact-email').value = d[emailKey];
+
+  } else {
+    // No contact field — fall back to dedicated columns
+    fill('property-contact', 'contact','contact name','property contact','manager','on-site contact');
+    fill('contact-phone',    'phone','contact phone','phone number','mobile','cell');
+    fill('contact-email',    'email','contact email','e-mail','email address');
+  }
 }
 
 // ─────────────────────────────────────────────────────────
