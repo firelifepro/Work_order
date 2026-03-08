@@ -271,7 +271,7 @@ code { background: #ffe082; padding: 1px 5px; border-radius: 3px; font-size: 0.7
 
 <!-- TOP BAR -->
 <div id="top-bar">
-  <h1>🔥 Fire Life Protection – Work Order Form19</h1>
+  <h1>🔥 Fire Life Protection – Work Order Form20</h1>
   <div class="top-input">
     <label>API Key:</label>
     <input type="password" id="api-key" placeholder="AIzaSy...">
@@ -310,7 +310,7 @@ code { background: #ffe082; padding: 1px 5px; border-radius: 3px; font-size: 0.7
       <td class="value-cell"><input type="date" id="date-required"></td>
     </tr>
     <tr>
-      <td class="label-cell">Work Order #:</td>
+      <td class="label-cell">Line #:</td>
       <td class="value-cell"><input type="text" id="wo-number" placeholder="Auto or enter manually"></td>
       <td class="label-cell">Priority:</td>
       <td class="value-cell">
@@ -959,7 +959,7 @@ function collectForm() {
   return {
     'DATE COMPLETED':       fmtDate(v('date-requested')),  // field renamed to Date Completed
     'DATE REQUIRED':        fmtDate(v('date-required')),
-    'WORK ORDER #':         v('wo-number'),
+    'LINE #':               v('wo-number'),
     'PRIORITY':             r('priority'),
     'REQUESTED BY':         v('requested-by'),
     'ASSIGNED TECHNICIAN':  v('technician'),
@@ -1045,8 +1045,8 @@ async function createDoc() {
     ? rawDate.split('-').slice(1).concat(rawDate.split('-')[0]).join('-') // mm-dd-yyyy
     : '';
 
-  const woNum  = data['WORK ORDER #'] || '';
-  const titleParts = [`WO ${woNum}`, property, firstSvc, dateTitle].filter(Boolean);
+  const woNum  = data['LINE #'] || '';
+  const titleParts = [`Line ${woNum}`, property, firstSvc, dateTitle].filter(Boolean);
   const docName = titleParts.join(' - ');
 
   const btn = document.getElementById('submit-btn');
@@ -1231,13 +1231,13 @@ function buildWorkOrderHTML(d) {
 
   // ── Letterhead ──────────────────────────────────────────────────
   html += `
-  <table style="width:100%;border-collapse:collapse;margin-bottom:6px;">
+  <table style="width:100%;border-collapse:collapse;margin-bottom:6px;border:none;">
     <tr>
-      <td style="width:60px;padding:6px 10px 6px 0;vertical-align:middle;">
+      <td style="width:60px;padding:6px 10px 6px 0;vertical-align:middle;border:none;">
         <div style="width:52px;height:52px;background:#2e6da4;border-radius:50%;
                     font-size:26px;text-align:center;line-height:52px;">&#128293;</div>
       </td>
-      <td style="vertical-align:middle;padding:4px 0;">
+      <td style="vertical-align:middle;padding:4px 0;border:none;">
         <div style="font-family:Arial,sans-serif;font-size:16pt;font-weight:bold;
                     color:#2e6da4;letter-spacing:0.5px;line-height:1.1;">
           FIRE LIFE PROTECTION SYSTEMS
@@ -1247,14 +1247,14 @@ function buildWorkOrderHTML(d) {
           Fire Inspection &amp; Protection Services
         </div>
       </td>
-      <td style="vertical-align:middle;text-align:right;padding:4px 0;">
+      <td style="vertical-align:middle;text-align:right;padding:4px 0;border:none;">
         <div style="display:inline-block;background:#2e6da4;color:#fff;
                     font-family:Arial,sans-serif;font-size:13pt;font-weight:bold;
                     padding:7px 18px;border-radius:4px;letter-spacing:1px;">
           WORK ORDER
         </div>
         <div style="font-family:Arial,sans-serif;font-size:8.5pt;color:#888;margin-top:4px;text-align:right;">
-          Line #: <strong style="color:#2e6da4;">${d['WORK ORDER #'] ? 'WO-'+d['WORK ORDER #'] : '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'}</strong>
+          Line #: <strong style="color:#2e6da4;">${d['LINE #'] ? 'WO-'+d['LINE #'] : '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'}</strong>
         </div>
       </td>
     </tr>
@@ -1264,7 +1264,7 @@ function buildWorkOrderHTML(d) {
   html += tbl(
     hdr('WORK ORDER INFORMATION') +
     tr(lbl('Date Completed:'), val(d['DATE COMPLETED']), lbl('Date Required:'), val(d['DATE REQUIRED'])) +
-    tr(lbl('Work Order #:'), val(d['WORK ORDER #']),
+    tr(lbl('Line #:'), val(d['LINE #']),
        lbl('Priority:'), val(['Routine','Urgent','Emergency'].map(p=>chk(d['PRIORITY']===p,p)).join('&nbsp;&nbsp;'))) +
     tr(lbl('Requested By:'), val(d['REQUESTED BY']), lbl('Assigned Technician:'), val(d['ASSIGNED TECHNICIAN'])) +
     tr(lbl('Scheduled Date:'), `<td colspan="3" style="${S.val}">${d['SCHEDULED DATE'] || '&nbsp;'}</td>`)
