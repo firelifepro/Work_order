@@ -271,7 +271,7 @@ code { background: #ffe082; padding: 1px 5px; border-radius: 3px; font-size: 0.7
 
 <!-- TOP BAR -->
 <div id="top-bar">
-  <h1>🔥 Fire Life Protection – Work Order Form20</h1>
+  <h1>🔥 Fire Life Protection – Work Order Form21</h1>
   <div class="top-input">
     <label>API Key:</label>
     <input type="password" id="api-key" placeholder="AIzaSy...">
@@ -1254,11 +1254,30 @@ function buildWorkOrderHTML(d) {
           WORK ORDER
         </div>
         <div style="font-family:Arial,sans-serif;font-size:8.5pt;color:#888;margin-top:4px;text-align:right;">
-          Line #: <strong style="color:#2e6da4;">${d['LINE #'] ? 'WO-'+d['LINE #'] : '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'}</strong>
+          Line #: <strong style="color:#2e6da4;">${d['LINE #'] || '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'}</strong>
         </div>
       </td>
     </tr>
   </table><br>`;
+
+  // ── Doc title above first section ──────────────────────────────
+  const rawPropTitle = d['PROPERTY NAME'] || '';
+  const propTitle = (rawPropTitle.includes(',') ? rawPropTitle.split(',')[0] : rawPropTitle).trim();
+  const firstSvcTitle = (() => {
+    const checked = document.querySelector('input[name="svc"]:checked');
+    if (!checked) return '';
+    return checked.value.replace(/\s*[\u2013\u2014-]\s*/g, ' ').replace(/\s*\/\s*/g, ' / ').trim();
+  })();
+  const rawDateTitle = document.getElementById('date-requested').value;
+  const dateTitleStr = rawDateTitle
+    ? rawDateTitle.split('-').slice(1).concat(rawDateTitle.split('-')[0]).join('-')
+    : '';
+  const titleParts2 = [`Line ${d['LINE #']}`, propTitle, firstSvcTitle, dateTitleStr].filter(Boolean);
+  const fullDocTitle = titleParts2.join(' - ');
+
+  html += `<h2 style="font-family:Arial,sans-serif;font-size:12pt;font-weight:bold;
+    color:#2e6da4;margin:0 0 8px 0;padding:0;border-bottom:1px solid #2e6da4;
+    padding-bottom:4px;">${fullDocTitle}</h2>`;
 
   // ── 1. Work Order Information ────────────────────────────────────
   html += tbl(
