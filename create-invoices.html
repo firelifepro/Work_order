@@ -314,7 +314,7 @@ code { background: #ffe082; padding: 1px 5px; border-radius: 3px; font-size: 0.7
 
 <!-- TOP BAR -->
 <div id="top-bar">
-  <h1>🔥 Fire Life Protection – Create Invoices</h1>
+  <h1>🔥 Fire Life Protection – Create Invoices31</h1>
   <div class="top-bar-nav">
     <a href="index.html" class="nav-link">📋 Work Order</a>
     <a href="create-invoices.html" class="nav-link active">🧾 Create Invoices</a>
@@ -462,7 +462,16 @@ function initGoogle() {
   if (!apiKey || !clientId) { toast('⚠ Enter both API Key and OAuth Client ID'); return; }
   localStorage.setItem('flips_api_key', apiKey);
   localStorage.setItem('flips_client_id', clientId);
-  startTokenClient(clientId, 'consent');
+  ensureGSILoaded(() => startTokenClient(clientId, 'consent'));
+}
+
+function ensureGSILoaded(cb) {
+  if (typeof google !== 'undefined' && google.accounts) { cb(); return; }
+  const s = document.createElement('script');
+  s.src = 'https://accounts.google.com/gsi/client';
+  s.onload = cb;
+  s.onerror = () => toast('⚠ Failed to load Google sign-in library');
+  document.head.appendChild(s);
 }
 
 function startTokenClient(clientId, prompt) {
@@ -664,13 +673,14 @@ function getCheckedIds() {
 function connectQuickBooks() {
   const clientId = document.getElementById('qb-client-id').value.trim();
   if (!clientId) { toast('⚠ Enter your QuickBooks Client ID'); return; }
+  localStorage.setItem('qb_client_id_saved', clientId);
   const env = document.getElementById('qb-env').value;
   const redirectUri = encodeURIComponent(location.href.split('?')[0]);
   const scope = encodeURIComponent('com.intuit.quickbooks.accounting');
   const state = Math.random().toString(36).slice(2);
   sessionStorage.setItem('qb_state', state);
   sessionStorage.setItem('qb_client_id', clientId);
-  sessionStorage.setItem('qb_client_secret', document.getElementById('qb-client-secret').value.trim());
+  // QB Client Secret is stored securely in Netlify env vars — not needed in browser
   sessionStorage.setItem('qb_env', env);
 
   const authUrl = `https://appcenter.intuit.com/connect/oauth2?` +
@@ -688,7 +698,6 @@ async function handleQBCallback() {
   if (!code || state !== sessionStorage.getItem('qb_state')) return;
 
   const clientId = sessionStorage.getItem('qb_client_id');
-  const clientSecret = sessionStorage.getItem('qb_client_secret');
   const env = sessionStorage.getItem('qb_env') || 'sandbox';
   const redirectUri = location.href.split('?')[0];
 
@@ -923,6 +932,10 @@ window.addEventListener('load', () => {
     document.getElementById('qb-status').textContent = '✓ QuickBooks connected (saved session)';
     document.getElementById('qb-status').style.color = '#1fb272';
   }
+
+  // Restore QB client ID
+  const savedQbId = localStorage.getItem('qb_client_id_saved');
+  if (savedQbId) document.getElementById('qb-client-id').value = savedQbId;
 
   // Set redirect URI hint
   document.getElementById('redirect-uri').textContent = location.href.split('?')[0];
