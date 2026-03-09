@@ -314,7 +314,7 @@ code { background: #ffe082; padding: 1px 5px; border-radius: 3px; font-size: 0.7
 
 <!-- TOP BAR -->
 <div id="top-bar">
-  <h1>🔥 Fire Life Protection – Create Invoices31</h1>
+  <h1>🔥 Fire Life Protection – Create Invoices</h1>
   <div class="top-bar-nav">
     <a href="index.html" class="nav-link">📋 Work Order</a>
     <a href="create-invoices.html" class="nav-link active">🧾 Create Invoices</a>
@@ -675,18 +675,16 @@ function connectQuickBooks() {
   if (!clientId) { toast('⚠ Enter your QuickBooks Client ID'); return; }
   localStorage.setItem('qb_client_id_saved', clientId);
   const env = document.getElementById('qb-env').value;
-  const redirectUri = encodeURIComponent(location.href.split('?')[0]);
+  // Must match EXACTLY what's registered in Intuit Developer portal
+  const redirectUri = encodeURIComponent('https://firelifepro.netlify.app/create-invoices');
   const scope = encodeURIComponent('com.intuit.quickbooks.accounting');
   const state = Math.random().toString(36).slice(2);
-  sessionStorage.setItem('qb_state', state);
-  sessionStorage.setItem('qb_client_id', clientId);
-  // QB Client Secret is stored securely in Netlify env vars — not needed in browser
-  sessionStorage.setItem('qb_env', env);
+  localStorage.setItem('qb_state', state);
+  localStorage.setItem('qb_client_id', clientId);
+  localStorage.setItem('qb_env', env);
 
-  const authUrl = `https://appcenter.intuit.com/connect/oauth2?` +
-    `client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code` +
-    `&scope=${scope}&state=${state}`;
-  window.open(authUrl, 'qb-auth', 'width=600,height=700');
+  // Redirect the current tab to QB auth — avoids popup blockers and cross-tab storage issues
+  window.location.href = `https://appcenter.intuit.com/connect/oauth2?client_id=${clientId}&redirect_uri=${encodeURIComponent('https://firelifepro.netlify.app/create-invoices')}&response_type=code&scope=${scope}&state=${state}`;
 }
 
 // Handle QB redirect (called if this page is the redirect target)
@@ -695,10 +693,10 @@ async function handleQBCallback() {
   const code = params.get('code');
   const state = params.get('state');
   const realmId = params.get('realmId');
-  if (!code || state !== sessionStorage.getItem('qb_state')) return;
+  if (!code || state !== localStorage.getItem('qb_state')) return;
 
-  const clientId = sessionStorage.getItem('qb_client_id');
-  const env = sessionStorage.getItem('qb_env') || 'sandbox';
+  const clientId = localStorage.getItem('qb_client_id');
+  const env = localStorage.getItem('qb_env') || 'sandbox';
   const redirectUri = location.href.split('?')[0];
 
   document.getElementById('qb-status').textContent = 'Exchanging token…';
@@ -707,7 +705,7 @@ async function handleQBCallback() {
     const resp = await fetch('/api/qb-token', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ grant_type: 'authorization_code', code, redirect_uri: redirectUri })
+      body: JSON.stringify({ grant_type: 'authorization_code', code, redirect_uri: 'https://firelifepro.netlify.app/create-invoices' })
     });
     if (!resp.ok) throw new Error(await resp.text());
     const data = await resp.json();
