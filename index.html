@@ -54,6 +54,17 @@ body {
 }
 #connect-btn:hover { background: #4a86e8; }
 #conn-status { font-size: 0.75rem; color: #7fff7f; min-width: 120px; }
+.nav-link {
+  color: rgba(255,255,255,0.8);
+  text-decoration: none;
+  font-size: 0.78rem;
+  padding: 5px 12px;
+  border-radius: 4px;
+  border: 1px solid rgba(255,255,255,0.25);
+  white-space: nowrap;
+  transition: all 0.15s;
+}
+.nav-link:hover { background: rgba(255,255,255,0.15); color: white; border-color: rgba(255,255,255,0.5); }
 
 /* ── Setup guide ── */
 #setup-guide {
@@ -165,6 +176,8 @@ code { background: #ffe082; padding: 1px 5px; border-radius: 3px; font-size: 0.7
 .wo-table select { appearance: none; cursor: pointer; }
 .wo-table textarea { min-height: 80px; }
 .wo-table input[readonly] { color: #555; cursor: default; }
+.field-error { background: #ffe0e0 !important; border: 1.5px solid #e53935 !important; border-radius: 2px; }
+.field-error-cell { background: #fff0f0 !important; }
 
 /* ── Checkboxes / radio groups ── */
 .check-group { display: flex; flex-direction: column; gap: 2px; }
@@ -271,7 +284,8 @@ code { background: #ffe082; padding: 1px 5px; border-radius: 3px; font-size: 0.7
 
 <!-- TOP BAR -->
 <div id="top-bar">
-  <h1>🔥 Fire Life Protection – Work Order Form26</h1>
+  <h1>🔥 Fire Life Protection – Work Order Form27</h1>
+  <a href="create-invoices.html" class="nav-link">🧾 Create QB Invoices</a>
   <div class="top-input">
     <label>API Key:</label>
     <input type="password" id="api-key" placeholder="AIzaSy...">
@@ -284,7 +298,7 @@ code { background: #ffe082; padding: 1px 5px; border-radius: 3px; font-size: 0.7
   <div id="conn-status"></div>
 </div>
 
-<!-- SETUP GUIDE -->
+<!-- SETUP GUIDE (commented out — uncomment if needed for first-time setup)
 <details id="setup-guide">
   <summary>⚙️ First-time Google setup — click to expand</summary>
   <div class="guide-body">
@@ -296,6 +310,7 @@ code { background: #ffe082; padding: 1px 5px; border-radius: 3px; font-size: 0.7
     <div class="step"><div class="step-n">💡</div><div><strong>Running locally?</strong> Open Terminal and run: <code>python3 -m http.server 8080</code> in the folder containing this file, then open <code>http://localhost:8080/FireLifeProtection_WorkOrder_Master.html</code>. Add <code>http://localhost:8080</code> as an authorized origin in your OAuth Client ID.</div></div>
   </div>
 </details>
+-->
 
 <!-- DOCUMENT -->
 <div id="doc-wrapper">
@@ -311,7 +326,7 @@ code { background: #ffe082; padding: 1px 5px; border-radius: 3px; font-size: 0.7
     </tr>
     <tr>
       <td class="label-cell">Line #:</td>
-      <td class="value-cell"><input type="text" id="wo-number" placeholder="Auto or enter manually"></td>
+      <td class="value-cell"><input type="text" id="wo-number" placeholder="Auto or enter manually" oninput="this.classList.remove('field-error');this.closest('td').classList.remove('field-error-cell');"></td>
       <td class="label-cell">Priority:</td>
       <td class="value-cell">
         <div class="check-group">
@@ -1133,6 +1148,32 @@ function collectForm() {
 async function createDoc() {
   if (!accessToken) { toast('Connect to Google first'); return; }
 
+  // ── Validate Line # ──────────────────────────────────────
+  const woNumInput = document.getElementById('wo-number');
+  const woNumCell  = woNumInput.closest('td');
+  if (!woNumInput.value.trim()) {
+    woNumInput.classList.add('field-error');
+    if (woNumCell) woNumCell.classList.add('field-error-cell');
+    woNumInput.focus();
+    // Show modal error
+    const modal = document.createElement('div');
+    modal.id = 'wo-error-modal';
+    modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:9998;display:flex;align-items:center;justify-content:center;';
+    modal.innerHTML = \`<div style="background:white;border-radius:8px;padding:28px 32px;max-width:340px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,0.25);text-align:center;">
+      <div style="font-size:2rem;margin-bottom:10px;">⚠️</div>
+      <div style="font-weight:700;font-size:1rem;color:#c0392b;margin-bottom:8px;">Line # Required</div>
+      <div style="font-size:0.875rem;color:#555;margin-bottom:20px;">Please enter a Line # before saving the work order.</div>
+      <button onclick="document.getElementById('wo-error-modal').remove();document.getElementById('wo-number').focus();"
+        style="background:#2e6da4;color:white;border:none;padding:9px 28px;border-radius:5px;font-size:0.875rem;font-weight:600;cursor:pointer;">OK</button>
+    </div>\`;
+    document.body.appendChild(modal);
+    modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
+    return;
+  }
+  // Clear any previous error state
+  woNumInput.classList.remove('field-error');
+  if (woNumCell) woNumCell.classList.remove('field-error-cell');
+
   const data = collectForm();
   // Property name: parse up to first comma
   const rawProp = data['PROPERTY NAME'] || '';
@@ -1588,6 +1629,33 @@ window.addEventListener('load', () => {
   // date-requested field is now 'Date Completed' — default to today
   document.getElementById('date-requested').value = new Date().toISOString().split('T')[0];
   calcTotal();
+
+  // Auto-connect if credentials are already saved — silently request token with no prompt
+  if (k && c) {
+    try {
+      tokenClient = google.accounts.oauth2.initTokenClient({
+        client_id: c,
+        scope: SCOPES,
+        callback: async (resp) => {
+          if (resp.error) {
+            // Silent auto-connect failed — user can still connect manually
+            console.warn('Auto-connect failed:', resp.error);
+            return;
+          }
+          accessToken = resp.access_token;
+          setStatus('conn-status', '✓ Connected', 'ok');
+          await loadSheet();
+        },
+        error_callback: (err) => {
+          console.warn('Auto-connect error:', err.type || err.message);
+        }
+      });
+      // prompt: '' means use cached session — won't show popup if already authorised
+      tokenClient.requestAccessToken({ prompt: '' });
+    } catch(e) {
+      console.warn('Auto-connect init failed:', e.message);
+    }
+  }
 });
 </script>
 </body>
