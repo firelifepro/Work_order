@@ -769,14 +769,10 @@ async function createInvoices() {
 }
 
 async function createQBInvoice(doc) {
-  const env = document.getElementById('qb-env').value;
   const dueDays = parseInt(document.getElementById('qb-due-days').value) || 30;
-  const baseUrl = env === 'production'
-    ? `https://quickbooks.api.intuit.com/v3/company/${qbRealmId}`
-    : `https://sandbox-quickbooks.api.intuit.com/v3/company/${qbRealmId}`;
 
   // Find or create the customer
-  const custRef = await findOrCreateCustomer(baseUrl, doc.client || doc.name);
+  const custRef = await findOrCreateCustomer(doc.client || doc.name);
 
   const today = new Date();
   const due = new Date(today); due.setDate(due.getDate() + dueDays);
@@ -800,43 +796,36 @@ async function createQBInvoice(doc) {
     PrivateNote: `Created from Work Order: ${doc.name} (Google Drive ID: ${doc.id})`
   };
 
-  const res = await fetch(`${baseUrl}/invoice?minorversion=70`, {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${qbAccessToken}`,
-      'Content-Type': 'application/json',
-      'Accept': 'application/json'
-    },
-    body: JSON.stringify(body)
-  });
-  if (!res.ok) throw new Error(await res.text());
-  const data = await res.json();
+  const data = await qbApi('POST', '/invoice?minorversion=70', body);
+  if (!data.Invoice) throw new Error('Invoice creation failed: ' + JSON.stringify(data));
   return data.Invoice;
 }
 
-async function findOrCreateCustomer(baseUrl, customerName) {
+async function qbApi(method, path, payload) {
+  const env = document.getElementById('qb-env').value;
+  const res = await fetch('/api/qb-api', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ access_token: qbAccessToken, realm_id: qbRealmId, method, path, payload, env })
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || data.message || 'QB API error');
+  return data;
+}
+
+async function findOrCreateCustomer(customerName) {
   if (!customerName) customerName = 'Unknown Customer';
   // Search for existing customer
   try {
-    const q = encodeURIComponent(`SELECT * FROM Customer WHERE DisplayName = '${customerName.replace("'", "\\'")}'`);
-    const res = await fetch(`${baseUrl}/query?query=${q}&minorversion=70`, {
-      headers: { 'Authorization': `Bearer ${qbAccessToken}`, 'Accept': 'application/json' }
-    });
-    if (res.ok) {
-      const data = await res.json();
-      const customers = data?.QueryResponse?.Customer;
-      if (customers && customers.length > 0) return { value: customers[0].Id, name: customers[0].DisplayName };
-    }
+    const q = encodeURIComponent(`SELECT * FROM Customer WHERE DisplayName = '${customerName.replace(/'/g, "")}'`);
+    const data = await qbApi('GET', `/query?query=${q}&minorversion=70`);
+    const customers = data?.QueryResponse?.Customer;
+    if (customers && customers.length > 0) return { value: customers[0].Id, name: customers[0].DisplayName };
   } catch(e) { /* fall through to create */ }
 
   // Create new customer
-  const res = await fetch(`${baseUrl}/customer?minorversion=70`, {
-    method: 'POST',
-    headers: { 'Authorization': `Bearer ${qbAccessToken}`, 'Content-Type': 'application/json', 'Accept': 'application/json' },
-    body: JSON.stringify({ DisplayName: customerName })
-  });
-  if (!res.ok) throw new Error('Could not create QB customer: ' + await res.text());
-  const data = await res.json();
+  const data = await qbApi('POST', '/customer?minorversion=70', { DisplayName: customerName });
+  if (!data.Customer) throw new Error('Could not create QB customer: ' + JSON.stringify(data));
   return { value: data.Customer.Id, name: data.Customer.DisplayName };
 }
 
