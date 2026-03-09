@@ -10,3 +10,9 @@
   from = "/api/qb-token"
   to   = "/.netlify/functions/qb-token"
   status = 200
+
+# Proxy /api/qb-api to the QB API proxy function
+[[redirects]]
+  from = "/api/qb-api"
+  to   = "/.netlify/functions/qb-api"
+  status = 200
