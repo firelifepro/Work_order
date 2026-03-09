@@ -271,7 +271,7 @@ code { background: #ffe082; padding: 1px 5px; border-radius: 3px; font-size: 0.7
 
 <!-- TOP BAR -->
 <div id="top-bar">
-  <h1>🔥 Fire Life Protection – Work Order Form22</h1>
+  <h1>🔥 Fire Life Protection – Work Order Form23</h1>
   <div class="top-input">
     <label>API Key:</label>
     <input type="password" id="api-key" placeholder="AIzaSy...">
@@ -931,36 +931,29 @@ function onPropertySelect() {
   const rawContact = contactKey ? d[contactKey] : '';
 
   if (rawContact) {
-    // Tokenise: split on newlines, then also split off inline email/phone
-    const tokens = rawContact
-      .split(/[\r\n]+/)
-      .flatMap(t => t.split(/(?=\(?\d{3}\)?[\s.-]\d{3}[\s.-]\d{4})|(?=[a-zA-Z0-9._%+\-]+@)/))
-      .map(t => t.trim())
-      .filter(Boolean);
+    const reEmail = /[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}/;
+    const rePhone = /\(?\d{3}\)?[\s.\-]\d{3}[\s.\-]\d{4}/;
 
-    let name = '', phone = '', email = '';
+    // Extract email and phone directly from the full raw string
+    const emailMatch = rawContact.match(reEmail);
+    const phoneMatch = rawContact.match(rePhone);
+    const email = emailMatch ? emailMatch[0] : '';
+    const phone = phoneMatch ? phoneMatch[0] : '';
 
-    for (const tok of tokens) {
-      if (!email && /[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}/.test(tok)) {
-        // Extract just the email in case it's glued to something
-        const m = tok.match(/[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}/);
-        email = m ? m[0] : tok;
-      } else if (!phone && /\(?\d{3}\)?[\s.\-]\d{3}[\s.\-]\d{4}/.test(tok)) {
-        phone = tok.replace(/[^\d()\-\s.+ext]/gi,'').trim();
-      } else if (!name) {
-        // Strip role in parens e.g. "(Property Manager)" — keep the name
-        name = tok.replace(/\s*\([^)]*\)\s*/g, '').trim();
-        // If name still has email/phone glued on, strip those
-        name = name.replace(/[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}/g,'').trim();
-        name = name.replace(/\(?\d{3}\)?[\s.\-]\d{3}[\s.\-]\d{4}/g,'').trim();
-      }
-    }
+    // Name: first line, strip email/phone/role-in-parens
+    const firstLine = rawContact.split(/[\r\n]+/)[0].trim();
+    let name = firstLine
+      .replace(reEmail, '')
+      .replace(rePhone, '')
+      .replace(/\s*\([^)]*\)\s*/g, '')
+      .replace(/\s+/g, ' ')
+      .trim();
 
-    document.getElementById('property-contact').value = name;
-    if (phone) document.getElementById('contact-phone').value = phone;
-    if (email) document.getElementById('contact-email').value = email;
+    document.getElementById('property-contact').value = name || rawContact.replace(/[\r\n]+/g, ' ').trim();
+    document.getElementById('contact-phone').value    = phone;
+    document.getElementById('contact-email').value    = email;
 
-    // Try dedicated phone/email columns as override if better data exists
+    // Override with dedicated columns if cleaner data exists there
     const phoneKey = Object.keys(d).find(h => ['phone','contact phone','phone number','mobile','cell'].some(k => h.includes(k)));
     const emailKey = Object.keys(d).find(h => ['email','contact email','e-mail','email address'].some(k => h.includes(k) && !h.includes('billing')));
     if (phoneKey && d[phoneKey]) document.getElementById('contact-phone').value = d[phoneKey];
