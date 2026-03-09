@@ -271,7 +271,7 @@ code { background: #ffe082; padding: 1px 5px; border-radius: 3px; font-size: 0.7
 
 <!-- TOP BAR -->
 <div id="top-bar">
-  <h1>🔥 Fire Life Protection – Work Order Form25</h1>
+  <h1>🔥 Fire Life Protection – Work Order Form26</h1>
   <div class="top-input">
     <label>API Key:</label>
     <input type="password" id="api-key" placeholder="AIzaSy...">
@@ -922,49 +922,75 @@ function onPropertySelect() {
   }
 
   // ── Property Contact parsing ──────────────────────────────────
-  // Raw value may look like:
-  //   "Mark Best (Property Manager)\nmbest@lcpmanagement.net\n(720) 749-2223"
-  // or single-line with no separators, or missing fields entirely.
-  const contactKey = Object.keys(d).find(h =>
-    ['contact','contact name','property contact','manager','on-site contact'].some(k => h.includes(k))
+  // Sheet has these relevant columns:
+  //   "Property Manager"          — name only (e.g. "Mark Best")
+  //   "Property Manger Contact info" — combined name+email+phone cell
+  //   "Billing Email"             — billing only, not contact email
+  //
+  // Strategy:
+  //   1. Prefer a "contact info" style column (combined) for regex extraction
+  //   2. Fall back to dedicated phone/email columns if they exist
+  //   3. Use "property manager" column for name if no combined cell found
+
+  const reEmail = /[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}/;
+  const rePhone = /\(?\d{3}\)?[\s.\-]\d{3}[\s.\-]\d{4}/;
+
+  const keys = Object.keys(d);
+
+  // 1. Find combined "contact info" column first (highest priority)
+  const contactInfoKey = keys.find(h =>
+    h.includes('contact info') || h.includes('contact information')
   );
-  const rawContact = contactKey ? d[contactKey] : '';
 
-  if (rawContact) {
-    const reEmail = /[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}/;
-    const rePhone = /\(?\d{3}\)?[\s.\-]\d{3}[\s.\-]\d{4}/;
+  // 2. Find dedicated phone column (not billing, not sub-contractor)
+  const phoneKey = keys.find(h =>
+    ['contact phone','phone number','mobile','cell','phone'].some(k => h.includes(k))
+    && !h.includes('billing') && !h.includes('sub') && !h.includes('info')
+  );
 
-    // Extract email and phone directly from the full raw string
-    const emailMatch = rawContact.match(reEmail);
-    const phoneMatch = rawContact.match(rePhone);
-    const email = emailMatch ? emailMatch[0] : '';
-    const phone = phoneMatch ? phoneMatch[0] : '';
+  // 3. Find dedicated email column (not billing)
+  const emailKey = keys.find(h =>
+    ['contact email','e-mail','email address','email'].some(k => h.includes(k))
+    && !h.includes('billing') && !h.includes('sub') && !h.includes('info')
+  );
 
-    // Name: first line, strip email/phone/role-in-parens
-    const firstLine = rawContact.split(/[\r\n]+/)[0].trim();
-    let name = firstLine
+  // 4. Find name-only column as fallback (e.g. "property manager")
+  const nameOnlyKey = keys.find(h =>
+    ['property contact','contact name','property manager','on-site contact'].some(k => h.includes(k))
+    && !h.includes('info') && !h.includes('phone') && !h.includes('email')
+    && !h.includes('billing') && !h.includes('company') && !h.includes('management')
+  );
+
+  const rawCombined = contactInfoKey ? d[contactInfoKey] : '';
+  const rawPhone    = phoneKey       ? d[phoneKey]       : '';
+  const rawEmail    = emailKey       ? d[emailKey]       : '';
+  const rawNameOnly = nameOnlyKey    ? d[nameOnlyKey]    : '';
+
+  // Extract email and phone from combined cell
+  const emailFromCell = rawCombined ? (rawCombined.match(reEmail) || [])[0] || '' : '';
+  const phoneFromCell = rawCombined ? (rawCombined.match(rePhone) || [])[0] || '' : '';
+
+  // Dedicated columns win; fall back to combined cell extraction
+  const resolvedPhone = rawPhone || phoneFromCell;
+  const resolvedEmail = rawEmail || emailFromCell;
+
+  // Name: strip email/phone/role from first line of combined cell, or use name-only column
+  let resolvedName = '';
+  const nameSource = rawCombined || rawNameOnly;
+  if (nameSource) {
+    const firstLine = nameSource.split(/[\r\n]+/)[0].trim();
+    resolvedName = firstLine
       .replace(reEmail, '')
       .replace(rePhone, '')
       .replace(/\s*\([^)]*\)\s*/g, '')
       .replace(/\s+/g, ' ')
       .trim();
-
-    document.getElementById('property-contact').value = name || rawContact.replace(/[\r\n]+/g, ' ').trim();
-    document.getElementById('contact-phone').value    = phone;
-    document.getElementById('contact-email').value    = email;
-
-    // Override with dedicated columns if cleaner data exists there
-    const phoneKey = Object.keys(d).find(h => ['phone','contact phone','phone number','mobile','cell'].some(k => h.includes(k)));
-    const emailKey = Object.keys(d).find(h => ['email','contact email','e-mail','email address'].some(k => h.includes(k) && !h.includes('billing')));
-    if (phoneKey && d[phoneKey]) document.getElementById('contact-phone').value = d[phoneKey];
-    if (emailKey && d[emailKey]) document.getElementById('contact-email').value = d[emailKey];
-
-  } else {
-    // No contact field — fall back to dedicated columns
-    fill('property-contact', 'contact','contact name','property contact','manager','on-site contact');
-    fill('contact-phone',    'phone','contact phone','phone number','mobile','cell');
-    fill('contact-email',    'email','contact email','e-mail','email address');
+    if (!resolvedName) resolvedName = nameSource.replace(/[\r\n]+/g, ' ').trim();
   }
+
+  document.getElementById('property-contact').value = resolvedName;
+  document.getElementById('contact-phone').value    = resolvedPhone;
+  document.getElementById('contact-email').value    = resolvedEmail;
 }
 
 // ─────────────────────────────────────────────────────────
