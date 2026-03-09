@@ -284,7 +284,7 @@ code { background: #ffe082; padding: 1px 5px; border-radius: 3px; font-size: 0.7
 
 <!-- TOP BAR -->
 <div id="top-bar">
-  <h1>🔥 Fire Life Protection – Work Order Form29</h1>
+  <h1>🔥 Fire Life Protection – Work Order Form30</h1>
   <a href="create-invoices.html" class="nav-link">🧾 Create QB Invoices</a>
   <div class="top-input">
     <label>API Key:</label>
@@ -736,6 +736,9 @@ async function initGoogle() {
           return;
         }
         accessToken = resp.access_token;
+        // Cache token with expiry (tokens last ~1 hour)
+        localStorage.setItem('flips_access_token', accessToken);
+        localStorage.setItem('flips_token_expiry', Date.now() + 55 * 60 * 1000);
         setStatus('conn-status', '✓ Connected', 'ok');
         await loadSheet();
       },
@@ -1630,31 +1633,17 @@ window.addEventListener('load', () => {
   document.getElementById('date-requested').value = new Date().toISOString().split('T')[0];
   calcTotal();
 
-  // Auto-connect if credentials are already saved — silently request token with no prompt
+  // Auto-connect: reuse cached token if still valid (no popup needed)
   if (k && c) {
-    try {
-      tokenClient = google.accounts.oauth2.initTokenClient({
-        client_id: c,
-        scope: SCOPES,
-        callback: async (resp) => {
-          if (resp.error) {
-            // Silent auto-connect failed — user can still connect manually
-            console.warn('Auto-connect failed:', resp.error);
-            return;
-          }
-          accessToken = resp.access_token;
-          setStatus('conn-status', '✓ Connected', 'ok');
-          await loadSheet();
-        },
-        error_callback: (err) => {
-          console.warn('Auto-connect error:', err.type || err.message);
-        }
-      });
-      // prompt: 'none' uses the cached Google session silently — no popup, no user interaction
-      tokenClient.requestAccessToken({ prompt: 'none' });
-    } catch(e) {
-      console.warn('Auto-connect init failed:', e.message);
+    const cachedToken  = localStorage.getItem('flips_access_token');
+    const tokenExpiry  = parseInt(localStorage.getItem('flips_token_expiry') || '0');
+    if (cachedToken && Date.now() < tokenExpiry) {
+      accessToken = cachedToken;
+      API_KEY_VAL = k;
+      setStatus('conn-status', '✓ Connected', 'ok');
+      loadSheet();
     }
+    // If token is missing or expired, user clicks Connect to re-auth once
   }
 });
 </script>
