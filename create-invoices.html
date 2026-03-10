@@ -800,7 +800,7 @@ async function createInvoices() {
       }
 
       const invoiceResult = await createQBInvoice(doc);
-      results.push({ doc, status: 'ok', invoiceId: invoiceResult.Id, invoiceNum: invoiceResult.DocNumber, link: buildQBLink(invoiceResult.Id) });
+      results.push({ doc, status: 'ok', invoiceId: invoiceResult.Id, invoiceNum: invoiceResult.DocNumber, invoiceAmount: invoiceResult.TotalAmt, link: buildQBLink(invoiceResult.Id) });
       toast(`✅ Invoice created: ${doc.name}`);
     } catch(e) {
       results.push({ doc, status: 'error', message: e.message });
@@ -917,8 +917,10 @@ function showResults(results) {
   card.style.display = 'block';
   const tbody = document.getElementById('results-body');
   tbody.innerHTML = results.map(r => {
-    const amt = r.doc.amount ? `$${parseFloat(r.doc.amount).toLocaleString('en-US',{minimumFractionDigits:2})}` : '—';
-    const client = r.doc.client || '—';
+    const wo = r.doc.parsed || {};
+    const client = wo.client || r.doc.client || '—';
+    const rawAmt = wo.amount || r.doc.amount || r.invoiceAmount;
+    const amt = rawAmt ? `$${parseFloat(rawAmt).toLocaleString('en-US',{minimumFractionDigits:2})}` : '—';
     const badge = r.status === 'ok'
       ? `<span class="badge badge-ok">✓ Created</span>`
       : `<span class="badge badge-err">✗ Error</span>`;
