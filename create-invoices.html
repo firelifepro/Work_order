@@ -314,7 +314,7 @@ code { background: #ffe082; padding: 1px 5px; border-radius: 3px; font-size: 0.7
 
 <!-- TOP BAR -->
 <div id="top-bar">
-  <h1>🔥 Fire Life Protection – Create Invoices</h1>
+  <h1>🔥 Fire Life Protection – Create Invoices7</h1>
   <div class="top-bar-nav">
     <a href="index.html" class="nav-link">📋 Work Order</a>
     <a href="create-invoices.html" class="nav-link active">🧾 Create Invoices</a>
@@ -720,7 +720,7 @@ function connectQuickBooks() {
   if (!clientId) { toast('⚠ Enter your QuickBooks Client ID'); return; }
   localStorage.setItem('qb_client_id_saved', clientId);
   const env = document.getElementById('qb-env').value;
-  const redirectUri = encodeURIComponent('https://firelifepro.netlify.app/create-invoices');
+  const redirectUri = encodeURIComponent('https://workorder.firelifepro.workers.dev/create-invoices');
   const scope = encodeURIComponent('com.intuit.quickbooks.accounting');
   const state = Math.random().toString(36).slice(2);
   localStorage.setItem('qb_state', state);
@@ -728,7 +728,7 @@ function connectQuickBooks() {
   localStorage.setItem('qb_env', env);
 
   // Redirect current tab — avoids popup blockers and cross-tab storage issues
-  window.location.href = `https://appcenter.intuit.com/connect/oauth2?client_id=${clientId}&redirect_uri=${encodeURIComponent('https://firelifepro.netlify.app/create-invoices')}&response_type=code&scope=${scope}&state=${state}`;
+  window.location.href = `https://appcenter.intuit.com/connect/oauth2?client_id=${clientId}&redirect_uri=${encodeURIComponent('https://workorder.firelifepro.workers.dev/create-invoices')}&response_type=code&scope=${scope}&state=${state}`;
 }
 
 // Handle QB redirect (called if this page is the redirect target)
@@ -749,7 +749,7 @@ async function handleQBCallback() {
     const resp = await fetch('/api/qb-token', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ grant_type: 'authorization_code', code, redirect_uri: 'https://firelifepro.netlify.app/create-invoices' })
+      body: JSON.stringify({ grant_type: 'authorization_code', code, redirect_uri: 'https://workorder.firelifepro.workers.dev/create-invoices' })
     });
     if (!resp.ok) throw new Error(await resp.text());
     const data = await resp.json();
@@ -1000,7 +1000,7 @@ window.addEventListener('load', () => {
   }
 
   // Redirect URI display
-  document.getElementById('redirect-uri').textContent = 'https://firelifepro.netlify.app/create-invoices';
+  document.getElementById('redirect-uri').textContent = 'https://workorder.firelifepro.workers.dev/create-invoices';
 
   // Handle QB OAuth callback from redirect
   if (location.search.includes('code=')) handleQBCallback();
