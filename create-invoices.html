@@ -449,11 +449,10 @@ const GOOGLE_SCOPES = 'https://www.googleapis.com/auth/drive.readonly https://ww
 
 let accessToken = null;
 let tokenClient = null;
-// ── Shared Apps Script logging endpoint ─────────────────────────────────────
-// Same web app URL used by the work order page — paste it here too so the
-// invoice page can also write to the system log sheet.
-const APPS_SCRIPT_URL    = 'https://script.google.com/macros/s/AKfycbwkXPCsmVT-uBtd46m4uwXa5s6PGsekWZMDVHpsWjTUi08AzuBoe9BxmP-UWKMxXEY0Uw/exec'; // ← paste your Apps Script Web App URL here
-const APPS_SCRIPT_SECRET = 'flips-2026-secret';
+// ── INSPECTION SCHEDULE / SYSTEM LOG ────────────────────────────────────────
+// Paste the same Apps Script Web App URL here as in index.html
+const APPS_SCRIPT_URL    = 'https://script.google.com/macros/s/AKfycbwBFg5DsvkZBX8sItKWb5kY7UR17lbo3ThlY4_1mgSESSA1qrcOc8CezmO-EwUVBW5lQA/exec'; // ← PASTE WEB APP URL HERE
+const APPS_SCRIPT_SECRET = 'flips-2026-secret'; // must match setSecret() in Apps Script
 
 let allDocs = [];        // { id, name, modifiedTime, amount, client }
 let qbAccessToken = null;
