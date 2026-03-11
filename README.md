@@ -39,4 +39,5 @@ code { background: #ffe082; padding: 1px 5px; border-radius: 3px; font-size: 0.7
     <div class="step"><div class="step-n">💡</div><div><strong>Running locally?</strong> Open Terminal and run: <code>python3 -m http.server 8080</code> in the folder containing this file, then open <code>http://localhost:8080/FireLifeProtection_WorkOrder_Master.html</code>. Add <code>http://localhost:8080</code> as an authorized origin in your OAuth Client ID.</div></div>
   </div>
 </details>
-You need to add the url from the google extention app script to each of the .html pages in the APPS_SCRIPT_URL
+When the google extention changes you have to redeploy because it will cache the old ones.  That gives you a new url.  You need to add the url from the google extention app script to each of the .html pages in the APPS_SCRIPT_URL
+also run set secret
