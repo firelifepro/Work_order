@@ -560,7 +560,6 @@ async function loadDocs() {
 // SHEET LOGGER — mirrors the one in the work order page
 // ─────────────────────────────────────────────────────────
 async function logToSheet(action, detail, status, error) {
-  if (!APPS_SCRIPT_URL) { console.log('[LOG]', action, detail, status, error || ''); return; }
   const entry = { source: 'create-invoices-page', action, detail: String(detail || ''), status: status || 'INFO', error: String(error || '') };
   try {
     await fetch('/api/apps-script', {
