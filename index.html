@@ -284,7 +284,7 @@ code { background: #ffe082; padding: 1px 5px; border-radius: 3px; font-size: 0.7
 
 <!-- TOP BAR -->
 <div id="top-bar">
-  <h1>🔥 Fire Life Protection – Work Order Form30</h1>
+  <h1>🔥 Fire Life Protection – Work Order Form</h1>
   <a href="create-invoices.html" class="nav-link">🧾 Create QB Invoices</a>
   <div class="top-input">
     <label>API Key:</label>
@@ -702,6 +702,11 @@ code { background: #ffe082; padding: 1px 5px; border-radius: 3px; font-size: 0.7
 // CONFIG
 // ─────────────────────────────────────────────────────────
 const SHEET_ID  = '1_Koq_v0RjsFbQ_c2qZh-eQpGQT2-0IkOal-I4CjSJrI';
+
+// ── Inspection Schedule Web App ─────────────────────────────────────────────
+// After deploying InspectionSchedule_AppScript.gs as a Web App, paste the URL:
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwQlfRw0p7UdgSbTO5uzWMig3pdJLVsKuUvQAYUlp5o87MD2CyX6UG9t7O50iaN_kWVyw/exec'; // ← paste your Apps Script Web App URL here
+const APPS_SCRIPT_SECRET = 'flips-2026-secret'; // must match setSecret() in Apps Script
 const SHEET_GID = '1899870347';
 const TEMPLATE_DOC_ID = '1x96eu74Jlo-8mz8Ztah2noGc7SY-HvX1CQNQ6Vl07Sc';
 const SCOPES = 'https://www.googleapis.com/auth/drive https://www.googleapis.com/auth/documents https://www.googleapis.com/auth/spreadsheets.readonly';
@@ -1260,6 +1265,9 @@ async function createDoc() {
     lnk.href = url; lnk.style.display = 'inline-block';
     toast('✓ Saved: ' + docName);
 
+    // Update inspection schedule (non-blocking — runs in background)
+    updateInspectionSchedule(data);
+
   } catch(e) {
     setStatus('submit-status', '✗ ' + e.message, 'err');
     console.error(e);
@@ -1646,6 +1654,92 @@ window.addEventListener('load', () => {
     // If token is missing or expired, user clicks Connect to re-auth once
   }
 });
+
+// ─────────────────────────────────────────────────────────
+// UPDATE INSPECTION SCHEDULE
+// Called after a work order is saved. Reads all checked
+// service boxes and posts updates to the Apps Script web app.
+// ─────────────────────────────────────────────────────────
+async function updateInspectionSchedule(data) {
+  if (!APPS_SCRIPT_URL) return; // not configured yet
+
+  const propertyName  = data['PROPERTY NAME']   || '';
+  const dateCompleted = data['DATE COMPLETED']   || '';
+  const svcRaw        = data['SERVICES']         || '';
+
+  if (!propertyName || !dateCompleted || dateCompleted === 'N/A') return;
+
+  // Parse ISO date from the formatted date string (MM/DD/YYYY or similar)
+  const parsedDate = parseDisplayDate(dateCompleted);
+  if (!parsedDate) return;
+
+  // Map checkbox values to canonical inspection types + frequencies
+  const SVC_MAP = [
+    { match: /^Fire Alarm\s*[–-]/i,           type: 'Fire Alarm Inspection',           freqKey: true  },
+    { match: /^Sprinkler\s*[–-]/i,             type: 'Sprinkler Inspection',             freqKey: true  },
+    { match: /^Extinguisher\s*[–-]/i,          type: 'Extinguisher Inspection',          freqKey: true  },
+    { match: /^Exit Light\s*[–-]/i,            type: 'Emergency Exit Light Inspection',  freqKey: true  },
+    { match: /5-Year Internal Pipe/i,          type: '5-Year Internal Pipe Inspection',  freq: '5-Year' },
+    { match: /5-Year FDC Hydrostatic/i,        type: '5-Year FDC Hydrostatic Test',      freq: '5-Year' },
+    { match: /3-Year Dry Pipe/i,               type: '3-Year Dry Pipe Test',             freq: '3-Year' },
+    { match: /Annual Backflow Prevention/i,    type: 'Annual Backflow Prevention Test',  freq: 'Annual' },
+  ];
+
+  const FREQ_MAP = {
+    'annual': 'Annual', 'semi annual': 'Semi Annual',
+    'quarterly': 'Quarterly', 'monthly': 'Monthly'
+  };
+
+  const checkedSvcs = svcRaw.split('\n').map(s => s.trim()).filter(Boolean);
+  const updates = [];
+
+  for (const svc of checkedSvcs) {
+    for (const rule of SVC_MAP) {
+      if (rule.match.test(svc)) {
+        let freq = rule.freq || 'Annual';
+        if (rule.freqKey) {
+          // e.g. "Fire Alarm – Semi Annual" → extract "Semi Annual"
+          const freqPart = svc.replace(/^[^–—-]+[–—-]\s*/i, '').trim().toLowerCase();
+          freq = FREQ_MAP[freqPart] || 'Annual';
+        }
+        updates.push({
+          propertyName,
+          inspectionType: rule.type,
+          dateCompleted:  parsedDate,
+          frequency:      freq
+        });
+        break;
+      }
+    }
+  }
+
+  if (updates.length === 0) return; // no trackable services checked
+
+  try {
+    const resp = await fetch(APPS_SCRIPT_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ secret: APPS_SCRIPT_SECRET, updates })
+    });
+    const result = await resp.json();
+    if (result.success) {
+      console.log('✓ Inspection schedule updated:', updates.length, 'record(s)');
+    } else {
+      console.warn('Inspection schedule update failed:', result.error);
+    }
+  } catch(e) {
+    // Non-fatal — work order was saved, schedule update failed silently
+    console.warn('Could not reach inspection schedule web app:', e.message);
+  }
+}
+
+// Parse "MM/DD/YYYY" or "M/D/YYYY" date string → ISO "YYYY-MM-DD"
+function parseDisplayDate(str) {
+  if (!str || str === 'N/A') return null;
+  const m = str.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+  if (!m) return null;
+  return `${m[3]}-${m[1].padStart(2,'0')}-${m[2].padStart(2,'0')}`;
+}
 </script>
 </body>
 </html>
