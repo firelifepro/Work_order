@@ -451,7 +451,7 @@ let accessToken = null;
 let tokenClient = null;
 // ── INSPECTION SCHEDULE / SYSTEM LOG ────────────────────────────────────────
 // Paste the same Apps Script Web App URL here as in index.html
-const APPS_SCRIPT_URL    = 'https://script.google.com/macros/s/AKfycbwBFg5DsvkZBX8sItKWb5kY7UR17lbo3ThlY4_1mgSESSA1qrcOc8CezmO-EwUVBW5lQA/exec'; // ← PASTE WEB APP URL HERE
+const APPS_SCRIPT_URL    = ''; // ← PASTE WEB APP URL HERE
 const APPS_SCRIPT_SECRET = 'flips-2026-secret'; // must match setSecret() in Apps Script
 
 let allDocs = [];        // { id, name, modifiedTime, amount, client }
@@ -563,10 +563,10 @@ async function logToSheet(action, detail, status, error) {
   if (!APPS_SCRIPT_URL) { console.log('[LOG]', action, detail, status, error || ''); return; }
   const entry = { source: 'create-invoices-page', action, detail: String(detail || ''), status: status || 'INFO', error: String(error || '') };
   try {
-    await fetch(APPS_SCRIPT_URL, {
+    await fetch('/api/apps-script', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ secret: APPS_SCRIPT_SECRET, action: 'log', log: entry })
+      body: JSON.stringify({ _appsScriptUrl: APPS_SCRIPT_URL, secret: APPS_SCRIPT_SECRET, action: 'log', log: entry })
     });
   } catch(_) { /* never block on logging */ }
 }
