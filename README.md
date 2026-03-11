@@ -1,4 +1,5 @@
 /* ── Setup guide ── */
+
 #setup-guide {
   background: #fff8e1;
   border: 1px solid #ffe082;
