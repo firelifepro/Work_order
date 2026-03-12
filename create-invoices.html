@@ -526,7 +526,7 @@ async function loadDocs() {
     const q = encodeURIComponent(`'${folderId}' in parents and trashed=false`);
     const res = await apiFetch(
       `https://www.googleapis.com/drive/v3/files?q=${q}` +
-      `&fields=files(id,name,modifiedTime,mimeType)&includeItemsFromAllDrives=true&supportsAllDrives=true&pageSize=200&orderBy=name`
+      `&fields=files(id,name,modifiedTime,mimeType,appProperties)&includeItemsFromAllDrives=true&supportsAllDrives=true&pageSize=200&orderBy=name`
     );
     if (!res.ok) throw new Error(await res.text());
     const json = await res.json();
@@ -541,8 +541,10 @@ async function loadDocs() {
       name: f.name,
       modifiedTime: f.modifiedTime,
       mimeType: f.mimeType,
-      amount: null,
-      client: null
+      // Populated instantly from Drive metadata for files saved by FLIPS —
+      // no doc fetch needed for these. Older files fall through to enrichment.
+      amount: f.appProperties?.flips_amount || null,
+      client: f.appProperties?.flips_client || null,
     }));
 
     renderDocList(allDocs);
@@ -571,40 +573,55 @@ async function logToSheet(action, detail, status, error) {
 }
 
 async function enrichDocsInBackground() {
-  const docList = allDocs.filter(d => d.mimeType === 'application/vnd.google-apps.document');
-  await logToSheet('ENRICH_START', `Enriching ${docList.length} doc(s) from folder`, 'INFO');
+  // Only fetch doc content for files that don't already have metadata from appProperties.
+  // Files saved by FLIPS after this update will have flips_client / flips_amount set
+  // on the Drive file itself and won't need to be opened at all.
+  const docList = allDocs.filter(d =>
+    d.mimeType === 'application/vnd.google-apps.document' &&
+    (!d.client || !d.amount)   // skip if already populated from appProperties
+  );
+
+  if (docList.length === 0) {
+    console.log('[enrich] All docs already have metadata from Drive properties — skipping fetch');
+    return;
+  }
+
+  console.log(`[enrich] Fetching content for ${docList.length} doc(s) without metadata`);
+  await logToSheet('ENRICH_START', `Fetching content for ${docList.length} doc(s) missing metadata`, 'INFO');
   let enriched = 0, failed = 0;
 
   for (let doc of docList) {
     try {
       const res = await apiFetch(`https://docs.googleapis.com/v1/documents/${doc.id}?fields=body`);
       if (!res.ok) {
-        await logToSheet('ENRICH_FETCH_FAIL', `Doc: ${doc.name} | HTTP ${res.status}`, 'ERROR');
         failed++;
         continue;
       }
       const data = await res.json();
       const text = extractText(data);
 
-      // Log a snippet of the extracted text for debugging
-      const snippet = text.replace(/\s+/g, ' ').trim().substring(0, 120);
-      await logToSheet('ENRICH_TEXT_SAMPLE', `Doc: ${doc.name} | Text[0-120]: ${snippet}`, 'INFO');
-
       doc.amount = parseAmount(text);
       doc.client = parseClient(text);
 
-      await logToSheet('ENRICH_PARSED',
-        `Doc: ${doc.name} | Client: "${doc.client || '(none)'}" | Amount: "${doc.amount || '(none)'}"`,
-        doc.client || doc.amount ? 'OK' : 'WARN');
+      // Back-fill the Drive appProperties so this doc won't need fetching next time
+      if (doc.amount || doc.client) {
+        apiFetch(
+          `https://www.googleapis.com/drive/v3/files/${doc.id}?supportsAllDrives=true`,
+          'PATCH',
+          { appProperties: { flips_client: doc.client || '', flips_amount: doc.amount || '' } }
+        ).catch(() => {});
+      }
 
       renderDocList(allDocs);
       enriched++;
     } catch(e) {
-      await logToSheet('ENRICH_EXCEPTION', `Doc: ${doc.name}`, 'ERROR', e.message);
       failed++;
     }
   }
-  await logToSheet('ENRICH_COMPLETE', `Done — ${enriched} enriched, ${failed} failed`, enriched > 0 ? 'OK' : 'WARN');
+
+  if (enriched > 0) {
+    await logToSheet('ENRICH_COMPLETE', `Fetched ${enriched} doc(s), back-filled Drive metadata`, 'OK');
+  }
 }
 
 function extractText(docData) {
@@ -675,7 +692,10 @@ function renderDocList(docs) {
     const isDoc = doc.mimeType === 'application/vnd.google-apps.document';
     const icon = isDoc ? '📄' : '📎';
     const date = doc.modifiedTime ? new Date(doc.modifiedTime).toLocaleDateString('en-US', {month:'short',day:'numeric',year:'numeric'}) : '';
-    const amountHtml = doc.amount ? `<div class="doc-amount">$${parseFloat(doc.amount).toLocaleString('en-US',{minimumFractionDigits:2})}</div>` : '';
+    const _amt = parseFloat(doc.amount);
+    const amountHtml = (doc.amount && !isNaN(_amt) && _amt > 0)
+      ? `<div class="doc-amount">$${_amt.toLocaleString('en-US',{minimumFractionDigits:2})}</div>`
+      : '';
     const clientStr = doc.client ? ` &middot; ${doc.client}` : '';
     return `<div class="doc-row" id="row-${doc.id}" onclick="toggleRow('${doc.id}')">
       <input type="checkbox" id="chk-${doc.id}" onchange="onCheckChange()" onclick="event.stopPropagation()">
@@ -807,7 +827,7 @@ async function createInvoices() {
     const doc = allDocs.find(d => d.id === id);
     if (!doc) continue;
     try {
-      // Re-read doc content if not enriched
+      // Re-read doc content if not already enriched (older files without appProperties)
       if (!doc.amount || !doc.client) {
         const res = await apiFetch(`https://docs.googleapis.com/v1/documents/${doc.id}?fields=body`);
         if (res.ok) {
@@ -926,7 +946,8 @@ function showResults(results) {
   card.style.display = 'block';
   const tbody = document.getElementById('results-body');
   tbody.innerHTML = results.map(r => {
-    const amt = r.doc.amount ? `$${parseFloat(r.doc.amount).toLocaleString('en-US',{minimumFractionDigits:2})}` : '—';
+    const _ramtVal = parseFloat(r.doc.amount);
+    const amt = (r.doc.amount && !isNaN(_ramtVal)) ? `$${_ramtVal.toLocaleString('en-US',{minimumFractionDigits:2})}` : '—';
     const client = r.doc.client || '—';
     const badge = r.status === 'ok'
       ? `<span class="badge badge-ok">✓ Created</span>`
