@@ -543,8 +543,9 @@ async function loadDocs() {
       mimeType: f.mimeType,
       // Populated instantly from Drive metadata for files saved by FLIPS —
       // no doc fetch needed for these. Older files fall through to enrichment.
-      amount: f.appProperties?.flips_amount || null,
-      client: f.appProperties?.flips_client || null,
+      amount:  f.appProperties?.flips_amount   || null,
+      client:  f.appProperties?.flips_client   || null,
+      acctNum: f.appProperties?.flips_acct_num || null,
     }));
 
     renderDocList(allDocs);
@@ -600,15 +601,20 @@ async function enrichDocsInBackground() {
       const data = await res.json();
       const text = extractText(data);
 
-      doc.amount = parseAmount(text);
-      doc.client = parseClient(text);
+      doc.amount  = parseAmount(text);
+      doc.client  = parseClient(text);
+      doc.acctNum = doc.acctNum || parseAcctNum(text);
 
       // Back-fill the Drive appProperties so this doc won't need fetching next time
       if (doc.amount || doc.client) {
         apiFetch(
           `https://www.googleapis.com/drive/v3/files/${doc.id}?supportsAllDrives=true`,
           'PATCH',
-          { appProperties: { flips_client: doc.client || '', flips_amount: doc.amount || '' } }
+          { appProperties: {
+              flips_client:   doc.client   || '',
+              flips_amount:   doc.amount   || '',
+              flips_acct_num: doc.acctNum  || '',
+          }}
         ).catch(() => {});
       }
 
@@ -670,6 +676,12 @@ function parseAmount(text) {
 
 function parseClient(text) {
   const m = text.match(/client\s*\/\s*company[:\s]+([^\n\r]+)/i);
+  return m ? m[1].trim() : null;
+}
+
+function parseAcctNum(text) {
+  // Matches "FLPS Account #:" label written into the Google Doc
+  const m = text.match(/FLPS\s+Account\s+#[:\s]+([\d]+)/i);
   return m ? m[1].trim() : null;
 }
 
@@ -835,8 +847,9 @@ async function createInvoices() {
         if (res.ok) {
           const data = await res.json();
           const text = extractText(data);
-          doc.amount = doc.amount || parseAmount(text);
-          doc.client = doc.client || parseClient(text) || doc.name;
+          doc.amount  = doc.amount  || parseAmount(text);
+          doc.client  = doc.client  || parseClient(text) || doc.name;
+          doc.acctNum = doc.acctNum || parseAcctNum(text);
         }
       }
 
@@ -861,7 +874,7 @@ async function createQBInvoice(doc) {
   const env = document.getElementById('qb-env').value;
   const dueDays = parseInt(document.getElementById('qb-due-days').value) || 30;
 
-  const custRef = await findOrCreateCustomer(doc.client || doc.name, env);
+  const custRef = await findOrCreateCustomer(doc.client || doc.name, env, doc.acctNum);
 
   const today = new Date();
   const due = new Date(today); due.setDate(due.getDate() + dueDays);
@@ -886,21 +899,63 @@ async function createQBInvoice(doc) {
   return data.Invoice;
 }
 
-async function findOrCreateCustomer(customerName, env) {
+// ── QB Custom Field name — must match exactly what you created in QBO ──────
+const QB_ACCT_CUSTOM_FIELD = 'FLPS Account Number';
+
+async function findOrCreateCustomer(customerName, env, acctNum) {
   if (!customerName) customerName = 'Unknown Customer';
-  await logToSheet('QB_CUSTOMER_LOOKUP', `Looking up QB customer: "${customerName}"`, 'INFO');
+
+  // ── 1. Look up by FLPS Account Number custom field (preferred) ───────────
+  if (acctNum) {
+    await logToSheet('QB_CUSTOMER_LOOKUP',
+      `Looking up QB customer by FLPS Account Number: "${acctNum}" (${customerName})`, 'INFO');
+    try {
+      // QB doesn't support querying custom fields directly via SQL —
+      // fetch all active customers and filter client-side by custom field value.
+      // Use a name-hint query first to narrow results when possible.
+      const q = `SELECT * FROM Customer MAXRESULTS 1000`;
+      const data = await qbProxy('GET', `/query?query=${encodeURIComponent(q)}&minorversion=70`, env);
+      const customers = data?.QueryResponse?.Customer || [];
+      const match = customers.find(cust =>
+        (cust.CustomField || []).some(cf =>
+          cf.Name === QB_ACCT_CUSTOM_FIELD && String(cf.StringValue).trim() === String(acctNum).trim()
+        )
+      );
+      if (match) {
+        await logToSheet('QB_CUSTOMER_FOUND',
+          `Found by acct# ${acctNum}: "${match.DisplayName}" (ID: ${match.Id})`, 'OK');
+        return { value: match.Id, name: match.DisplayName };
+      }
+      await logToSheet('QB_CUSTOMER_LOOKUP',
+        `No QB customer found with FLPS Account Number "${acctNum}" — falling back to name`, 'WARN');
+    } catch(e) {
+      await logToSheet('QB_CUSTOMER_LOOKUP', `Custom field lookup failed: ${e.message}`, 'WARN');
+    }
+  }
+
+  // ── 2. Fall back to DisplayName match ────────────────────────────────────
+  await logToSheet('QB_CUSTOMER_LOOKUP', `Looking up QB customer by name: "${customerName}"`, 'INFO');
   try {
     const q = `SELECT * FROM Customer WHERE DisplayName = '${customerName.replace(/'/g, "\\'")}'`;
     const data = await qbProxy('GET', `/query?query=${encodeURIComponent(q)}&minorversion=70`, env);
     const customers = data?.QueryResponse?.Customer;
     if (customers && customers.length > 0) {
-      await logToSheet('QB_CUSTOMER_FOUND', `Found: "${customers[0].DisplayName}" (ID: ${customers[0].Id})`, 'OK');
+      await logToSheet('QB_CUSTOMER_FOUND',
+        `Found by name: "${customers[0].DisplayName}" (ID: ${customers[0].Id})`, 'OK');
       return { value: customers[0].Id, name: customers[0].DisplayName };
     }
   } catch(e) { /* fall through to create */ }
 
-  await logToSheet('QB_CUSTOMER_CREATE', `Creating new QB customer: "${customerName}"`, 'INFO');
-  const data = await qbProxy('POST', `/customer?minorversion=70`, env, { DisplayName: customerName });
+  // ── 3. Create new customer with FLPS Account Number custom field ──────────
+  await logToSheet('QB_CUSTOMER_CREATE',
+    `Creating new QB customer: "${customerName}"${acctNum ? ` (FLPS #${acctNum})` : ''}`, 'INFO');
+  const newCust = {
+    DisplayName: customerName,
+    ...(acctNum ? {
+      CustomField: [{ Name: QB_ACCT_CUSTOM_FIELD, Type: 'StringType', StringValue: String(acctNum) }]
+    } : {})
+  };
+  const data = await qbProxy('POST', `/customer?minorversion=70`, env, newCust);
   if (!data.Customer) throw new Error('Could not create QB customer: ' + JSON.stringify(data.Fault || data));
   return { value: data.Customer.Id, name: data.Customer.DisplayName };
 }
