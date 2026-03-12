@@ -543,9 +543,13 @@ async function loadDocs() {
       mimeType: f.mimeType,
       // Populated instantly from Drive metadata for files saved by FLIPS —
       // no doc fetch needed for these. Older files fall through to enrichment.
-      amount:  f.appProperties?.flips_amount   || null,
-      client:  f.appProperties?.flips_client   || null,
-      acctNum: f.appProperties?.flips_acct_num || null,
+      amount:    f.appProperties?.flips_amount    || null,
+      client:    f.appProperties?.flips_client    || null,
+      acctNum:   f.appProperties?.flips_acct_num  || null,
+      billTo:    f.appProperties?.flips_bill_to   || null,
+      billEmail: f.appProperties?.flips_bill_email || null,
+      svcAddr:   f.appProperties?.flips_svc_addr  || null,
+      citySt:    f.appProperties?.flips_city_st   || null,
     }));
 
     renderDocList(allDocs);
@@ -601,9 +605,12 @@ async function enrichDocsInBackground() {
       const data = await res.json();
       const text = extractText(data);
 
-      doc.amount  = parseAmount(text);
-      doc.client  = parseClient(text);
-      doc.acctNum = doc.acctNum || parseAcctNum(text);
+      doc.amount    = parseAmount(text);
+      doc.client    = parseClient(text);
+      doc.acctNum   = doc.acctNum   || parseAcctNum(text);
+      doc.billEmail = doc.billEmail || parseBillingEmail(text);
+      doc.svcAddr   = doc.svcAddr   || parseSvcAddr(text);
+      doc.citySt    = doc.citySt    || parseCitySt(text);
 
       // Back-fill the Drive appProperties so this doc won't need fetching next time
       if (doc.amount || doc.client) {
@@ -611,9 +618,12 @@ async function enrichDocsInBackground() {
           `https://www.googleapis.com/drive/v3/files/${doc.id}?supportsAllDrives=true`,
           'PATCH',
           { appProperties: {
-              flips_client:   doc.client   || '',
-              flips_amount:   doc.amount   || '',
-              flips_acct_num: doc.acctNum  || '',
+              flips_client:     doc.client    || '',
+              flips_amount:     doc.amount    || '',
+              flips_acct_num:   doc.acctNum   || '',
+              flips_bill_email: doc.billEmail || '',
+              flips_svc_addr:   doc.svcAddr   || '',
+              flips_city_st:    doc.citySt    || '',
           }}
         ).catch(() => {});
       }
@@ -680,9 +690,102 @@ function parseClient(text) {
 }
 
 function parseAcctNum(text) {
-  // Matches "FLPS Account #:" label written into the Google Doc
   const m = text.match(/FLPS\s+Account\s+#[:\s]+([\d]+)/i);
   return m ? m[1].trim() : null;
+}
+
+function parseBillingEmail(text) {
+  const m = text.match(/Billing\s+Email[:\s]+([^\n\r\t]+)/i);
+  return m ? m[1].trim() : null;
+}
+
+function parseSvcAddr(text) {
+  const m = text.match(/Service\s+Address[:\s]+([^\n\r\t]+)/i);
+  return m ? m[1].trim() : null;
+}
+
+function parseCitySt(text) {
+  const m = text.match(/City\s*\/\s*State\s*\/\s*Zip[:\s]+([^\n\r\t]+)/i);
+  return m ? m[1].trim() : null;
+}
+
+function parseWorkDesc(text) {
+  // Grab text after "Description of Work Requested:" header, up to next section header
+  const m = text.match(/Description\s+of\s+Work\s+Requested[:\s]*([\s\S]*?)(?=FIRE SYSTEM INFORMATION|SUB-CONTRACTOR|NOTES \/|FLIPS EXPENSES|COMPLETION|$)/i);
+  if (!m) return '';
+  return m[1].replace(/^[\s\n\r]+|[\s\n\r]+$/g, '').trim();
+}
+
+function parseScope(text) {
+  // The doc renders checked services as "☑ ServiceName" and frequencies as "☑ Frequency"
+  // We want to emit lines like "• Fire Alarm Inspection (Semi Annual)"
+  // Strategy: find the SCOPE OF WORK section, then match ☑ lines.
+  const scopeMatch = text.match(/SCOPE OF WORK([\s\S]*?)(?=FIRE SYSTEM INFORMATION|SUB-CONTRACTOR|NOTES \/|FLIPS EXPENSES|COMPLETION)/i);
+  const scopeText  = scopeMatch ? scopeMatch[1] : text;
+
+  // Service types — top-level checked items (Fire Alarm Inspection, etc.)
+  // These appear as "☑ Fire Alarm Inspection" in the table cell text
+  const SERVICE_TYPES = [
+    'Fire Alarm Inspection',
+    'Sprinkler Inspection',
+    'Extinguisher Inspection',
+    'Emergency Exit Light Inspection',
+    '5-Year Internal Pipe Inspection',
+    '5-Year FDC Hydrostatic Test',
+    '3-Year Dry Pipe Test',
+    'Annual Backflow Prevention Test',
+    'Deficiency Correction',
+    'Repair / Service Call',
+    'New Installation',
+    'Compliance Report',
+    'Monitoring Setup / Change',
+    'Sub-Contractor Work',
+    'Walk-Through / Consultation',
+  ];
+  const FREQUENCIES = ['Annual', 'Semi Annual', 'Quarterly', 'Monthly'];
+
+  // Build a map: service type → frequency (from nearby ☑ freq lines)
+  // The doc lays out: [svc row] then [freq row] in table columns side by side.
+  // In flat text they appear as: "☑ Fire Alarm Inspection ... ☑ Semi Annual ..."
+  // We parse checked service types, then find the nearest checked frequency.
+
+  const results = [];
+
+  for (const svcType of SERVICE_TYPES) {
+    // Check if this service is ticked
+    const svcChecked = new RegExp('\u2611\s*' + svcType.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i').test(scopeText);
+    if (!svcChecked) continue;
+
+    // For frequency-bearing services, find frequency column for this service.
+    // The doc text has frequencies listed after each service column header.
+    // We look for a block containing the service name + a checked frequency.
+    let freq = '';
+    if (['Fire Alarm Inspection','Sprinkler Inspection','Extinguisher Inspection','Emergency Exit Light Inspection'].includes(svcType)) {
+      // Attempt to find the frequency in the section near this service
+      // The service prefix in svcList is like "Fire Alarm – Semi Annual"
+      const prefix = svcType.replace(' Inspection','').replace(' Light',''); // "Fire Alarm", "Sprinkler", etc.
+      for (const f of FREQUENCIES) {
+        // In the SERVICES stored field (written as "Fire Alarm – Semi Annual")
+        const re = new RegExp(prefix + '\s*[\u2013\-]\s*' + f, 'i');
+        if (re.test(text)) { freq = f; break; }
+        // Also check raw ☑ near the service col
+      }
+      // Fallback: look for checked frequency in scope text near service name
+      if (!freq) {
+        for (const f of FREQUENCIES) {
+          const re = new RegExp('\u2611\s*' + f, 'i');
+          if (re.test(scopeText)) { freq = f; break; }
+        }
+      }
+    }
+    results.push(freq ? svcType + ' (' + freq + ')' : svcType);
+  }
+
+  // Also handle "Other:" service
+  const otherMatch = scopeText.match(/\u2611\s*Other[:\s]+([^\n\r]+)/i);
+  if (otherMatch) results.push('Other: ' + otherMatch[1].trim());
+
+  return results;
 }
 
 // ─────────────────────────────────────────────────────────
@@ -841,15 +944,21 @@ async function createInvoices() {
     const doc = allDocs.find(d => d.id === id);
     if (!doc) continue;
     try {
-      // Re-read doc content if not already enriched (older files without appProperties)
-      if (!doc.amount || !doc.client) {
+      // Always re-fetch fresh doc content at invoice creation time so amount
+      // and scope reflect the latest saved state of the work order, not stale cache.
+      {
         const res = await apiFetch(`https://docs.googleapis.com/v1/documents/${doc.id}?fields=body`);
         if (res.ok) {
-          const data = await res.json();
-          const text = extractText(data);
-          doc.amount  = doc.amount  || parseAmount(text);
-          doc.client  = doc.client  || parseClient(text) || doc.name;
-          doc.acctNum = doc.acctNum || parseAcctNum(text);
+          const data  = await res.json();
+          const text  = extractText(data);
+          doc.amount    = parseAmount(text);                          // always fresh
+          doc.client    = doc.client    || parseClient(text) || doc.name;
+          doc.acctNum   = doc.acctNum   || parseAcctNum(text);
+          doc.billEmail = doc.billEmail || parseBillingEmail(text);
+          doc.svcAddr   = doc.svcAddr   || parseSvcAddr(text);
+          doc.citySt    = doc.citySt    || parseCitySt(text);
+          doc.scope     = parseScope(text);                           // always fresh
+          doc.workDesc  = parseWorkDesc(text);                        // always fresh
         }
       }
 
@@ -871,32 +980,88 @@ async function createInvoices() {
 async function createQBInvoice(doc) {
   await logToSheet('QB_INVOICE_START',
     `Doc: ${doc.name} | Client: ${doc.client || '(none)'} | Amount: ${doc.amount || '(none)'}`, 'INFO');
-  const env = document.getElementById('qb-env').value;
+  const env     = document.getElementById('qb-env').value;
   const dueDays = parseInt(document.getElementById('qb-due-days').value) || 30;
 
   const custRef = await findOrCreateCustomer(doc.client || doc.name, env, doc.acctNum);
 
   const today = new Date();
-  const due = new Date(today); due.setDate(due.getDate() + dueDays);
-  const fmt = d => d.toISOString().split('T')[0];
-
+  const due   = new Date(today); due.setDate(due.getDate() + dueDays);
+  const fmt   = d => d.toISOString().split('T')[0];
   const amount = parseFloat(doc.amount) || 0;
+
+  // ── Build invoice line description ────────────────────────────────────
+  // Line 1: Job Location
+  const addrParts   = [doc.svcAddr, doc.citySt].filter(Boolean);
+  const locationStr = addrParts.length ? addrParts.join('\n') : (doc.client || doc.name);
+  let lineDesc = `Job Location - ${locationStr}`;
+
+  // Lines 2+: Scope of work bullets (one per line)
+  const scopeLines = (doc.scope || []);
+  if (scopeLines.length) {
+    lineDesc += '\n' + scopeLines.map(s => `• ${s}`).join('\n');
+  }
+
+  // Final line: Description of Work Requested (if any)
+  if (doc.workDesc && doc.workDesc.trim()) {
+    lineDesc += '\n' + doc.workDesc.trim();
+  }
+
+  // ── Bill-To address ───────────────────────────────────────────────────
+  const billToLines = (doc.billTo || '').split(/[\r\n]+/).map(l => l.trim()).filter(Boolean);
+  const billAddr = billToLines.length ? {
+    Line1: billToLines[0] || '',
+    Line2: billToLines[1] || '',
+    Line3: billToLines[2] || '',
+    Line4: billToLines[3] || '',
+    Line5: billToLines[4] || '',
+  } : undefined;
+
+  // ── Look up the QB "Services" item ID (cached after first call) ───────
+  const itemRef = await getServicesItemRef(env);
+
   const payload = {
     Line: [{
       Amount: amount,
       DetailType: 'SalesItemLineDetail',
-      SalesItemLineDetail: { ItemRef: { value: '1', name: 'Services' }, Qty: 1, UnitPrice: amount },
-      Description: doc.name
+      SalesItemLineDetail: {
+        ItemRef: itemRef,
+        Qty: 1,
+        UnitPrice: amount   // rate = total amount, qty 1
+      },
+      Description: lineDesc
     }],
     CustomerRef: custRef,
     TxnDate: fmt(today),
     DueDate: fmt(due),
-    PrivateNote: `Created from Work Order: ${doc.name} (Google Drive ID: ${doc.id})`
+    PrivateNote: `Created from Work Order: ${doc.name} (Google Drive ID: ${doc.id})`,
+    ...(doc.billEmail ? { BillEmail: { Address: doc.billEmail } } : {}),
+    ...(billAddr      ? { BillAddr:  billAddr }                  : {}),
   };
 
   const data = await qbProxy('POST', `/invoice?minorversion=70`, env, payload);
   if (!data.Invoice) throw new Error(JSON.stringify(data.Fault || data));
   return data.Invoice;
+}
+
+// ── Cache the QB "Services" item ref so we only look it up once ──────────
+let _servicesItemRef = null;
+async function getServicesItemRef(env) {
+  if (_servicesItemRef) return _servicesItemRef;
+  try {
+    const q    = `SELECT * FROM Item WHERE Name = 'Services' MAXRESULTS 5`;
+    const data = await qbProxy('GET', `/query?query=${encodeURIComponent(q)}&minorversion=70`, env);
+    const items = data?.QueryResponse?.Item || [];
+    if (items.length) {
+      _servicesItemRef = { value: items[0].Id, name: items[0].Name };
+      await logToSheet('QB_ITEM_LOOKUP', `Found Services item: ID ${items[0].Id}`, 'OK');
+      return _servicesItemRef;
+    }
+  } catch(e) {
+    await logToSheet('QB_ITEM_LOOKUP', `Services item lookup failed: ${e.message} — using ID 1`, 'WARN');
+  }
+  // Fallback to ID 1 if lookup fails
+  return { value: '1', name: 'Services' };
 }
 
 // ── QB Custom Field name — must match exactly what you created in QBO ──────
