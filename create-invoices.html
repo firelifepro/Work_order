@@ -941,7 +941,7 @@ async function handleQBCallback() {
     const resp = await fetch('/api/qb-token', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ grant_type: 'authorization_code', code, redirect_uri: redirectUri })
+      body: JSON.stringify({ grant_type: 'authorization_code', code, redirect_uri: redirectUri, env })
     });
     if (!resp.ok) throw new Error(await resp.text());
     const data = await resp.json();
@@ -1193,7 +1193,7 @@ async function refreshQBToken() {
   const resp = await fetch('/api/qb-token', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ grant_type: 'refresh_token', refresh_token: refreshToken })
+    body: JSON.stringify({ grant_type: 'refresh_token', refresh_token: refreshToken, env: sessionStorage.getItem('qb_env') || localStorage.getItem('qb_env') || 'sandbox' })
   });
   if (!resp.ok) throw new Error('Token refresh failed: ' + await resp.text());
   const data = await resp.json();
