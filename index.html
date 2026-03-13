@@ -18,6 +18,82 @@ body {
   padding: 20px;
 }
 
+
+/* ── Connection drawer ── */
+#conn-drawer { background: #0f0f23; border-bottom: 1px solid rgba(255,255,255,0.1); overflow: hidden; max-height: 0; transition: max-height 0.3s ease; }
+#conn-drawer.open { max-height: 300px; }
+.conn-drawer-inner { padding: 14px 20px; display: flex; gap: 20px; flex-wrap: wrap; align-items: flex-end; }
+.conn-field { display: flex; flex-direction: column; gap: 4px; }
+.conn-field label { font-size: 0.7rem; color: #aaa; font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em; }
+.conn-field input, .conn-field select { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: white; padding: 6px 10px; border-radius: 4px; font-size: 0.78rem; font-family: inherit; width: 240px; }
+.conn-field input::placeholder { color: rgba(255,255,255,0.35); }
+.conn-field select { width: auto; cursor: pointer; }
+.conn-field select option { background: #1a1a2e; color: white; }
+.conn-btn { background: #2e6da4; color: white; border: none; padding: 7px 16px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; font-weight: 600; white-space: nowrap; align-self: flex-end; }
+.conn-btn:hover { background: #4a86e8; }
+.conn-btn.green { background: #1fb272; }
+.conn-btn.green:hover { background: #27ae60; }
+.conn-btn.grey { background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.25); }
+.conn-btn.grey:hover { background: rgba(255,255,255,0.25); }
+.conn-divider { width: 1px; background: rgba(255,255,255,0.15); align-self: stretch; margin: 0 4px; }
+.conn-status-pill { font-size: 0.72rem; padding: 3px 10px; border-radius: 12px; font-weight: 600; white-space: nowrap; align-self: flex-end; }
+.conn-status-pill.ok  { background: rgba(31,178,114,0.2); color: #7fffb8; border: 1px solid rgba(31,178,114,0.3); }
+.conn-status-pill.err { background: rgba(220,53,69,0.2);  color: #ff8888; border: 1px solid rgba(220,53,69,0.3); }
+.conn-status-pill.warn{ background: rgba(249,168,37,0.2); color: #ffe082; border: 1px solid rgba(249,168,37,0.3); }
+/* toggle button in top bar */
+.conn-toggle { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: rgba(255,255,255,0.8); padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 0.72rem; white-space: nowrap; }
+.conn-toggle:hover { background: rgba(255,255,255,0.18); }
+
+
+/* ── Connection drawer ── */
+#conn-drawer { background: #0f0f23; border-bottom: 1px solid rgba(255,255,255,0.1); overflow: hidden; max-height: 0; transition: max-height 0.3s ease; }
+#conn-drawer.open { max-height: 300px; }
+.conn-drawer-inner { padding: 14px 20px; display: flex; gap: 20px; flex-wrap: wrap; align-items: flex-end; }
+.conn-field { display: flex; flex-direction: column; gap: 4px; }
+.conn-field label { font-size: 0.7rem; color: #aaa; font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em; }
+.conn-field input, .conn-field select { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: white; padding: 6px 10px; border-radius: 4px; font-size: 0.78rem; font-family: inherit; width: 240px; }
+.conn-field input::placeholder { color: rgba(255,255,255,0.35); }
+.conn-field select { width: auto; cursor: pointer; }
+.conn-field select option { background: #1a1a2e; color: white; }
+.conn-btn { background: #2e6da4; color: white; border: none; padding: 7px 16px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; font-weight: 600; white-space: nowrap; align-self: flex-end; }
+.conn-btn:hover { background: #4a86e8; }
+.conn-btn.green { background: #1fb272; }
+.conn-btn.green:hover { background: #27ae60; }
+.conn-btn.grey { background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.25); }
+.conn-btn.grey:hover { background: rgba(255,255,255,0.25); }
+.conn-divider { width: 1px; background: rgba(255,255,255,0.15); align-self: stretch; margin: 0 4px; }
+.conn-status-pill { font-size: 0.72rem; padding: 3px 10px; border-radius: 12px; font-weight: 600; white-space: nowrap; align-self: center; }
+.conn-status-pill.ok   { background: rgba(31,178,114,0.2); color: #7fffb8; border: 1px solid rgba(31,178,114,0.3); }
+.conn-status-pill.err  { background: rgba(220,53,69,0.2);  color: #ff8888; border: 1px solid rgba(220,53,69,0.3); }
+.conn-status-pill.warn { background: rgba(249,168,37,0.2); color: #ffe082; border: 1px solid rgba(249,168,37,0.3); }
+.conn-toggle { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: rgba(255,255,255,0.8); padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 0.72rem; white-space: nowrap; }
+.conn-toggle:hover { background: rgba(255,255,255,0.18); }
+
+
+/* ── Connection drawer ── */
+#conn-drawer { background: #0f0f23; border-bottom: 1px solid rgba(255,255,255,0.1); overflow: hidden; max-height: 0; transition: max-height 0.3s ease; }
+#conn-drawer.open { max-height: 300px; }
+.conn-drawer-inner { padding: 14px 20px; display: flex; gap: 20px; flex-wrap: wrap; align-items: flex-end; }
+.conn-field { display: flex; flex-direction: column; gap: 4px; }
+.conn-field label { font-size: 0.7rem; color: #aaa; font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em; }
+.conn-field input, .conn-field select { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: white; padding: 6px 10px; border-radius: 4px; font-size: 0.78rem; font-family: inherit; width: 240px; }
+.conn-field input::placeholder { color: rgba(255,255,255,0.35); }
+.conn-field select { width: auto; cursor: pointer; }
+.conn-field select option { background: #1a1a2e; color: white; }
+.conn-btn { background: #2e6da4; color: white; border: none; padding: 7px 16px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; font-weight: 600; white-space: nowrap; align-self: flex-end; }
+.conn-btn:hover { background: #4a86e8; }
+.conn-btn.green { background: #1fb272; }
+.conn-btn.green:hover { background: #27ae60; }
+.conn-btn.grey { background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.25); }
+.conn-btn.grey:hover { background: rgba(255,255,255,0.25); }
+.conn-divider { width: 1px; background: rgba(255,255,255,0.15); align-self: stretch; margin: 0 4px; }
+.conn-status-pill { font-size: 0.72rem; padding: 3px 10px; border-radius: 12px; font-weight: 600; white-space: nowrap; align-self: center; }
+.conn-status-pill.ok   { background: rgba(31,178,114,0.2); color: #7fffb8; border: 1px solid rgba(31,178,114,0.3); }
+.conn-status-pill.err  { background: rgba(220,53,69,0.2);  color: #ff8888; border: 1px solid rgba(220,53,69,0.3); }
+.conn-status-pill.warn { background: rgba(249,168,37,0.2); color: #ffe082; border: 1px solid rgba(249,168,37,0.3); }
+.conn-toggle { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: rgba(255,255,255,0.8); padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 0.72rem; white-space: nowrap; }
+.conn-toggle:hover { background: rgba(255,255,255,0.18); }
+
 /* ── Top bar ── */
 #top-bar {
   background: #1a1a2e;
@@ -297,23 +373,24 @@ code { background: #ffe082; padding: 1px 5px; border-radius: 3px; font-size: 0.7
     </div>
   </div>
   <h1>🔥 Fire Life Protection – Work Order Form</h1>
-  <div class="top-input">
-    <label>API Key:</label>
-    <input type="password" id="api-key" placeholder="AIzaSy...">
+  <span id="conn-status" class="conn-status-pill warn">Not connected</span>
+  <button class="conn-toggle" onclick="toggleDrawer()">⚙ Connection</button>
+</div>
+<div id="conn-drawer">
+  <div class="conn-drawer-inner">
+    <div class="conn-field">
+      <label>Google API Key</label>
+      <input type="password" id="api-key" placeholder="AIzaSy…">
+    </div>
+    <div class="conn-field">
+      <label>OAuth Client ID</label>
+      <input type="text" id="client-id" placeholder="123456….apps.googleusercontent.com">
+    </div>
+    <button class="conn-btn" id="connect-btn" onclick="initGoogle()">🔗 Connect Google</button>
+    <button id="refresh-props-btn" class="conn-btn grey" onclick="loadSheet(true)" style="display:none;" title="Re-fetch client list from Google Sheet">↺ Refresh Properties</button>
+    <div class="conn-divider"></div>
+    <button class="conn-btn grey" id="test-conn-btn" onclick="testScriptConnection()" title="Ping Apps Script and write a test log row">🔌 Test Schedule Connection</button>
   </div>
-  <div class="top-input">
-    <label>OAuth Client ID:</label>
-    <input type="text" id="client-id" placeholder="123456...apps.googleusercontent.com">
-  </div>
-  <button id="connect-btn" onclick="initGoogle()">🔗 Connect</button>
-  <button id="refresh-props-btn" onclick="loadSheet(true)" style="display:none;background:rgba(255,255,255,0.12);color:rgba(255,255,255,0.75);border:1px solid rgba(255,255,255,0.25);padding:5px 12px;border-radius:4px;font-size:0.75rem;cursor:pointer;white-space:nowrap;" title="Re-fetch client list from Google Sheet">↺ Refresh Properties</button>
-  <div id="conn-status"></div>
-  <button type="button" id="test-conn-btn" onclick="testScriptConnection()"
-    style="background:rgba(255,255,255,0.12);color:rgba(255,255,255,0.75);border:1px solid rgba(255,255,255,0.25);
-           padding:5px 12px;border-radius:4px;font-size:0.75rem;cursor:pointer;white-space:nowrap;"
-    title="Sends a test ping to the Apps Script web app and writes a row to the log sheet">
-    🔌 Test Connection
-  </button>
 </div>
 
 <!-- SETUP GUIDE (commented out — uncomment if needed for first-time setup)
@@ -1236,7 +1313,7 @@ function collectForm() {
 async function createDoc() {
   if (!accessToken) {
     toast('⚠ Not connected — click Connect first');
-    setStatus('conn-status', '⚠ Session expired — click Connect', 'err');
+    setStatus('conn-status', '⚠ Session expired', 'err'); document.getElementById('conn-drawer').classList.add('open');
     return;
   }
 
@@ -1766,8 +1843,20 @@ function fmtDate(val) {
 function setStatus(id, msg, cls) {
   const el = document.getElementById(id);
   if (!el) return;
-  el.textContent = msg;
-  el.className = cls;
+  if (id === 'conn-status') {
+    el.textContent = cls === 'ok' ? '✓ Google connected' : msg;
+    el.className = 'conn-status-pill ' + (cls === 'ok' ? 'ok' : cls === 'err' ? 'err' : 'warn');
+    if (cls === 'ok') document.getElementById('conn-drawer').classList.remove('open');
+  } else {
+    el.textContent = msg; el.className = cls;
+  }
+}
+function toggleDrawer() {
+  document.getElementById('conn-drawer').classList.toggle('open');
+}
+
+function toggleDrawer() {
+  document.getElementById('conn-drawer').classList.toggle('open');
 }
 
 function toast(msg) {
@@ -1803,7 +1892,7 @@ window.addEventListener('load', () => {
       // Token missing or expired — load properties from cache so the dropdown
       // is ready, but make it obvious the user still needs to Connect.
       loadSheet(); // will hit session cache instantly, no API call
-      setStatus('conn-status', '⚠ Session expired — click Connect', 'err');
+      setStatus('conn-status', '⚠ Session expired', 'err'); document.getElementById('conn-drawer').classList.add('open');
       document.getElementById('refresh-props-btn').style.display = 'inline-block';
     }
   }
