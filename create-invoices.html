@@ -1065,71 +1065,48 @@ async function getServicesItemRef(env) {
 }
 
 // ── QB Custom Field name — must match exactly what you created in QBO ──────
-const QB_ACCT_CUSTOM_FIELD = 'FLPS Account Number';
 
 async function findOrCreateCustomer(customerName, env, acctNum) {
   if (!customerName) customerName = 'Unknown Customer';
 
-  // ── 1. Look up by FLPS Account Number custom field (preferred) ───────────
+  await logToSheet('QB_CUSTOMER_LOOKUP',
+    `Looking up QB customer: acct#${acctNum || 'n/a'}, name="${customerName}"`, 'INFO');
+
+  // ── 1. Match by QB AcctNum ("Other" field) ────────────────────────────────
+  // In QB: Customer edit → Additional info tab → "Account no." field.
+  // This is a standard QB field that returns in every query — no custom field
+  // definitions needed. Populate it with the FLPS Internal Account Number.
   if (acctNum) {
-    await logToSheet('QB_CUSTOMER_LOOKUP',
-      `Looking up QB customer by FLPS Account Number: "${acctNum}" (${customerName})`, 'INFO');
     try {
-      const q = `SELECT * FROM Customer MAXRESULTS 1000`;
+      const q    = `SELECT * FROM Customer WHERE AcctNum = '${String(acctNum).replace(/'/g, "\\'")}'`;
       const data = await qbProxy('GET', `/query?query=${encodeURIComponent(q)}&minorversion=70`, env);
-      const customers = data?.QueryResponse?.Customer || [];
-
-      // Debug: log the first customer's raw CustomField data so we can see what QB returns
-      if (customers.length > 0) {
-        const sample = customers[0];
-        await logToSheet('QB_CUSTOM_FIELD_DEBUG',
-          `Sample customer "${sample.DisplayName}" CustomField: ${JSON.stringify(sample.CustomField || [])}`, 'INFO');
-      }
-
-      const match = customers.find(cust =>
-        (cust.CustomField || []).some(cf => {
-          const nameMatch  = cf.Name === QB_ACCT_CUSTOM_FIELD;
-          const valueMatch = String(cf.StringValue || '').trim() === String(acctNum).trim();
-          return nameMatch && valueMatch;
-        })
-      );
-      if (match) {
+      const hits = data?.QueryResponse?.Customer;
+      if (hits && hits.length > 0) {
         await logToSheet('QB_CUSTOMER_FOUND',
-          `Found by acct# ${acctNum}: "${match.DisplayName}" (ID: ${match.Id})`, 'OK');
-        return { value: match.Id, name: match.DisplayName };
+          `Found by AcctNum "${acctNum}": "${hits[0].DisplayName}" (ID: ${hits[0].Id})`, 'OK');
+        return { value: hits[0].Id, name: hits[0].DisplayName };
       }
-
-      // Log what custom fields we actually see across all customers to diagnose
-      const cfSummary = customers
-        .filter(c => c.CustomField && c.CustomField.length > 0)
-        .map(c => `${c.DisplayName}: ${JSON.stringify(c.CustomField)}`)
-        .join(' | ');
-      await logToSheet('QB_CUSTOM_FIELD_DEBUG',
-        `Customers with any CustomField (${customers.filter(c=>c.CustomField?.length).length}/${customers.length}): ${cfSummary || 'none'}`, 'INFO');
-
-      await logToSheet('QB_CUSTOMER_LOOKUP',
-        `No QB customer found with FLPS Account Number "${acctNum}" — falling back to name`, 'WARN');
     } catch(e) {
-      await logToSheet('QB_CUSTOMER_LOOKUP', `Custom field lookup failed: ${e.message}`, 'WARN');
+      await logToSheet('QB_CUSTOMER_LOOKUP', `AcctNum lookup failed: ${e.message}`, 'WARN');
     }
   }
 
-  // ── 2. Fall back to DisplayName match ────────────────────────────────────
-  await logToSheet('QB_CUSTOMER_LOOKUP', `Looking up QB customer by name: "${customerName}"`, 'INFO');
+  // ── 2. Exact DisplayName match ────────────────────────────────────────────
   try {
-    const q = `SELECT * FROM Customer WHERE DisplayName = '${customerName.replace(/'/g, "\\'")}'`;
+    const q    = `SELECT * FROM Customer WHERE DisplayName = '${customerName.replace(/'/g, "\\'")}'`;
     const data = await qbProxy('GET', `/query?query=${encodeURIComponent(q)}&minorversion=70`, env);
-    const customers = data?.QueryResponse?.Customer;
-    if (customers && customers.length > 0) {
+    const hits = data?.QueryResponse?.Customer;
+    if (hits && hits.length > 0) {
       await logToSheet('QB_CUSTOMER_FOUND',
-        `Found by name: "${customers[0].DisplayName}" (ID: ${customers[0].Id})`, 'OK');
-      return { value: customers[0].Id, name: customers[0].DisplayName };
+        `Found by exact name: "${hits[0].DisplayName}" (ID: ${hits[0].Id})`, 'OK');
+      return { value: hits[0].Id, name: hits[0].DisplayName };
     }
-  } catch(e) { /* fall through to create */ }
+  } catch(e) { /* fall through */ }
 
-  // ── 3. No match found — fail gracefully so user can fix it in QB ────────
+  // ── 3. No match — fail gracefully ────────────────────────────────────────
   const hint = acctNum
-    ? `No QB customer found with FLPS Account # ${acctNum} or name "${customerName}". Please add this customer in QuickBooks and set their "FLPS Account Number" custom field to ${acctNum}.`
+    ? `No QB customer found with Account No. "${acctNum}" or name "${customerName}". ` +
+      `In QuickBooks, open the customer → Additional info tab → set "Account no." to ${acctNum}.`
     : `No QB customer found matching "${customerName}". Please add this customer in QuickBooks first.`;
   await logToSheet('QB_CUSTOMER_NOT_FOUND', hint, 'WARN');
   throw new Error(hint);
