@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Cross-Origin-Opener-Policy" content="same-origin-allow-popups">
+<title>FLIPS – Inspection Schedule</title>
+<link rel="icon" type="image/png" href="data:image/png;base64,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">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Inter', Arial, sans-serif; font-size: 10pt; background: #e8e8e8; color: #000; }
+
+/* ── Top bar ── */
+#top-bar {
+  background: #1a1a2e; color: white; padding: 12px 20px;
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap; position: sticky; top: 0; z-index: 100;
+}
+#top-bar h1 { font-size: 1rem; font-weight: 600; }
+.top-input { display: flex; align-items: center; gap: 8px; font-size: 0.78rem; }
+.top-input label { color: #aaa; white-space: nowrap; }
+.top-input input { background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.25); color: white; padding: 5px 8px; border-radius: 4px; font-size: 0.75rem; width: 220px; }
+.top-input input::placeholder { color: rgba(255,255,255,0.4); }
+#connect-btn { background: #2e6da4; color: white; border: none; padding: 6px 14px; border-radius: 4px; cursor: pointer; font-size: 0.78rem; font-weight: 600; }
+#connect-btn:hover { background: #4a86e8; }
+#conn-status { font-size: 0.75rem; color: #7fff7f; min-width: 100px; }
+
+/* ── Hamburger nav ── */
+.nav-hamburger { position: relative; }
+.hamburger-btn { background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.25); color: white; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 1rem; line-height: 1; }
+.hamburger-btn:hover { background: rgba(255,255,255,0.22); }
+.nav-menu { display: none; position: absolute; top: calc(100% + 6px); left: 0; background: #1a1a2e; border: 1px solid rgba(255,255,255,0.2); border-radius: 6px; min-width: 200px; box-shadow: 0 8px 24px rgba(0,0,0,0.4); z-index: 200; overflow: hidden; }
+.nav-menu.open { display: block; }
+.nav-menu a { display: block; padding: 10px 16px; color: rgba(255,255,255,0.85); text-decoration: none; font-size: 0.82rem; border-bottom: 1px solid rgba(255,255,255,0.07); transition: background 0.1s; }
+.nav-menu a:last-child { border-bottom: none; }
+.nav-menu a:hover { background: rgba(255,255,255,0.1); color: white; }
+.nav-menu a.active { color: #7fc4fd; font-weight: 600; }
+
+/* ── Content ── */
+#content { padding: 20px; max-width: 1200px; margin: 0 auto; }
+
+/* ── Summary cards ── */
+#summary { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }
+.sum-card { background: white; border-radius: 8px; padding: 16px 18px; box-shadow: 0 1px 6px rgba(0,0,0,0.08); border-left: 4px solid #ccc; }
+.sum-card.overdue  { border-color: #e53935; }
+.sum-card.thismonth { border-color: #f57c00; }
+.sum-card.soon     { border-color: #f9a825; }
+.sum-card.ok       { border-color: #2e7d32; }
+.sum-card .num { font-size: 2rem; font-weight: 700; line-height: 1; }
+.sum-card.overdue  .num { color: #e53935; }
+.sum-card.thismonth .num { color: #f57c00; }
+.sum-card.soon     .num { color: #f9a825; }
+.sum-card.ok       .num { color: #2e7d32; }
+.sum-card .lbl { font-size: 0.75rem; color: #666; margin-top: 4px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em; }
+
+/* ── Filters ── */
+#filters { background: white; border-radius: 8px; padding: 12px 16px; margin-bottom: 16px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; box-shadow: 0 1px 6px rgba(0,0,0,0.08); }
+#filters label { font-size: 0.78rem; color: #666; font-weight: 500; }
+#filters input, #filters select { border: 1px solid #ddd; border-radius: 4px; padding: 5px 10px; font-size: 0.8rem; font-family: inherit; outline: none; }
+#filters input:focus, #filters select:focus { border-color: #2e6da4; }
+#search-box { width: 220px; }
+#filter-status { width: 160px; }
+#filter-type { width: 220px; }
+.filter-count { font-size: 0.78rem; color: #888; margin-left: auto; }
+#refresh-btn { background: #2e6da4; color: white; border: none; padding: 5px 14px; border-radius: 4px; cursor: pointer; font-size: 0.78rem; font-weight: 600; }
+#refresh-btn:hover { background: #4a86e8; }
+
+/* ── Table ── */
+#table-wrap { background: white; border-radius: 8px; box-shadow: 0 1px 6px rgba(0,0,0,0.08); overflow: hidden; }
+table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+thead th { background: #1a1a2e; color: white; padding: 10px 12px; text-align: left; font-weight: 600; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.04em; white-space: nowrap; cursor: pointer; user-select: none; }
+thead th:hover { background: #2a2a4e; }
+thead th .sort-arrow { opacity: 0.4; margin-left: 4px; }
+thead th.sorted .sort-arrow { opacity: 1; }
+tbody tr { border-bottom: 1px solid #f0f0f0; transition: background 0.1s; }
+tbody tr:hover { background: #f7faff; }
+tbody td { padding: 9px 12px; vertical-align: middle; }
+.col-property { font-weight: 600; color: #1a1a2e; max-width: 200px; }
+.col-type { color: #444; }
+.col-freq { color: #666; font-size: 0.75rem; }
+.col-last { color: #555; }
+.col-next { font-weight: 600; }
+.col-days { text-align: center; }
+.col-status { text-align: center; }
+
+/* ── Status badges ── */
+.badge { display: inline-block; padding: 3px 9px; border-radius: 12px; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.03em; white-space: nowrap; }
+.badge-overdue   { background: #fde8e8; color: #c62828; }
+.badge-thismonth { background: #fff3e0; color: #e65100; }
+.badge-soon      { background: #fffde7; color: #f57f17; }
+.badge-ok        { background: #e8f5e9; color: #2e7d32; }
+.badge-unknown   { background: #f5f5f5; color: #757575; }
+
+.days-pill { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 0.75rem; font-weight: 700; }
+.days-overdue   { background: #e53935; color: white; }
+.days-thismonth { background: #f57c00; color: white; }
+.days-soon      { background: #f9a825; color: #333; }
+.days-ok        { background: #e8f5e9; color: #2e7d32; }
+
+/* ── Empty / loading states ── */
+#loading, #empty-state { text-align: center; padding: 60px 20px; color: #888; }
+.spinner-lg { width: 36px; height: 36px; border: 3px solid #e0e0e0; border-top-color: #2e6da4; border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 16px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Toast ── */
+#toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(80px); background: #1a1a2e; color: white; padding: 10px 22px; border-radius: 6px; font-size: 0.85rem; box-shadow: 0 4px 20px rgba(0,0,0,0.3); transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1); z-index: 9999; white-space: nowrap; }
+#toast.show { transform: translateX(-50%) translateY(0); }
+
+@media (max-width: 768px) {
+  #summary { grid-template-columns: repeat(2, 1fr); }
+  #search-box { width: 140px; }
+}
+</style>
+</head>
+<body>
+
+<div id="top-bar">
+  <div class="nav-hamburger">
+    <button class="hamburger-btn" onclick="toggleNav(this)" title="Navigation menu">☰</button>
+    <div class="nav-menu" id="nav-menu">
+      <a href="index.html">📋 Work Order</a>
+      <a href="create-invoices.html">🧾 Create QB Invoices</a>
+      <a href="schedule.html" class="active">📅 Inspection Schedule</a>
+      <a href="clients.html">👥 Client Management</a>
+    </div>
+  </div>
+  <h1>📅 Inspection Schedule</h1>
+  <div class="top-input">
+    <label>API Key:</label>
+    <input type="password" id="api-key" placeholder="AIzaSy...">
+  </div>
+  <div class="top-input">
+    <label>OAuth Client ID:</label>
+    <input type="text" id="client-id" placeholder="123456...apps.googleusercontent.com">
+  </div>
+  <button id="connect-btn" onclick="initGoogle()">🔗 Connect</button>
+  <div id="conn-status"></div>
+</div>
+
+<div id="content">
+  <div id="summary">
+    <div class="sum-card overdue"><div class="num" id="cnt-overdue">—</div><div class="lbl">Overdue</div></div>
+    <div class="sum-card thismonth"><div class="num" id="cnt-thismonth">—</div><div class="lbl">Due This Month</div></div>
+    <div class="sum-card soon"><div class="num" id="cnt-soon">—</div><div class="lbl">Due in 60 Days</div></div>
+    <div class="sum-card ok"><div class="num" id="cnt-ok">—</div><div class="lbl">OK</div></div>
+  </div>
+
+  <div id="filters">
+    <label>Search:</label>
+    <input type="text" id="search-box" placeholder="Property name…" oninput="applyFilters()">
+    <label>Status:</label>
+    <select id="filter-status" onchange="applyFilters()">
+      <option value="">All statuses</option>
+      <option value="overdue">Overdue</option>
+      <option value="thismonth">Due This Month</option>
+      <option value="soon">Due in 60 Days</option>
+      <option value="ok">OK</option>
+    </select>
+    <label>Type:</label>
+    <select id="filter-type" onchange="applyFilters()">
+      <option value="">All types</option>
+    </select>
+    <button id="refresh-btn" onclick="loadSchedule(true)">↺ Refresh</button>
+    <span class="filter-count" id="filter-count"></span>
+  </div>
+
+  <div id="table-wrap">
+    <div id="loading" style="display:none;">
+      <div class="spinner-lg"></div>
+      <div>Loading schedule…</div>
+    </div>
+    <div id="empty-state">Connect to Google to load the inspection schedule.</div>
+    <table id="sched-table" style="display:none;">
+      <thead>
+        <tr>
+          <th onclick="sortBy('property')" data-col="property">Property <span class="sort-arrow">↕</span></th>
+          <th onclick="sortBy('type')" data-col="type">Inspection Type <span class="sort-arrow">↕</span></th>
+          <th onclick="sortBy('freq')" data-col="freq">Frequency <span class="sort-arrow">↕</span></th>
+          <th onclick="sortBy('last')" data-col="last">Last Done <span class="sort-arrow">↕</span></th>
+          <th onclick="sortBy('next')" data-col="next">Next Due <span class="sort-arrow">↕</span></th>
+          <th onclick="sortBy('days')" data-col="days" class="sorted">Days <span class="sort-arrow">↑</span></th>
+          <th onclick="sortBy('status')" data-col="status">Status <span class="sort-arrow">↕</span></th>
+        </tr>
+      </thead>
+      <tbody id="sched-body"></tbody>
+    </table>
+  </div>
+</div>
+
+<div id="toast"></div>
+<script src="https://accounts.google.com/gsi/client"></script>
+<script>
+const SHEET_ID  = '1_Koq_v0RjsFbQ_c2qZh-eQpGQT2-0IkOal-I4CjSJrI';
+const SCHEDULE_TAB_NAME = 'Inspection Schedule';
+const SCOPES = 'https://www.googleapis.com/auth/spreadsheets.readonly';
+
+let accessToken = null;
+let tokenClient = null;
+let allRows = [];       // parsed schedule rows
+let sortCol = 'days';
+let sortAsc = true;
+
+// ── Nav toggle ─────────────────────────────────────────────
+function toggleNav(btn) {
+  const menu = document.getElementById('nav-menu');
+  menu.classList.toggle('open');
+}
+document.addEventListener('click', e => {
+  if (!e.target.closest('.nav-hamburger')) {
+    document.getElementById('nav-menu').classList.remove('open');
+  }
+});
+
+// ── Auth ───────────────────────────────────────────────────
+function initGoogle() {
+  const apiKey   = document.getElementById('api-key').value.trim();
+  const clientId = document.getElementById('client-id').value.trim();
+  if (!apiKey || !clientId) { toast('⚠ Enter API Key and Client ID'); return; }
+  localStorage.setItem('flips_api_key', apiKey);
+  localStorage.setItem('flips_client_id', clientId);
+  setStatus('Connecting…', '');
+  try {
+    tokenClient = google.accounts.oauth2.initTokenClient({
+      client_id: clientId,
+      scope: SCOPES,
+      callback: async (resp) => {
+        if (resp.error) { setStatus('✗ ' + resp.error, 'err'); return; }
+        accessToken = resp.access_token;
+        localStorage.setItem('flips_access_token', accessToken);
+        localStorage.setItem('flips_token_expiry', Date.now() + 55 * 60 * 1000);
+        setStatus('✓ Connected', 'ok');
+        loadSchedule();
+      },
+      error_callback: (err) => setStatus('✗ ' + (err.message || err.type), 'err')
+    });
+    tokenClient.requestAccessToken({ prompt: '' });
+  } catch(e) { setStatus('✗ ' + e.message, 'err'); }
+}
+
+async function googleFetch(url) {
+  const makeOpts = () => ({ headers: { Authorization: 'Bearer ' + accessToken } });
+  let res = await fetch(url, makeOpts());
+  if (res.status === 401) {
+    toast('⏳ Session expired — reconnecting…');
+    await new Promise((resolve, reject) => {
+      if (!tokenClient) { reject(new Error('Not initialized')); return; }
+      tokenClient.callback = async (resp) => {
+        if (resp.error) { reject(new Error(resp.error)); return; }
+        accessToken = resp.access_token;
+        localStorage.setItem('flips_access_token', accessToken);
+        localStorage.setItem('flips_token_expiry', Date.now() + 55 * 60 * 1000);
+        resolve();
+      };
+      tokenClient.requestAccessToken({ prompt: '' });
+    });
+    res = await fetch(url, makeOpts());
+  }
+  return res;
+}
+
+// ── Load schedule ──────────────────────────────────────────
+async function loadSchedule(forceRefresh = false) {
+  const CACHE_KEY = 'flips_schedule_cache';
+  const CACHE_TTL = 5 * 60 * 1000; // 5 min — schedule changes often
+  if (!forceRefresh) {
+    try {
+      const cached = JSON.parse(sessionStorage.getItem(CACHE_KEY) || 'null');
+      if (cached && (Date.now() - cached.ts) < CACHE_TTL) {
+        allRows = cached.data;
+        renderTable();
+        return;
+      }
+    } catch(_) {}
+  }
+
+  document.getElementById('loading').style.display = 'block';
+  document.getElementById('empty-state').style.display = 'none';
+  document.getElementById('sched-table').style.display = 'none';
+
+  try {
+    const res = await googleFetch(
+      `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${encodeURIComponent(SCHEDULE_TAB_NAME)}`
+    );
+    if (!res.ok) throw new Error('Sheets API error ' + res.status);
+    const json = await res.json();
+    const rows = json.values || [];
+    if (rows.length < 2) { showEmpty('No data in Inspection Schedule tab.'); return; }
+
+    const headers = rows[0].map(h => h.trim().toLowerCase());
+    const col = (name) => headers.findIndex(h => h.includes(name));
+    const iProperty = col('property');
+    const iAddress  = col('address');
+    const iType     = col('inspection');
+    const iFreq     = col('freq');
+    const iLast     = col('last');
+    const iNext     = col('next');
+    const iStatus   = col('status');
+    const iNotes    = col('notes');
+
+    const today = new Date(); today.setHours(0,0,0,0);
+    allRows = [];
+
+    for (let i = 1; i < rows.length; i++) {
+      const r = rows[i];
+      const get = (idx) => (idx >= 0 ? (r[idx] || '').trim() : '');
+      const property = get(iProperty);
+      if (!property) continue;
+
+      const nextRaw = get(iNext);
+      let nextDate = null, daysUntil = null, bucket = 'unknown';
+      if (nextRaw) {
+        nextDate = parseSheetDate(nextRaw);
+        if (nextDate) {
+          daysUntil = Math.round((nextDate - today) / 86400000);
+          if      (daysUntil < 0)   bucket = 'overdue';
+          else if (daysUntil <= 31) bucket = 'thismonth';
+          else if (daysUntil <= 60) bucket = 'soon';
+          else                      bucket = 'ok';
+        }
+      }
+
+      allRows.push({
+        property,
+        address:  get(iAddress),
+        type:     get(iType),
+        freq:     get(iFreq),
+        last:     get(iLast),
+        next:     nextRaw,
+        nextDate,
+        daysUntil,
+        bucket,
+        status:   get(iStatus),
+        notes:    get(iNotes),
+      });
+    }
+
+    try { sessionStorage.setItem(CACHE_KEY, JSON.stringify({ ts: Date.now(), data: allRows })); } catch(_) {}
+    populateTypeFilter();
+    renderTable();
+  } catch(e) {
+    showEmpty('Error loading schedule: ' + e.message);
+  } finally {
+    document.getElementById('loading').style.display = 'none';
+  }
+}
+
+function parseSheetDate(str) {
+  if (!str) return null;
+  // Sheets returns dates as "M/D/YYYY" or "YYYY-MM-DD" or serial numbers
+  // Try M/D/YYYY first
+  const mdy = str.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (mdy) return new Date(parseInt(mdy[3]), parseInt(mdy[1])-1, parseInt(mdy[2]), 12);
+  // ISO
+  const iso = str.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (iso) return new Date(parseInt(iso[1]), parseInt(iso[2])-1, parseInt(iso[3]), 12);
+  // Fallback
+  const d = new Date(str);
+  return isNaN(d) ? null : d;
+}
+
+// ── Filters & sort ─────────────────────────────────────────
+function applyFilters() {
+  const q      = document.getElementById('search-box').value.toLowerCase();
+  const status = document.getElementById('filter-status').value;
+  const type   = document.getElementById('filter-type').value;
+
+  const filtered = allRows.filter(r => {
+    if (q      && !r.property.toLowerCase().includes(q) && !r.type.toLowerCase().includes(q)) return false;
+    if (status && r.bucket !== status) return false;
+    if (type   && r.type !== type) return false;
+    return true;
+  });
+  renderRows(filtered);
+}
+
+function sortBy(col) {
+  if (sortCol === col) { sortAsc = !sortAsc; }
+  else { sortCol = col; sortAsc = (col === 'days'); }
+  document.querySelectorAll('thead th').forEach(th => {
+    const arrow = th.querySelector('.sort-arrow');
+    if (th.dataset.col === col) {
+      th.classList.add('sorted');
+      arrow.textContent = sortAsc ? '↑' : '↓';
+    } else {
+      th.classList.remove('sorted');
+      arrow.textContent = '↕';
+    }
+  });
+  applyFilters();
+}
+
+function sorted(rows) {
+  const dir = sortAsc ? 1 : -1;
+  return [...rows].sort((a, b) => {
+    switch(sortCol) {
+      case 'property': return dir * a.property.localeCompare(b.property);
+      case 'type':     return dir * a.type.localeCompare(b.type);
+      case 'freq':     return dir * a.freq.localeCompare(b.freq);
+      case 'last':     return dir * a.last.localeCompare(b.last);
+      case 'next':     return dir * ((a.nextDate||0) - (b.nextDate||0));
+      case 'days': {
+        const ad = a.daysUntil ?? 99999;
+        const bd = b.daysUntil ?? 99999;
+        return dir * (ad - bd);
+      }
+      case 'status':   return dir * a.bucket.localeCompare(b.bucket);
+      default: return 0;
+    }
+  });
+}
+
+function populateTypeFilter() {
+  const types = [...new Set(allRows.map(r => r.type).filter(Boolean))].sort();
+  const sel = document.getElementById('filter-type');
+  sel.innerHTML = '<option value="">All types</option>';
+  types.forEach(t => {
+    const o = document.createElement('option');
+    o.value = t; o.textContent = t;
+    sel.appendChild(o);
+  });
+}
+
+// ── Render ─────────────────────────────────────────────────
+function renderTable() {
+  document.getElementById('sched-table').style.display = 'block';
+  document.getElementById('empty-state').style.display = 'none';
+  updateSummaryCards();
+  applyFilters();
+}
+
+function renderRows(rows) {
+  const s = sorted(rows);
+  document.getElementById('filter-count').textContent = `Showing ${s.length} of ${allRows.length}`;
+  const tbody = document.getElementById('sched-body');
+  if (s.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:30px;color:#888;">No records match your filters.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = s.map(r => {
+    const daysPill = r.daysUntil === null ? '<span style="color:#aaa;">—</span>'
+      : r.daysUntil < 0
+        ? `<span class="days-pill days-overdue">${Math.abs(r.daysUntil)}d ago</span>`
+        : r.bucket === 'thismonth'
+          ? `<span class="days-pill days-thismonth">${r.daysUntil}d</span>`
+          : r.bucket === 'soon'
+            ? `<span class="days-pill days-soon">${r.daysUntil}d</span>`
+            : `<span class="days-pill days-ok">${r.daysUntil}d</span>`;
+
+    const bucketLabel = { overdue:'Overdue', thismonth:'Due This Month', soon:'Due Soon', ok:'OK', unknown:'—' };
+    const badge = `<span class="badge badge-${r.bucket}">${bucketLabel[r.bucket]||'—'}</span>`;
+
+    return `<tr>
+      <td class="col-property" title="${escHtml(r.address)}">${escHtml(r.property)}</td>
+      <td class="col-type">${escHtml(r.type)}</td>
+      <td class="col-freq">${escHtml(r.freq)}</td>
+      <td class="col-last">${escHtml(r.last)}</td>
+      <td class="col-next">${escHtml(r.next)}</td>
+      <td class="col-days">${daysPill}</td>
+      <td class="col-status">${badge}</td>
+    </tr>`;
+  }).join('');
+}
+
+function updateSummaryCards() {
+  const counts = { overdue:0, thismonth:0, soon:0, ok:0 };
+  allRows.forEach(r => { if (counts[r.bucket] !== undefined) counts[r.bucket]++; });
+  document.getElementById('cnt-overdue').textContent   = counts.overdue;
+  document.getElementById('cnt-thismonth').textContent = counts.thismonth;
+  document.getElementById('cnt-soon').textContent      = counts.soon;
+  document.getElementById('cnt-ok').textContent        = counts.ok;
+}
+
+function showEmpty(msg) {
+  document.getElementById('empty-state').textContent = msg;
+  document.getElementById('empty-state').style.display = 'block';
+  document.getElementById('sched-table').style.display = 'none';
+}
+
+// ── Helpers ────────────────────────────────────────────────
+function setStatus(msg, cls) {
+  const el = document.getElementById('conn-status');
+  el.textContent = msg;
+  el.style.color = cls === 'ok' ? '#7fff7f' : cls === 'err' ? '#ff7777' : '#ccc';
+}
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 3000);
+}
+function escHtml(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ── On load ────────────────────────────────────────────────
+window.addEventListener('load', () => {
+  const k = localStorage.getItem('flips_api_key');
+  const c = localStorage.getItem('flips_client_id');
+  if (k) document.getElementById('api-key').value = k;
+  if (c) document.getElementById('client-id').value = c;
+
+  if (k && c) {
+    const cachedToken = localStorage.getItem('flips_access_token');
+    const tokenExpiry = parseInt(localStorage.getItem('flips_token_expiry') || '0');
+    if (cachedToken && Date.now() < tokenExpiry) {
+      accessToken = cachedToken;
+      setStatus('✓ Connected', 'ok');
+      loadSchedule();
+    } else {
+      setStatus('⚠ Session expired — click Connect', 'err');
+    }
+  }
+});
+</script>
+</body>
+</html>
