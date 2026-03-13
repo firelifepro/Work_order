@@ -1072,36 +1072,47 @@ async function findOrCreateCustomer(customerName, env, acctNum) {
   await logToSheet('QB_CUSTOMER_LOOKUP',
     `Looking up QB customer: acct#${acctNum || 'n/a'}, name="${customerName}"`, 'INFO');
 
-  // ── 1. Match by QB AcctNum ("Other" field) ────────────────────────────────
-  // In QB: Customer edit → Additional info tab → "Account no." field.
-  // This is a standard QB field that returns in every query — no custom field
-  // definitions needed. Populate it with the FLPS Internal Account Number.
-  if (acctNum) {
+  // Fetch all customers once and cache for the session — QB doesn't support
+  // WHERE AcctNum = '...' in queries, so we filter client-side.
+  // AcctNum (the QB "Other" / "Account no." field) does appear in the response object.
+  if (!findOrCreateCustomer._cache) {
     try {
-      const q    = `SELECT * FROM Customer WHERE AcctNum = '${String(acctNum).replace(/'/g, "\\'")}'`;
+      const q    = `SELECT * FROM Customer MAXRESULTS 1000`;
       const data = await qbProxy('GET', `/query?query=${encodeURIComponent(q)}&minorversion=70`, env);
-      const hits = data?.QueryResponse?.Customer;
-      if (hits && hits.length > 0) {
-        await logToSheet('QB_CUSTOMER_FOUND',
-          `Found by AcctNum "${acctNum}": "${hits[0].DisplayName}" (ID: ${hits[0].Id})`, 'OK');
-        return { value: hits[0].Id, name: hits[0].DisplayName };
-      }
+      findOrCreateCustomer._cache = data?.QueryResponse?.Customer || [];
+      await logToSheet('QB_CUSTOMER_LOOKUP',
+        `Loaded ${findOrCreateCustomer._cache.length} QB customers into cache`, 'INFO');
     } catch(e) {
-      await logToSheet('QB_CUSTOMER_LOOKUP', `AcctNum lookup failed: ${e.message}`, 'WARN');
+      findOrCreateCustomer._cache = [];
+      await logToSheet('QB_CUSTOMER_LOOKUP', `Failed to load QB customers: ${e.message}`, 'WARN');
+    }
+  }
+  const all = findOrCreateCustomer._cache;
+
+  // Diagnostic: dump raw QB object so we can see the exact field name for "Other"
+  const diagCust = all.find(c => c.DisplayName && c.DisplayName.toLowerCase().includes('south university')) || all[0];
+  if (diagCust) {
+    console.log('[QB_DIAG] Raw customer object:', JSON.stringify(diagCust));
+    await logToSheet('QB_DIAG', 'Raw QB customer: ' + JSON.stringify(diagCust), 'INFO');
+  }
+
+  // ── 1. Match by AcctNum (QB "Other" / "Account no." field) ───────────────
+  if (acctNum) {
+    const match = all.find(c => String(c.AcctNum || '').trim() === String(acctNum).trim());
+    if (match) {
+      await logToSheet('QB_CUSTOMER_FOUND',
+        `Found by AcctNum "${acctNum}": "${match.DisplayName}" (ID: ${match.Id})`, 'OK');
+      return { value: match.Id, name: match.DisplayName };
     }
   }
 
   // ── 2. Exact DisplayName match ────────────────────────────────────────────
-  try {
-    const q    = `SELECT * FROM Customer WHERE DisplayName = '${customerName.replace(/'/g, "\\'")}'`;
-    const data = await qbProxy('GET', `/query?query=${encodeURIComponent(q)}&minorversion=70`, env);
-    const hits = data?.QueryResponse?.Customer;
-    if (hits && hits.length > 0) {
-      await logToSheet('QB_CUSTOMER_FOUND',
-        `Found by exact name: "${hits[0].DisplayName}" (ID: ${hits[0].Id})`, 'OK');
-      return { value: hits[0].Id, name: hits[0].DisplayName };
-    }
-  } catch(e) { /* fall through */ }
+  const exact = all.find(c => c.DisplayName === customerName);
+  if (exact) {
+    await logToSheet('QB_CUSTOMER_FOUND',
+      `Found by exact name: "${exact.DisplayName}" (ID: ${exact.Id})`, 'OK');
+    return { value: exact.Id, name: exact.DisplayName };
+  }
 
   // ── 3. No match — fail gracefully ────────────────────────────────────────
   const hint = acctNum
