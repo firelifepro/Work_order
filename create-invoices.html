@@ -927,17 +927,18 @@ function connectQuickBooks() {
   const clientId = document.getElementById('qb-client-id').value.trim();
   if (!clientId) { toast('⚠ Enter your QuickBooks Client ID'); return; }
   const env = document.getElementById('qb-env').value;
-  const redirectUri = encodeURIComponent(location.href.split('?')[0]);
+  const redirectUri = encodeURIComponent('https://workorder.firelifepro.workers.dev/create-invoices.html');
   const scope = encodeURIComponent('com.intuit.quickbooks.accounting');
   const state = Math.random().toString(36).slice(2);
   sessionStorage.setItem('qb_state', state);
   sessionStorage.setItem('qb_client_id', clientId);
   sessionStorage.setItem('qb_env', env);
-
-  const authUrl = `https://appcenter.intuit.com/connect/oauth2?` +
+  localStorage.setItem('qb_client_id', clientId);
+  localStorage.setItem('qb_env', env);
+  // Redirect current tab — Intuit sends the code back here via redirect
+  window.location.href = `https://appcenter.intuit.com/connect/oauth2?` +
     `client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code` +
     `&scope=${scope}&state=${state}`;
-  window.open(authUrl, 'qb-auth', 'width=600,height=700');
 }
 
 // Handle QB redirect (called if this page is the redirect target)
@@ -958,20 +959,16 @@ async function handleQBCallback() {
     const resp = await fetch('/api/qb-token', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ grant_type: 'authorization_code', code, redirect_uri: redirectUri, env })
+      body: JSON.stringify({ grant_type: 'authorization_code', code, redirect_uri: 'https://workorder.firelifepro.workers.dev/create-invoices.html', env })
     });
     if (!resp.ok) throw new Error(await resp.text());
     const data = await resp.json();
     qbAccessToken = data.access_token;
     qbRealmId = realmId;
-    // QB access tokens last 1 hour; refresh tokens last 100 days
-    const expiresAt = Date.now() + ((data.expires_in || 3600) - 60) * 1000; // 60s buffer
-    localStorage.setItem('qb_access_token',  qbAccessToken);
-    localStorage.setItem('qb_realm_id',      qbRealmId);
-    localStorage.setItem('qb_refresh_token', data.refresh_token || '');
-    localStorage.setItem('qb_expires_at',    String(expiresAt));
-    document.getElementById('qb-status').textContent = '✓ QuickBooks connected';
-    document.getElementById('qb-status').style.color = '#1fb272';
+    const expiresAt = Date.now() + ((data.expires_in || 3600) - 60) * 1000;
+    saveQBTokens(data, expiresAt, realmId, env);
+    const mins = Math.round((expiresAt - Date.now()) / 60000);
+    setQBStatusPill(`✓ QB (~${mins}m)`, 'ok');
     // Clean URL
     history.replaceState({}, '', location.pathname);
     updateSelectedCount();
@@ -1413,6 +1410,13 @@ window.addEventListener('load', () => {
   }
 
   // Restore QB token — auto-refresh if expired
+  // Restore QB client ID field
+  const savedQbCid = localStorage.getItem('qb_client_id');
+  if (savedQbCid) {
+    const cidEl = document.getElementById('qb-client-id');
+    if (cidEl) cidEl.value = savedQbCid;
+  }
+
   // Restore QB — env-namespaced so sandbox/production never mix
   const qbEnvStored = localStorage.getItem('qb_env') || 'sandbox';
   const qbEnvSel = document.getElementById('qb-env');
