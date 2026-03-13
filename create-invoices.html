@@ -353,9 +353,9 @@ code { background: #ffe082; padding: 1px 5px; border-radius: 3px; font-size: 0.7
   <div class="nav-hamburger">
     <button class="hamburger-btn" onclick="toggleNav()" title="Navigation menu">☰</button>
     <div class="nav-menu" id="nav-menu">
-      <a href="index.html">📋 Work Order</a>
-      <a href="create-invoices.html" class="active">🧾 Create QB Invoices</a>
+            <a href="index.html">📋 Work Order</a>
       <a href="schedule.html">📅 Inspection Schedule</a>
+      <a href="create-invoices.html" class="active">🧾 Create QB Invoices</a>
       <a href="clients.html">👥 Client Management</a>
     </div>
   </div>
@@ -433,8 +433,6 @@ code { background: #ffe082; padding: 1px 5px; border-radius: 3px; font-size: 0.7
   </div>
 </div>
 
-<!-- QB redirect URI hint -->
-<div style="padding:4px 20px 8px;font-size:0.72rem;color:#888;">QB Redirect URI: <code id="redirect-uri"></code> &nbsp;·&nbsp; <span id="qb-status" style="display:none;"></span></div>
 
 <!-- ACTION BAR -->
 <div class="card">
@@ -553,8 +551,9 @@ function startGapi(apiKey, clientId) {
 function setConnStatus(msg, color) {
   const el = document.getElementById('conn-status');
   const isOk = msg.startsWith('✓');
+  const isErr = msg.startsWith('✗') || msg.includes('expired') || msg.includes('error');
   el.textContent = isOk ? '✓ Google connected' : msg;
-  el.className = 'conn-status-pill ' + (isOk ? 'ok' : 'err');
+  el.className = 'conn-status-pill ' + (isOk ? 'ok' : isErr ? 'err' : 'warn');
   if (isOk) document.getElementById('conn-drawer').classList.remove('open');
 }
 function setQBStatusPill(msg, cls) {
@@ -1355,6 +1354,41 @@ window.addEventListener('load', () => {
   if (k) document.getElementById('api-key').value = k;
   if (c) document.getElementById('client-id').value = c;
 
+  // Auto-connect Google if we have a cached valid token — same as index.html
+  if (k && c) {
+    const cachedToken  = localStorage.getItem('flips_access_token');
+    const tokenExpiry  = parseInt(localStorage.getItem('flips_token_expiry') || '0');
+    if (cachedToken && Date.now() < tokenExpiry) {
+      // Silently init GIS and restore token — no popup
+      loadScript('https://accounts.google.com/gsi/client', () => {
+        loadScript('https://apis.google.com/js/api.js', () => {
+          gapi.load('client', async () => {
+            await gapi.client.init({ apiKey: k, discoveryDocs: [] });
+            accessToken = cachedToken;
+            gapi.client.setToken({ access_token: cachedToken });
+            tokenClient = google.accounts.oauth2.initTokenClient({
+              client_id: c, scope: GOOGLE_SCOPES,
+              callback: async (resp) => {
+                if (resp.error) { setConnStatus('✗ ' + resp.error, ''); return; }
+                accessToken = resp.access_token;
+                gapi.client.setToken({ access_token: accessToken });
+                localStorage.setItem('flips_access_token', accessToken);
+                localStorage.setItem('flips_token_expiry', Date.now() + 55 * 60 * 1000);
+                setConnStatus('✓ Connected', '#7fff7f');
+                loadDocs();
+              }
+            });
+            setConnStatus('✓ Connected', '#7fff7f');
+            loadDocs();
+          });
+        });
+      });
+    } else if (cachedToken) {
+      setConnStatus('⚠ Session expired', '');
+      document.getElementById('conn-drawer').classList.add('open');
+    }
+  }
+
   // Restore QB token — auto-refresh if expired
   const savedToken   = localStorage.getItem('qb_access_token');
   const savedRealm   = localStorage.getItem('qb_realm_id');
@@ -1364,23 +1398,18 @@ window.addEventListener('load', () => {
     qbAccessToken = savedToken;
     qbRealmId     = savedRealm;
     if (savedExpiry && Date.now() > savedExpiry && savedRefresh) {
-      // Token is expired — try to refresh silently on page load
-      document.getElementById('qb-status').textContent = '⏳ QB token expired — refreshing…';
-      document.getElementById('qb-status').style.color = '#888';
+      setQBStatusPill('⏳ Refreshing QB token…', 'warn');
       refreshQBToken().catch(() => {
-        document.getElementById('qb-status').textContent = '⚠ QB session expired — please reconnect';
-        document.getElementById('qb-status').style.color = '#c0392b';
+        setQBStatusPill('QB session expired — reconnect', 'err');
+        document.getElementById('conn-drawer').classList.add('open');
         qbAccessToken = null;
       });
     } else {
       const mins = savedExpiry ? Math.max(0, Math.round((savedExpiry - Date.now()) / 60000)) : '?';
-      document.getElementById('qb-status').textContent = `✓ QuickBooks connected (~${mins}m remaining)`;
-      document.getElementById('qb-status').style.color = '#1fb272';
+      setQBStatusPill(`✓ QB (~${mins}m)`, 'ok');
     }
   }
 
-  // Set redirect URI hint
-  document.getElementById('redirect-uri').textContent = location.href.split('?')[0];
 
   // Handle QB OAuth callback
   if (location.search.includes('code=')) handleQBCallback();
