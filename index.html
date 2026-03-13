@@ -1204,7 +1204,11 @@ function collectForm() {
 //  replaceAllText on a doc converted from Google Docs HTML export)
 // ─────────────────────────────────────────────────────────
 async function createDoc() {
-  if (!accessToken) { toast('Connect to Google first'); return; }
+  if (!accessToken) {
+    toast('⚠ Not connected — click Connect first');
+    setStatus('conn-status', '⚠ Session expired — click Connect', 'err');
+    return;
+  }
 
   // ── Validate Line # ──────────────────────────────────────
   const woNumInput = document.getElementById('wo-number');
@@ -1306,9 +1310,6 @@ async function createDoc() {
         errMsg = errJson.error?.message || errJson.error?.status || JSON.stringify(errJson);
       } catch(_) { try { errMsg = await uploadRes.text(); } catch(_2) {} }
       console.error('[createDoc] Drive upload error', uploadRes.status, errMsg);
-      console.error('[createDoc] safeHtml length:', safeHtml.length);
-      console.error('[createDoc] safeHtml first 2000 chars:', safeHtml.substring(0, 2000));
-      console.error('[createDoc] safeHtml last 500 chars:', safeHtml.slice(-500));
       throw new Error(`Drive upload ${uploadRes.status}: ${errMsg}`);
     }
     const { id: newId, parents } = await uploadRes.json();
@@ -1769,7 +1770,13 @@ window.addEventListener('load', () => {
       document.getElementById('refresh-props-btn').style.display = 'inline-block';
       loadSheet();
     }
-    // If token is missing or expired, user clicks Connect to re-auth once
+    } else {
+      // Token missing or expired — load properties from cache so the dropdown
+      // is ready, but make it obvious the user still needs to Connect.
+      loadSheet(); // will hit session cache instantly, no API call
+      setStatus('conn-status', '⚠ Session expired — click Connect', 'err');
+      document.getElementById('refresh-props-btn').style.display = 'inline-block';
+    }
   }
 });
 
