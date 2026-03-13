@@ -1089,16 +1089,16 @@ async function findOrCreateCustomer(customerName, env, acctNum) {
   }
   const all = findOrCreateCustomer._cache;
 
-  // Diagnostic: dump raw QB object so we can see the exact field name for "Other"
-  const diagCust = all.find(c => c.DisplayName && c.DisplayName.toLowerCase().includes('south university')) || all[0];
-  if (diagCust) {
-    console.log('[QB_DIAG] Raw customer object:', JSON.stringify(diagCust));
-    await logToSheet('QB_DIAG', 'Raw QB customer: ' + JSON.stringify(diagCust), 'INFO');
-  }
-
-  // ── 1. Match by AcctNum (QB "Other" / "Account no." field) ───────────────
+  // ── 1. Match by AcctNum (Additional info → "Account no.") ──────────────────
+  // Also checks AlternatePhone as a fallback since QB's "Other" field on the
+  // main contact screen maps there. The correct field is AcctNum, found under
+  // Customer → Edit → Additional info tab → "Account no." field.
   if (acctNum) {
-    const match = all.find(c => String(c.AcctNum || '').trim() === String(acctNum).trim());
+    const acctStr = String(acctNum).trim();
+    const match = all.find(c =>
+      String(c.AcctNum || '').trim() === acctStr ||
+      String(c.AlternatePhone?.FreeFormNumber || '').trim() === acctStr
+    );
     if (match) {
       await logToSheet('QB_CUSTOMER_FOUND',
         `Found by AcctNum "${acctNum}": "${match.DisplayName}" (ID: ${match.Id})`, 'OK');
