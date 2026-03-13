@@ -717,6 +717,13 @@ const SHEET_ID  = '1_Koq_v0RjsFbQ_c2qZh-eQpGQT2-0IkOal-I4CjSJrI';
 // Also run setSecret() in the Apps Script once after pasting.
 const APPS_SCRIPT_URL    = ''; // ← PASTE WEB APP URL HERE
 const APPS_SCRIPT_SECRET = 'flips-2026-secret'; // must match setSecret() in Apps Script
+
+// ── Log verbosity ────────────────────────────────────────────────────────────
+// 'NORMAL'  — only logs WO/invoice creation and errors (production default)
+// 'VERBOSE' — logs every step (use when debugging a specific issue)
+// Change this constant and redeploy, or use browser console to override:
+//   flipsLogLevel = 'VERBOSE'  /  flipsLogLevel = 'NORMAL'
+let flipsLogLevel = 'NORMAL';
 const SHEET_GID = '1899870347';
 const TEMPLATE_DOC_ID = '1x96eu74Jlo-8mz8Ztah2noGc7SY-HvX1CQNQ6Vl07Sc';
 const SCOPES = 'https://www.googleapis.com/auth/drive https://www.googleapis.com/auth/documents https://www.googleapis.com/auth/spreadsheets.readonly';
@@ -1803,8 +1810,14 @@ async function testScriptConnection() {
 // Non-blocking, never throws, silently swallows its own errors.
 // ─────────────────────────────────────────────────────────────────────────────
 function logToSheet(action, detail, status, error) {
-  // Fire-and-forget — never awaited, never blocks the user-facing flow.
-  const entry = { source: 'work-order-page', action, detail: String(detail || ''), status: status || 'INFO', error: String(error || '') };
+  // Fire-and-forget — never blocks the user-facing flow.
+  // Respects flipsLogLevel: in NORMAL mode only WARN, ERROR, and key OK events
+  // are sent to the sheet. Set flipsLogLevel = 'VERBOSE' in the browser console
+  // to temporarily enable full logging without redeploying.
+  const s = String(status || 'INFO').toUpperCase();
+  const isKeyEvent = ['WO_SAVED','INVOICE_CREATED','QB_INVOICE_CREATED'].includes(action);
+  if (flipsLogLevel !== 'VERBOSE' && s === 'INFO' && !isKeyEvent) return;
+  const entry = { source: 'work-order-page', action, detail: String(detail || ''), status: s, error: String(error || '') };
   fetch('/api/apps-script', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -1899,8 +1912,8 @@ async function updateInspectionSchedule(data) {
 
     const result = await resp.json();
     if (result.success) {
-      logToSheet('WO_SCHEDULE_UPDATED',
-        `${updates.length} inspection record(s) updated for ${propertyName}`, 'OK');
+      logToSheet('WO_SAVED',
+        `Work order saved + ${updates.length} inspection record(s) updated for ${propertyName}`, 'OK');
       console.log('✓ Inspection schedule updated:', updates.length, 'record(s)');
     } else {
       logToSheet('WO_SCHEDULE_FAILED',
