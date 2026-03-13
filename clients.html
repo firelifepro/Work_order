@@ -159,10 +159,10 @@ tbody td { padding: 9px 12px; vertical-align: middle; }
     <button class="hamburger-btn" onclick="toggleNav()" title="Navigation menu">☰</button>
     <div class="nav-menu" id="nav-menu">
       <a href="index.html">📋 Work Order</a>
-      <a href="create-invoices.html">🧾 Create QB Invoices</a>
       <a href="schedule.html">📅 Inspection Schedule</a>
+      <a href="create-invoices.html">🧾 Create QB Invoices</a>
       <a href="clients.html" class="active">👥 Client Management</a>
-    </div>
+        </div>
   </div>
   <h1>👥 Client Management</h1>
   <span id="conn-status-google" class="conn-status-pill err">Google not connected</span>
@@ -328,19 +328,20 @@ async function googleFetch(url) {
 function connectQuickBooks() {
   const env      = document.getElementById('qb-env').value;
   const clientId = localStorage.getItem('flips_client_id') || '';
-  // Reuse stored QB tokens if still valid
+  // Reuse stored QB tokens only if env matches current dropdown selection
   const storedToken   = localStorage.getItem('qb_access_token');
   const storedExpiry  = parseInt(localStorage.getItem('qb_expires_at') || '0');
   const storedRealm   = localStorage.getItem('qb_realm_id');
   const storedRefresh = localStorage.getItem('qb_refresh_token');
-  if (storedToken && Date.now() < storedExpiry && storedRealm) {
+  const storedEnv     = localStorage.getItem('qb_env') || 'sandbox';
+  if (storedToken && Date.now() < storedExpiry && storedRealm && storedEnv === env) {
     qbAccessToken = storedToken; qbRealmId = storedRealm;
     const mins = Math.round((storedExpiry - Date.now()) / 60000);
     setQBStatus(`✓ QB connected (~${mins}m remaining)`, 'ok');
     if (sheetClients.length) reconcile();
     return;
   }
-  if (storedRefresh) { refreshQBToken().then(() => { if (sheetClients.length) reconcile(); }); return; }
+  if (storedRefresh && storedEnv === env) { refreshQBToken().then(() => { if (sheetClients.length) reconcile(); }); return; }
   // Full OAuth flow
   const scope    = encodeURIComponent('com.intuit.quickbooks.accounting');
   const redirect = encodeURIComponent(window.location.href.split('?')[0]);
@@ -711,6 +712,10 @@ window.addEventListener('load', async () => {
   const qbTok    = localStorage.getItem('qb_access_token');
   const qbExpiry = parseInt(localStorage.getItem('qb_expires_at') || '0');
   const realmId  = localStorage.getItem('qb_realm_id');
+  const storedQbEnv = localStorage.getItem('qb_env') || 'sandbox';
+  // Restore the saved env to the dropdown so it matches the token
+  const envSel = document.getElementById('qb-env');
+  if (envSel && storedQbEnv) envSel.value = storedQbEnv;
   if (qbTok && Date.now() < qbExpiry && realmId) {
     qbAccessToken = qbTok; qbRealmId = realmId;
     const mins = Math.round((qbExpiry - Date.now()) / 60000);
