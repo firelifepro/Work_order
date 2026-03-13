@@ -1265,7 +1265,14 @@ async function createDoc() {
     const html = buildWorkOrderHTML(data);
 
     setStatus('submit-status', 'Uploading to Drive…', '');
+    // Strip emoji/symbol Unicode ranges that cause Google Drive's HTML-to-Doc
+    // converter to return a 500 Internal Error.
+    const safeHtml = html
+      .replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]/g, '')  // surrogate pairs (emoji)
+      .replace(/[\u2600-\u27BF]/g, '');                  // misc symbols/dingbats
+
     const boundary = '-------314159265358979';
+
     const metadata = JSON.stringify({ name: docName, mimeType: 'application/vnd.google-apps.document' });
     const body = [
       `--${boundary}`,
@@ -1275,7 +1282,7 @@ async function createDoc() {
       `--${boundary}`,
       'Content-Type: text/html; charset=UTF-8',
       '',
-      html,
+      safeHtml,
       `--${boundary}--`
     ].join('\r\n');
 
@@ -1290,7 +1297,15 @@ async function createDoc() {
         body
       }
     );
-    if (!uploadRes.ok) throw new Error((await uploadRes.json()).error?.message || 'Upload failed');
+    if (!uploadRes.ok) {
+      let errMsg = 'Upload failed';
+      try {
+        const errJson = await uploadRes.json();
+        errMsg = errJson.error?.message || errJson.error?.status || JSON.stringify(errJson);
+      } catch(_) { try { errMsg = await uploadRes.text(); } catch(_2) {} }
+      console.error('[createDoc] Drive upload error', uploadRes.status, errMsg);
+      throw new Error(`Drive upload ${uploadRes.status}: ${errMsg}`);
+    }
     const { id: newId, parents } = await uploadRes.json();
 
     // Move into "FLPS Work Flow / 2 - Ready to Invoice"
@@ -1465,8 +1480,7 @@ function buildWorkOrderHTML(d) {
   <table style="width:100%;border-collapse:collapse;margin-bottom:6px;border:none;">
     <tr>
       <td style="width:60px;padding:6px 10px 6px 0;vertical-align:middle;border:none;">
-        <div style="width:52px;height:52px;background:#2e6da4;border-radius:50%;
-                    font-size:26px;text-align:center;line-height:52px;">&#128293;</div>
+        <div style="width:52px;height:52px;background:#c0392b;border-radius:50%;display:flex;align-items:center;justify-content:center;"><span style="color:white;font-weight:900;font-size:22px;font-family:Arial;">F</span></div>
       </td>
       <td style="vertical-align:middle;padding:4px 0;border:none;">
         <div style="font-family:Arial,sans-serif;font-size:16pt;font-weight:bold;
