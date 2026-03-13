@@ -1265,11 +1265,13 @@ async function createDoc() {
     const html = buildWorkOrderHTML(data);
 
     setStatus('submit-status', 'Uploading to Drive…', '');
-    // Strip emoji/symbol Unicode ranges that cause Google Drive's HTML-to-Doc
-    // converter to return a 500 Internal Error.
-    const safeHtml = html
-      .replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]/g, '')  // surrogate pairs (emoji)
-      .replace(/[\u2600-\u27BF]/g, '');                  // misc symbols/dingbats
+    // Google's Drive HTML-to-Doc converter only needs the <body>.
+    // Stripping <head> removes the base64 favicon and any other metadata
+    // that can cause the converter to return a 500.
+    const bodyMatch = html.match(/<body[^>]*>([\s\S]*)<\/body>/i);
+    const safeHtml = bodyMatch
+      ? `<!DOCTYPE html><html><body>${bodyMatch[1]}</body></html>`
+      : html;
 
     const boundary = '-------314159265358979';
 
@@ -1480,7 +1482,8 @@ function buildWorkOrderHTML(d) {
   <table style="width:100%;border-collapse:collapse;margin-bottom:6px;border:none;">
     <tr>
       <td style="width:60px;padding:6px 10px 6px 0;vertical-align:middle;border:none;">
-        <div style="width:52px;height:52px;background:#c0392b;border-radius:50%;display:flex;align-items:center;justify-content:center;"><span style="color:white;font-weight:900;font-size:22px;font-family:Arial;">F</span></div>
+        <div style="width:52px;height:52px;background:#2e6da4;border-radius:50%;
+                    font-size:26px;text-align:center;line-height:52px;">&#128293;</div>
       </td>
       <td style="vertical-align:middle;padding:4px 0;border:none;">
         <div style="font-family:Arial,sans-serif;font-size:16pt;font-weight:bold;
