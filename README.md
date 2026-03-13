@@ -41,3 +41,11 @@ code { background: #ffe082; padding: 1px 5px; border-radius: 3px; font-size: 0.7
 </details>
 When the google extention changes you have to redeploy because it will cache the old ones.  That gives you a new url.  You need to add the url from the google extention app script to each of the .html pages in the APPS_SCRIPT_URL
 also run set secret
+
+
+
+Log Verbosity — Two Switches
+Browser side (HTML pages): There's now a let flipsLogLevel = 'NORMAL' constant near the top of each page. In NORMAL mode, only WARN, ERROR, and the two key OK events (WO_SAVED, INVOICE_CREATED) are sent to the sheet — maybe 2-3 rows per work order instead of 10+. To turn it up temporarily without redeploying, open browser DevTools console and type:
+flipsLogLevel = 'VERBOSE'
+Set it back to 'NORMAL' the same way, or just refresh the page.
+Apps Script side: The same logic lives in maybeLog() — INFO rows are suppressed in NORMAL mode, WARN/ERROR always write. To switch the Apps Script verbosity without editing code, go to Project Settings → Script Properties and add/change LOG_LEVEL to VERBOSE or NORMAL. No re-deploy needed since it's read at runtime via PropertiesService.
