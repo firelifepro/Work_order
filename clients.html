@@ -329,19 +329,16 @@ function connectQuickBooks() {
   const env      = document.getElementById('qb-env').value;
   const clientId = localStorage.getItem('flips_client_id') || '';
   // Reuse stored QB tokens only if env matches current dropdown selection
-  const storedToken   = localStorage.getItem('qb_access_token');
-  const storedExpiry  = parseInt(localStorage.getItem('qb_expires_at') || '0');
-  const storedRealm   = localStorage.getItem('qb_realm_id');
-  const storedRefresh = localStorage.getItem('qb_refresh_token');
-  const storedEnv     = localStorage.getItem('qb_env') || 'sandbox';
-  if (storedToken && Date.now() < storedExpiry && storedRealm && storedEnv === env) {
-    qbAccessToken = storedToken; qbRealmId = storedRealm;
-    const mins = Math.round((storedExpiry - Date.now()) / 60000);
+  const stored = loadQBTokens(env);
+  if (stored.token && stored.expiry > 0 && Date.now() < stored.expiry && stored.realm) {
+    qbAccessToken = stored.token; qbRealmId = stored.realm;
+    localStorage.setItem('qb_env', env);
+    const mins = Math.round((stored.expiry - Date.now()) / 60000);
     setQBStatus(`✓ QB connected (~${mins}m remaining)`, 'ok');
     if (sheetClients.length) reconcile();
     return;
   }
-  if (storedRefresh && storedEnv === env) { refreshQBToken().then(() => { if (sheetClients.length) reconcile(); }); return; }
+  if (stored.refresh) { localStorage.setItem('qb_env', env); refreshQBToken().then(() => { if (sheetClients.length) reconcile(); }); return; }
   // Full OAuth flow
   const scope    = encodeURIComponent('com.intuit.quickbooks.accounting');
   const redirect = encodeURIComponent(window.location.href.split('?')[0]);
@@ -369,34 +366,51 @@ async function handleQBCallback() {
   const data = await resp.json();
   qbAccessToken = data.access_token; qbRealmId = realmId;
   const expiresAt = Date.now() + ((data.expires_in || 3600) - 60) * 1000;
-  localStorage.setItem('qb_access_token',  qbAccessToken);
-  localStorage.setItem('qb_expires_at',    String(expiresAt));
-  localStorage.setItem('qb_realm_id',      realmId);
-  localStorage.setItem('qb_env',           env);
-  if (data.refresh_token) localStorage.setItem('qb_refresh_token', data.refresh_token);
+  saveQBTokens(data, expiresAt, realmId, env);
   const mins = Math.round((expiresAt - Date.now()) / 60000);
   setQBStatus(`✓ QB connected (~${mins}m remaining)`, 'ok');
   if (sheetClients.length) reconcile();
 }
 
 async function refreshQBToken() {
-  const refreshToken = localStorage.getItem('qb_refresh_token');
-  if (!refreshToken) { setQBStatus('✗ No refresh token — click Connect QB', 'err'); return; }
+  const env = localStorage.getItem('qb_env') || 'sandbox';
+  const stored = loadQBTokens(env);
+  if (!stored.refresh) { setQBStatus('✗ No refresh token — click Connect QB', 'err'); return; }
   const resp = await fetch('/api/qb-token', {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ grant_type: 'refresh_token', refresh_token: refreshToken, env: localStorage.getItem('qb_env') || 'sandbox' })
+    body: JSON.stringify({ grant_type: 'refresh_token', refresh_token: stored.refresh, env })
   });
   if (!resp.ok) { setQBStatus('✗ Token refresh failed', 'err'); return; }
   const data = await resp.json();
   qbAccessToken = data.access_token;
   const expiresAt = Date.now() + ((data.expires_in || 3600) - 60) * 1000;
-  localStorage.setItem('qb_access_token', qbAccessToken);
-  localStorage.setItem('qb_expires_at',   String(expiresAt));
-  if (data.refresh_token) localStorage.setItem('qb_refresh_token', data.refresh_token);
-  const realmId = localStorage.getItem('qb_realm_id');
-  if (realmId) qbRealmId = realmId;
+  saveQBTokens(data, expiresAt, stored.realm || qbRealmId, env);
+  qbRealmId = stored.realm || qbRealmId;
   const mins = Math.round((expiresAt - Date.now()) / 60000);
   setQBStatus(`✓ QB connected (~${mins}m remaining)`, 'ok');
+}
+
+
+// ── QB storage key helpers — namespaced per environment ───────────────────────
+// Prevents sandbox tokens from contaminating production and vice versa.
+function qbKey(key) {
+  const env = localStorage.getItem('qb_env') || 'sandbox';
+  return key + '_' + env;
+}
+function saveQBTokens(data, expiresAt, realmId, env) {
+  localStorage.setItem('qb_access_token_' + env,  data.access_token);
+  localStorage.setItem('qb_expires_at_' + env,    String(expiresAt));
+  localStorage.setItem('qb_realm_id_' + env,      realmId);
+  localStorage.setItem('qb_env',                  env);
+  if (data.refresh_token) localStorage.setItem('qb_refresh_token_' + env, data.refresh_token);
+}
+function loadQBTokens(env) {
+  return {
+    token:   localStorage.getItem('qb_access_token_' + env),
+    expiry:  Number(localStorage.getItem('qb_expires_at_' + env)) || 0,
+    realm:   localStorage.getItem('qb_realm_id_' + env),
+    refresh: localStorage.getItem('qb_refresh_token_' + env),
+  };
 }
 
 async function qbProxy(method, path, env, payload) {
@@ -708,17 +722,15 @@ window.addEventListener('load', async () => {
     }
   }
 
-  // Restore QB token
-  const qbTok    = localStorage.getItem('qb_access_token');
-  const qbExpiry = parseInt(localStorage.getItem('qb_expires_at') || '0');
-  const realmId  = localStorage.getItem('qb_realm_id');
+  // Restore QB token (env-namespaced)
+  // Restore QB env dropdown, then load the matching token for that env
   const storedQbEnv = localStorage.getItem('qb_env') || 'sandbox';
-  // Restore the saved env to the dropdown so it matches the token
   const envSel = document.getElementById('qb-env');
-  if (envSel && storedQbEnv) envSel.value = storedQbEnv;
-  if (qbTok && Date.now() < qbExpiry && realmId) {
-    qbAccessToken = qbTok; qbRealmId = realmId;
-    const mins = Math.round((qbExpiry - Date.now()) / 60000);
+  if (envSel) envSel.value = storedQbEnv;
+  const restoredQB = loadQBTokens(storedQbEnv);
+  if (restoredQB.token && restoredQB.expiry > 0 && Date.now() < restoredQB.expiry && restoredQB.realm) {
+    qbAccessToken = restoredQB.token; qbRealmId = restoredQB.realm;
+    const mins = Math.round((restoredQB.expiry - Date.now()) / 60000);
     setQBStatus(`✓ QB connected (~${mins}m remaining)`, 'ok');
   }
 
