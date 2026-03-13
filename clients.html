@@ -341,6 +341,7 @@ async function handleQBCallback() {
   localStorage.setItem('qb_access_token',  qbAccessToken);
   localStorage.setItem('qb_expires_at',    String(expiresAt));
   localStorage.setItem('qb_realm_id',      realmId);
+  localStorage.setItem('qb_env',           env);
   if (data.refresh_token) localStorage.setItem('qb_refresh_token', data.refresh_token);
   const mins = Math.round((expiresAt - Date.now()) / 60000);
   setQBStatus(`✓ QB connected (~${mins}m remaining)`, 'ok');
@@ -352,7 +353,7 @@ async function refreshQBToken() {
   if (!refreshToken) { setQBStatus('✗ No refresh token — click Connect QB', 'err'); return; }
   const resp = await fetch('/api/qb-token', {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ grant_type: 'refresh_token', refresh_token: refreshToken })
+    body: JSON.stringify({ grant_type: 'refresh_token', refresh_token: refreshToken, env: localStorage.getItem('qb_env') || 'sandbox' })
   });
   if (!resp.ok) { setQBStatus('✗ Token refresh failed', 'err'); return; }
   const data = await resp.json();
