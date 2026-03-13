@@ -1313,7 +1313,7 @@ function collectForm() {
 async function createDoc() {
   if (!accessToken) {
     toast('⚠ Not connected — click Connect first');
-    setStatus('conn-status', '⚠ Session expired', 'err'); document.getElementById('conn-drawer').classList.add('open');
+    setStatus('conn-status', '⚠ Session expired', 'warn'); document.getElementById('conn-drawer').classList.add('open');
     return;
   }
 
@@ -1881,8 +1881,8 @@ window.addEventListener('load', () => {
   // Auto-connect: reuse cached token if still valid (no popup needed)
   if (k && c) {
     const cachedToken  = localStorage.getItem('flips_access_token');
-    const tokenExpiry  = parseInt(localStorage.getItem('flips_token_expiry') || '0');
-    if (cachedToken && Date.now() < tokenExpiry) {
+    const tokenExpiry  = Number(localStorage.getItem('flips_token_expiry')) || 0;
+    if (cachedToken && tokenExpiry > 0 && Date.now() < tokenExpiry) {
       accessToken = cachedToken;
       API_KEY_VAL = k;
       setStatus('conn-status', '✓ Connected', 'ok');
@@ -1892,7 +1892,7 @@ window.addEventListener('load', () => {
       // Token missing or expired — load properties from cache so the dropdown
       // is ready, but make it obvious the user still needs to Connect.
       loadSheet(); // will hit session cache instantly, no API call
-      setStatus('conn-status', '⚠ Session expired', 'err'); document.getElementById('conn-drawer').classList.add('open');
+      setStatus('conn-status', '⚠ Session expired', 'warn'); document.getElementById('conn-drawer').classList.add('open');
       document.getElementById('refresh-props-btn').style.display = 'inline-block';
     }
   }
