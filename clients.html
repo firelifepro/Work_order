@@ -327,7 +327,8 @@ async function googleFetch(url) {
 // ── QB Auth ────────────────────────────────────────────────
 function connectQuickBooks() {
   const env      = document.getElementById('qb-env').value;
-  const clientId = localStorage.getItem('flips_client_id') || '';
+  const clientId = document.getElementById('qb-client-id').value.trim() || localStorage.getItem('qb_client_id') || '';
+  if (!clientId) { toast('⚠ Enter your QuickBooks Client ID in Connection settings'); document.getElementById('conn-drawer').classList.add('open'); return; }
   // Reuse stored QB tokens only if env matches current dropdown selection
   const stored = loadQBTokens(env);
   if (stored.token && stored.expiry > 0 && Date.now() < stored.expiry && stored.realm) {
@@ -341,12 +342,14 @@ function connectQuickBooks() {
   if (stored.refresh) { localStorage.setItem('qb_env', env); refreshQBToken().then(() => { if (sheetClients.length) reconcile(); }); return; }
   // Full OAuth flow
   const scope    = encodeURIComponent('com.intuit.quickbooks.accounting');
-  const redirect = encodeURIComponent(window.location.href.split('?')[0]);
+  const redirect = encodeURIComponent('https://workorder.firelifepro.workers.dev/create-invoices.html');
   const state    = Math.random().toString(36).slice(2);
   const base     = env === 'production' ? 'https://appcenter.intuit.com/connect/oauth2' : 'https://appcenter.intuit.com/connect/oauth2';
   sessionStorage.setItem('qb_state', state);
   sessionStorage.setItem('qb_env', env);
-  window.location.href = `${base}?client_id=${localStorage.getItem('flips_client_id')}&response_type=code&scope=${scope}&redirect_uri=${redirect}&state=${state}`;
+  localStorage.setItem('qb_client_id', clientId);
+  sessionStorage.setItem('qb_client_id', clientId);
+  window.location.href = `${base}?client_id=${clientId}&response_type=code&scope=${scope}&redirect_uri=${redirect}&state=${state}`;
 }
 
 async function handleQBCallback() {
@@ -360,7 +363,7 @@ async function handleQBCallback() {
   document.getElementById('qb-bar-status').textContent = 'Exchanging token…';
   const resp = await fetch('/api/qb-token', {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ grant_type: 'authorization_code', code, redirect_uri: window.location.href.split('?')[0], realm_id: realmId, env })
+    body: JSON.stringify({ grant_type: 'authorization_code', code, redirect_uri: 'https://workorder.firelifepro.workers.dev/create-invoices.html', realm_id: realmId, env })
   });
   if (!resp.ok) { setQBStatus('✗ Token exchange failed', 'err'); return; }
   const data = await resp.json();
@@ -732,6 +735,13 @@ window.addEventListener('load', async () => {
     qbAccessToken = restoredQB.token; qbRealmId = restoredQB.realm;
     const mins = Math.round((restoredQB.expiry - Date.now()) / 60000);
     setQBStatus(`✓ QB connected (~${mins}m remaining)`, 'ok');
+  }
+
+  // Restore QB client ID field
+  const savedQbClientId = localStorage.getItem('qb_client_id');
+  if (savedQbClientId) {
+    const el = document.getElementById('qb-client-id');
+    if (el) el.value = savedQbClientId;
   }
 
   // Handle QB OAuth callback
