@@ -1224,6 +1224,29 @@ async function refreshQBToken() {
   console.log('[QB] Token refreshed — expires in ~' + mins + ' minutes');
 }
 
+
+// ── QB storage key helpers — namespaced per environment ───────────────────────
+// Prevents sandbox tokens from contaminating production and vice versa.
+function qbKey(key) {
+  const env = localStorage.getItem('qb_env') || 'sandbox';
+  return key + '_' + env;
+}
+function saveQBTokens(data, expiresAt, realmId, env) {
+  localStorage.setItem('qb_access_token_' + env,  data.access_token);
+  localStorage.setItem('qb_expires_at_' + env,    String(expiresAt));
+  localStorage.setItem('qb_realm_id_' + env,      realmId);
+  localStorage.setItem('qb_env',                  env);
+  if (data.refresh_token) localStorage.setItem('qb_refresh_token_' + env, data.refresh_token);
+}
+function loadQBTokens(env) {
+  return {
+    token:   localStorage.getItem('qb_access_token_' + env),
+    expiry:  Number(localStorage.getItem('qb_expires_at_' + env)) || 0,
+    realm:   localStorage.getItem('qb_realm_id_' + env),
+    refresh: localStorage.getItem('qb_refresh_token_' + env),
+  };
+}
+
 // Route all QB API calls through the Cloudflare Worker (/api/qb-api) — never call QB directly from the browser.
 async function qbProxy(method, path, env, payload) {
   const makeRequest = async () => fetch('/api/qb-api', {
@@ -1390,14 +1413,14 @@ window.addEventListener('load', () => {
   }
 
   // Restore QB token — auto-refresh if expired
-  const savedToken   = localStorage.getItem('qb_access_token');
-  const savedRealm   = localStorage.getItem('qb_realm_id');
-  const savedExpiry  = parseInt(localStorage.getItem('qb_expires_at') || '0');
-  const savedRefresh = localStorage.getItem('qb_refresh_token');
-  if (savedToken && savedRealm) {
-    qbAccessToken = savedToken;
-    qbRealmId     = savedRealm;
-    if (savedExpiry && Date.now() > savedExpiry && savedRefresh) {
+  // Restore QB — env-namespaced so sandbox/production never mix
+  const qbEnvStored = localStorage.getItem('qb_env') || 'sandbox';
+  const qbEnvSel = document.getElementById('qb-env');
+  if (qbEnvSel) qbEnvSel.value = qbEnvStored;
+  const saved = loadQBTokens(qbEnvStored);
+  if (saved.token && saved.realm) {
+    qbAccessToken = saved.token; qbRealmId = saved.realm;
+    if (saved.expiry > 0 && Date.now() > saved.expiry && saved.refresh) {
       setQBStatusPill('⏳ Refreshing QB token…', 'warn');
       refreshQBToken().catch(() => {
         setQBStatusPill('QB session expired — reconnect', 'err');
@@ -1405,7 +1428,7 @@ window.addEventListener('load', () => {
         qbAccessToken = null;
       });
     } else {
-      const mins = savedExpiry ? Math.max(0, Math.round((savedExpiry - Date.now()) / 60000)) : '?';
+      const mins = saved.expiry ? Math.max(0, Math.round((saved.expiry - Date.now()) / 60000)) : '?';
       setQBStatusPill(`✓ QB (~${mins}m)`, 'ok');
     }
   }
