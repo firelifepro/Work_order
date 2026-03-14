@@ -957,15 +957,14 @@ async function handleQBCallback() {
 
   const clientId = sessionStorage.getItem('qb_client_id');
   const env = sessionStorage.getItem('qb_env') || 'sandbox';
-  const redirectUri = location.href.split('?')[0];
+  const redirectUri = 'https://workorder.firelifepro.workers.dev/create-invoices.html';
 
-  document.getElementById('qb-status').textContent = 'Exchanging token…';
+  setQBStatusPill('⏳ Exchanging token…', 'warn');
   try {
-    // Exchange auth code via Netlify function proxy (avoids CORS). QB secrets stay server-side.
     const resp = await fetch('/api/qb-token', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ grant_type: 'authorization_code', code, redirect_uri: 'https://workorder.firelifepro.workers.dev/create-invoices.html', env })
+      body: JSON.stringify({ grant_type: 'authorization_code', code, redirect_uri: redirectUri, env })
     });
     if (!resp.ok) throw new Error(await resp.text());
     const data = await resp.json();
@@ -975,13 +974,15 @@ async function handleQBCallback() {
     saveQBTokens(data, expiresAt, realmId, env);
     const mins = Math.round((expiresAt - Date.now()) / 60000);
     setQBStatusPill(`✓ QB (~${mins}m)`, 'ok');
-    // Clean URL
+    // Clean URL and restore page state
     history.replaceState({}, '', location.pathname);
     updateSelectedCount();
     toast('✅ QuickBooks connected!');
+    // If we got here via clients.html redirect, go back there
+    const returnTo = sessionStorage.getItem('qb_return_to');
+    if (returnTo) { sessionStorage.removeItem('qb_return_to'); window.location.href = returnTo; }
   } catch(e) {
-    document.getElementById('qb-status').textContent = '❌ ' + e.message;
-    document.getElementById('qb-status').style.color = '#c0392b';
+    setQBStatusPill('✗ ' + e.message, 'err');
   }
 }
 
