@@ -353,6 +353,7 @@ function connectQuickBooks() {
   const base     = env === 'production' ? 'https://appcenter.intuit.com/connect/oauth2' : 'https://appcenter.intuit.com/connect/oauth2';
   sessionStorage.setItem('qb_state', state);
   sessionStorage.setItem('qb_env', env);
+  sessionStorage.setItem('qb_return_to', window.location.href.split('?')[0]);
   saveQBClientIds();
   sessionStorage.setItem('qb_client_id', clientId);
   window.location.href = `${base}?client_id=${clientId}&response_type=code&scope=${scope}&redirect_uri=${redirect}&state=${state}`;
