@@ -565,7 +565,16 @@ function setConnStatus(msg, color) {
 }
 function setQBStatusPill(msg, cls) {
   const pill = document.getElementById('qb-status-pill');
-  if (pill) { pill.textContent = msg; pill.className = 'conn-status-pill ' + (cls || 'warn'); }
+  if (!pill) return;
+  // Append env label when connected so it's obvious which environment is active
+  let label = msg;
+  if (cls === 'ok') {
+    const env = localStorage.getItem('qb_env') || document.getElementById('qb-env')?.value || '';
+    const envLabel = env === 'production' ? ' · Prod' : env === 'sandbox' ? ' · Sandbox' : '';
+    label = msg + envLabel;
+  }
+  pill.textContent = label;
+  pill.className = 'conn-status-pill ' + (cls || 'warn');
   if (cls === 'ok') document.getElementById('conn-drawer').classList.remove('open');
 }
 function toggleDrawer() {
@@ -1251,10 +1260,17 @@ function saveQBClientIds() {
   if (prod?.value.trim()) localStorage.setItem('qb_client_id_production', prod.value.trim());
 }
 function getQBClientId() {
+  // Always read from the env-specific field — never fall back to legacy key
+  // which could be the wrong environment's client ID.
   const env = document.getElementById('qb-env').value;
-  const key = 'qb_client_id_' + env;
-  // also check legacy single key for backward compat
-  return localStorage.getItem(key) || localStorage.getItem('qb_client_id') || '';
+  // Try the namespaced key first, then the input field directly as fallback
+  const stored = localStorage.getItem('qb_client_id_' + env);
+  if (stored) return stored;
+  // Read from the visible input fields
+  const el = env === 'production'
+    ? document.getElementById('qb-client-id-prod')
+    : document.getElementById('qb-client-id-sandbox');
+  return el?.value.trim() || '';
 }
 function restoreQBClientIds() {
   const sb   = document.getElementById('qb-client-id-sandbox');
