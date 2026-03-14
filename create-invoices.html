@@ -395,6 +395,7 @@ code { background: #ffe082; padding: 1px 5px; border-radius: 3px; font-size: 0.7
       <input type="number" id="qb-due-days" value="30" min="0" max="365" style="width:65px;">
     </div>
     <button class="conn-btn green" onclick="connectQuickBooks()">🔗 Connect QuickBooks</button>
+    <button class="conn-btn grey" onclick="clearQBTokens()" title="Clear all QB tokens from localStorage (for testing)">🗑 Clear QB</button>
     <button class="conn-btn grey" onclick="refreshQBCustomers()" title="Clear QB customer cache">↺ Customers</button>
   </div>
 </div>
@@ -1260,6 +1261,17 @@ function restoreQBClientIds() {
   const prod = document.getElementById('qb-client-id-prod');
   if (sb)   sb.value   = localStorage.getItem('qb_client_id_sandbox')    || localStorage.getItem('qb_client_id') || '';
   if (prod) prod.value = localStorage.getItem('qb_client_id_production') || '';
+}
+
+
+function clearQBTokens() {
+  ['sandbox','production'].forEach(env => {
+    ['qb_access_token_','qb_expires_at_','qb_realm_id_','qb_refresh_token_'].forEach(k => localStorage.removeItem(k + env));
+  });
+  ['qb_access_token','qb_expires_at','qb_realm_id','qb_refresh_token','qb_client_id','qb_env'].forEach(k => localStorage.removeItem(k));
+  qbAccessToken = null; qbRealmId = null;
+  setQBStatusPill('QB cleared — reconnect', 'warn');
+  toast('🗑 QB tokens cleared — reconnect to continue');
 }
 
 function loadQBTokens(env) {
