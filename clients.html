@@ -423,10 +423,17 @@ function saveQBClientIds() {
   if (prod?.value.trim()) localStorage.setItem('qb_client_id_production', prod.value.trim());
 }
 function getQBClientId() {
+  // Always read from the env-specific field — never fall back to legacy key
+  // which could be the wrong environment's client ID.
   const env = document.getElementById('qb-env').value;
-  const key = 'qb_client_id_' + env;
-  // also check legacy single key for backward compat
-  return localStorage.getItem(key) || localStorage.getItem('qb_client_id') || '';
+  // Try the namespaced key first, then the input field directly as fallback
+  const stored = localStorage.getItem('qb_client_id_' + env);
+  if (stored) return stored;
+  // Read from the visible input fields
+  const el = env === 'production'
+    ? document.getElementById('qb-client-id-prod')
+    : document.getElementById('qb-client-id-sandbox');
+  return el?.value.trim() || '';
 }
 function restoreQBClientIds() {
   const sb   = document.getElementById('qb-client-id-sandbox');
@@ -720,7 +727,13 @@ function setGoogleStatus(msg, cls) {
 function setQBStatus(msg, cls) {
   const el = document.getElementById('conn-status-qb');
   const mins = msg.match(/~(\d+)m/)?.[1];
-  el.textContent = cls === 'ok' ? (mins ? '✓ QB (~' + mins + 'm)' : '✓ QuickBooks') : msg;
+  if (cls === 'ok') {
+    const env = localStorage.getItem('qb_env') || document.getElementById('qb-env')?.value || '';
+    const envLabel = env === 'production' ? ' · Prod' : env === 'sandbox' ? ' · Sandbox' : '';
+    el.textContent = (mins ? '✓ QB (~' + mins + 'm)' : '✓ QuickBooks') + envLabel;
+  } else {
+    el.textContent = msg;
+  }
   el.className = 'conn-status-pill ' + (cls === 'ok' ? 'ok' : cls === 'err' ? 'err' : 'warn');
   const bar = document.getElementById('qb-bar-status');
   if (bar) bar.textContent = msg;
