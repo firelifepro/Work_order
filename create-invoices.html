@@ -377,8 +377,14 @@ code { background: #ffe082; padding: 1px 5px; border-radius: 3px; font-size: 0.7
     <button class="conn-btn" id="connect-btn" onclick="initGoogle()">🔗 Connect Google</button>
     <div class="conn-divider"></div>
     <div class="conn-field">
-      <label>QB Client ID</label>
-      <input type="text" id="qb-client-id" placeholder="AB…QB OAuth2 client ID" style="width:200px;">
+      <label>QB Client ID (Sandbox)</label>
+      <input type="text" id="qb-client-id-sandbox" placeholder="AB…sandbox client ID" style="width:200px;"
+             oninput="saveQBClientIds()">
+    </div>
+    <div class="conn-field">
+      <label>QB Client ID (Production)</label>
+      <input type="text" id="qb-client-id-prod" placeholder="AB…production client ID" style="width:200px;"
+             oninput="saveQBClientIds()">
     </div>
     <div class="conn-field">
       <label>QB Environment</label>
@@ -924,7 +930,7 @@ function getCheckedIds() {
 // QUICKBOOKS OAUTH
 // ─────────────────────────────────────────────────────────
 function connectQuickBooks() {
-  const clientId = document.getElementById('qb-client-id').value.trim();
+  const clientId = getQBClientId();
   if (!clientId) { toast('⚠ Enter your QuickBooks Client ID'); return; }
   const env = document.getElementById('qb-env').value;
   const redirectUri = encodeURIComponent('https://workorder.firelifepro.workers.dev/create-invoices.html');
@@ -933,7 +939,7 @@ function connectQuickBooks() {
   sessionStorage.setItem('qb_state', state);
   sessionStorage.setItem('qb_client_id', clientId);
   sessionStorage.setItem('qb_env', env);
-  localStorage.setItem('qb_client_id', clientId);
+  saveQBClientIds();
   localStorage.setItem('qb_env', env);
   // Redirect current tab — Intuit sends the code back here via redirect
   window.location.href = `https://appcenter.intuit.com/connect/oauth2?` +
@@ -1235,6 +1241,26 @@ function saveQBTokens(data, expiresAt, realmId, env) {
   localStorage.setItem('qb_env',                  env);
   if (data.refresh_token) localStorage.setItem('qb_refresh_token_' + env, data.refresh_token);
 }
+
+function saveQBClientIds() {
+  const sb   = document.getElementById('qb-client-id-sandbox');
+  const prod = document.getElementById('qb-client-id-prod');
+  if (sb?.value.trim())   localStorage.setItem('qb_client_id_sandbox',    sb.value.trim());
+  if (prod?.value.trim()) localStorage.setItem('qb_client_id_production', prod.value.trim());
+}
+function getQBClientId() {
+  const env = document.getElementById('qb-env').value;
+  const key = 'qb_client_id_' + env;
+  // also check legacy single key for backward compat
+  return localStorage.getItem(key) || localStorage.getItem('qb_client_id') || '';
+}
+function restoreQBClientIds() {
+  const sb   = document.getElementById('qb-client-id-sandbox');
+  const prod = document.getElementById('qb-client-id-prod');
+  if (sb)   sb.value   = localStorage.getItem('qb_client_id_sandbox')    || localStorage.getItem('qb_client_id') || '';
+  if (prod) prod.value = localStorage.getItem('qb_client_id_production') || '';
+}
+
 function loadQBTokens(env) {
   return {
     token:   localStorage.getItem('qb_access_token_' + env),
@@ -1410,12 +1436,7 @@ window.addEventListener('load', () => {
   }
 
   // Restore QB token — auto-refresh if expired
-  // Restore QB client ID field
-  const savedQbCid = localStorage.getItem('qb_client_id');
-  if (savedQbCid) {
-    const cidEl = document.getElementById('qb-client-id');
-    if (cidEl) cidEl.value = savedQbCid;
-  }
+  restoreQBClientIds();
 
   // Restore QB — env-namespaced so sandbox/production never mix
   const qbEnvStored = localStorage.getItem('qb_env') || 'sandbox';
