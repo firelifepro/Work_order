@@ -1241,8 +1241,7 @@ function addSubRow(labelVal, amountVal) {
     '<td class="exp-label" style="white-space:nowrap;">Sub-Contractor ' +
     '<button type="button" onclick="removeSubRow(' + n + ')" ' +
     'style="margin-left:4px;background:#fde8e8;border:1px solid #e53935;color:#e53935;border-radius:3px;padding:1px 6px;cursor:pointer;font-size:0.75rem;">−</button></td>' +
-    '<td class="value-cell"><input type="text" id="sub-label-' + n + '" value="' + (labelVal||'') + '" placeholder="Sub-contractor name / description" style="width:100%;"></td>' +
-    '<td class="value-cell" style="text-align:center;"></td>' +
+    '<td class="value-cell" colspan="2"><input type="text" id="sub-label-' + n + '" value="' + (labelVal||'') + '" placeholder="Sub-contractor name / description" style="width:100%;"></td>' +
     '<td class="value-cell"><span class="dollar-prefix">$</span>' +
     '<input type="number" id="sub-amt-' + n + '" value="' + (amountVal||'') + '" min="0" step="0.01" style="width:calc(100% - 14px);" oninput="calcTotal()"></td>';
   // Insert before the "Add Another Sub-Contractor" button row
@@ -1884,7 +1883,17 @@ function buildWorkOrderHTML(d) {
       td(chk(otherChecked, 'Other: ' + (otherText||'')))
     ) +
     tr(th('Description of Work Requested:', 4, S.subhdr)) +
-    tr(`<td colspan="4" style="${S.val}">${v(d['DESCRIPTION OF WORK'])}</td>`)
+    tr(`<td colspan="4" style="${S.val}">${v(d['DESCRIPTION OF WORK'])}</td>`) +
+    tr(th('Originally Selected Work Scope Items:', 4, 'background:#e8f0fe;color:#1a1a2e;font-weight:bold;font-size:9pt;padding:4px 5px;')) +
+    tr(`<td colspan="4" style="${S.val}padding:4px 6px;line-height:1.6;">${
+      (() => {
+        const svcs = [...document.querySelectorAll('input[name="svc"]:checked')].map(c => c.value);
+        const otherEl = document.getElementById('other-svc-cb');
+        if (otherEl?.checked) svcs.push('Other: ' + (document.getElementById('other-svc-text')?.value?.trim() || ''));
+        if (!svcs.length) return '<em style="color:#888;">None selected</em>';
+        return svcs.map(s => '• ' + s).join('<br>');
+      })()
+    }</td>`)
   );
   html += '<br>';
 
@@ -1919,7 +1928,7 @@ function buildWorkOrderHTML(d) {
 
   // ── 7. FLIPS Expenses ────────────────────────────────────────────
   html += tbl(
-    hdr('FLIPS EXPENSES') +
+    hdr('FLPS EXPENSES') +
     (() => {
       try {
         const rows = JSON.parse(d['SUB-CONTRACTOR ROWS'] || '[]');
@@ -1937,7 +1946,7 @@ function buildWorkOrderHTML(d) {
        val(d['LABOR TOTAL'])) +
     tr(lbl('Trip Charge'), val(chk(d['TRIP CHARGE']==='$90.00','$90.00')), val(''), val(d['TRIP CHARGE']==='$90.00'?d['TRIP CHARGE']:'')) +
     tr(lbl('Misc'), val(d['MISC DESCRIPTION']), val(''), val(d['MISC TOTAL'])) +
-    (d['COMPLIANCE REPORT'] === 'Yes' ? tr(lbl('Compliance Report'), val(d['COMPLIANCE DESC']), val(''), val(d['COMPLIANCE AMOUNT'])) : '') +
+    tr(lbl('Compliance Report'), val(d['COMPLIANCE REPORT'] === 'Yes' ? (d['COMPLIANCE DESC'] || 'Yes') : '☐ Not required'), val(''), val(d['COMPLIANCE REPORT'] === 'Yes' ? d['COMPLIANCE AMOUNT'] : '')) +
     tr(`<td colspan="2" style="${S.lbl}">Total to Invoice</td>`,
        `<td style="${S.lbl}text-align:center;">=</td>`,
        `<td style="${S.lbl}font-size:10pt;">${d['TOTAL TO INVOICE']||'&nbsp;'}</td>`)
