@@ -1899,7 +1899,7 @@ function buildWorkOrderHTML(d) {
     ) +
     tr(th('Description of Work Requested:', 4, S.subhdr)) +
     tr(`<td colspan="4" style="${S.val}">${v(d['DESCRIPTION OF WORK'])}</td>`) +
-    tr(th('Originally Selected Work Scope Items:', 4, 'background:#e8f0fe;color:#1a1a2e;font-weight:bold;font-size:9pt;padding:4px 5px;')) +
+    tr(th('List of Selected Work Scope Items to be included in QB Invoice:', 4, 'background:#e8f0fe;color:#1a1a2e;font-weight:bold;font-size:9pt;padding:4px 5px;')) +
     tr(`<td colspan="4" style="${S.val}padding:4px 6px;line-height:1.6;">${
       (() => {
         const svcs = [...document.querySelectorAll('input[name="svc"]:checked')].map(c => c.value);
