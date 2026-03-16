@@ -491,6 +491,8 @@ async function loadSheetClients() {
   const iBillTo  = col(['bill to','invoice info']);
   const iBillEm  = col(['billing email','bill email']);
   const iContact = col(['property manager contact','contact']);
+  // Use exact match for 'property manager' to avoid matching 'property manager contact'
+  const iManager = headers.findIndex(h => h === 'property manager' || h === 'property manager name');
 
   sheetClients = [];
   for (let i = 1; i < rows.length; i++) {
@@ -500,7 +502,8 @@ async function loadSheetClients() {
     if (!name) continue;
     sheetClients.push({
       name, acct: g(iAcct), address: g(iAddr),
-      mgmt: g(iMgmt), billTo: g(iBillTo), billEmail: g(iBillEm), contact: g(iContact)
+      mgmt: g(iMgmt), billTo: g(iBillTo), billEmail: g(iBillEm),
+      contact: g(iContact), manager: g(iManager)
     });
   }
 }
@@ -567,19 +570,80 @@ async function createQBCustomer(idx) {
   if (btn) { btn.disabled = true; btn.textContent = 'Creating…'; }
   try {
     // Build customer object from Sheet data
+
+    // Name: prefer the dedicated "Property Manager" column (clean name only).
+    // Fall back to contact column but strip email/phone — take only the first
+    // two whitespace-separated tokens that don't contain @ or digits.
+    let givenName = '', familyName = '';
+    const managerRaw = (row.manager || '').trim();
+    if (managerRaw) {
+      const parts = managerRaw.split(/\s+/);
+      givenName  = parts[0] || '';
+      familyName = parts.slice(1).join(' ') || '';
+    } else if (row.contact) {
+      // Contact field may be "Aaron Ojala aaron@email.com 720-xxx-xxxx"
+      // Extract only the name tokens (no @ and no digit-heavy tokens)
+      const tokens = row.contact.split(/\s+/)
+        .filter(t => !t.includes('@') && !/\d{3}/.test(t));
+      givenName  = tokens[0] || '';
+      familyName = tokens.slice(1).join(' ') || '';
+    }
+
+    // Bill-To address: split on newlines, then try to detect city/state/zip
+    // on the last line so QB can store it in structured fields.
     const billLines = (row.billTo || '').split(/[\r\n]+/).map(l => l.trim()).filter(Boolean);
-    const nameParts = row.contact ? row.contact.split(/\s+/) : [];
+    let billAddr = undefined;
+    if (billLines.length) {
+      // Scan all lines for "City, ST ZIP" or "City ST ZIP" pattern —
+      // it may not be the last line (e.g. "Suite B Carlsbad, CA 92008" on same line)
+      let cityLineIdx = -1;
+      let cityMatch = null;
+      for (let li = billLines.length - 1; li >= 0; li--) {
+        // Try "...City, ST ZIP" — city may follow other text on the same line
+        const m = billLines[li].match(/([A-Za-z][^,]+),\s*([A-Z]{2})\s+(\d{5}(?:-\d{4})?)\s*$/);
+        if (m) { cityLineIdx = li; cityMatch = m; break; }
+      }
+      if (cityMatch) {
+        // Lines before the city line become address lines
+        const addrLines = [...billLines];
+        // If city was embedded in a line with other content (e.g. "Suite B Carlsbad, CA 92008"),
+        // split that line: everything before the city match goes into an address line
+        const cityLine = billLines[cityLineIdx];
+        const cityStart = cityLine.search(/[A-Za-z][^,]+,\s*[A-Z]{2}\s+\d{5}/);
+        const streetPart = cityStart > 0 ? cityLine.slice(0, cityStart).trim() : null;
+        const pureAddrLines = [
+          ...billLines.slice(0, cityLineIdx),
+          ...(streetPart ? [streetPart] : []),
+        ].filter(Boolean);
+        billAddr = {
+          Line1: pureAddrLines[0] || '',
+          Line2: pureAddrLines[1] || '',
+          Line3: pureAddrLines[2] || '',
+          Line4: pureAddrLines[3] || '',
+          City:  cityMatch[1].trim(),
+          CountrySubDivisionCode: cityMatch[2],
+          PostalCode: cityMatch[3],
+          Country: 'US',
+        };
+      } else {
+        // No parseable city/state/zip — just use line slots
+        billAddr = {
+          Line1: billLines[0] || '', Line2: billLines[1] || '',
+          Line3: billLines[2] || '', Line4: billLines[3] || '',
+          Line5: billLines[4] || '',
+        };
+      }
+    }
+
     const customer = {
-      DisplayName:    row.name,
-      CompanyName:    row.mgmt || row.name,
-      GivenName:      nameParts[0] || '',
-      FamilyName:     nameParts.slice(1).join(' ') || '',
+      DisplayName:      row.name,
+      CompanyName:      row.mgmt || row.name,
+      GivenName:        givenName,
+      FamilyName:       familyName,
       PrimaryEmailAddr: row.billEmail ? { Address: row.billEmail } : undefined,
-      AlternatePhone:   row.acct    ? { FreeFormNumber: row.acct } : undefined,
-      BillAddr: billLines.length ? {
-        Line1: billLines[0] || '', Line2: billLines[1] || '',
-        Line3: billLines[2] || '', Line4: billLines[3] || ''
-      } : undefined,
+      AlternatePhone:   row.acct     ? { FreeFormNumber: row.acct } : undefined,
+      Notes:            row.address  ? 'Service Address: ' + row.address : undefined,
+      BillAddr:         billAddr,
     };
     // Remove undefined keys
     Object.keys(customer).forEach(k => customer[k] === undefined && delete customer[k]);
