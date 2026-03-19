@@ -1,0 +1,2101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta http-equiv="Cross-Origin-Opener-Policy" content="same-origin-allow-popups">
+<title>FLIPS – Fire Inspection</title>
+<link rel="icon" type="image/png" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAABCGlDQ1BJQ0MgUHJvZmlsZQAAeJxjYGA8wQAELAYMDLl5JUVB7k4KEZFRCuwPGBiBEAwSk4sLGHADoKpv1yBqL+viUYcLcKakFicD6Q9ArFIEtBxopAiQLZIOYWuA2EkQtg2IXV5SUAJkB4DYRSFBzkB2CpCtkY7ETkJiJxcUgdT3ANk2uTmlyQh3M/Ck5oUGA2kOIJZhKGYIYnBncAL5H6IkfxEDg8VXBgbmCQixpJkMDNtbGRgkbiHEVBYwMPC3MDBsO48QQ4RJQWJRIliIBYiZ0tIYGD4tZ2DgjWRgEL7AwMAVDQsIHG5TALvNnSEfCNMZchhSgSKeDHkMyQx6QJYRgwGDIYMZAKbWPz9HbOBQAAAIRklEQVR4nJWXa4xV1RmGn2+tfW5zZriDQEBKQbReU0NrU4uTyI9G29gf9VBrTJqmVZqm2KRpqybVgTa2sZVSmmpDVUzUtAraeiEktakjokSBwiAIioLAMDPM7ewzM+e6z97r6499GGaGi7qSlZN91uV913d5v7XgMzQFaafV09ZWT3M5q6pGVY3mNlltbfXaafXawHyWPT8tsNFczmLkwtsLYARtazObwH6aveVCg21gVre1Ib/5tcMpW2HmPJLXJ2Ys+oo3Z9YSmdQ8XQUjpUrB9fYfrXYf29XPyPblcBwj6P0PGNasQcB9ZgJKzop5PsIpO+D6WfOvXZm54Us3T/7addPTV10Gs2eiTRlUwFQDZCBPcPBD8tvfKdW27/xP/oMdf10Kr2IEdbdaYXP0aSyCgmhbm0GgHS47uuDazf2/WK1hR4cWSwUtBMXQLxXq+UJ/mB/sjbvfF/pFv+7XRsLhyrDW3z+k/uqH9Oii67a0w5UIaC5n9RMsThsYkXjOHqbc3XPbnSPh3g71gxGXHx4M8z0nnd/Tqf6pk+r3do3vp7rU7+nUfE+nyxcGQr9eiuoHDmjP7SvLHUxaBaCqMpHE6IeCiIiuUk39eNqljy9s+9kdwQ+/Q+hcJCNFi7FgznMA50Ak7jESRBHanI08z7PJDf/g2Jq1T64sfHjXNpFQVUVARwk0WMmLMOmKRUtfWPznB28cvvmG0PUOWgHBXCD0owhpzqJhCEH9DIkGMQU1F02PWl5+zfto1a/+feTE3hU3QRFQAY13zuWMgFty8TXrL9nw8I1DN7cG2t3viTHnB1cFVWT6VOpv7SY6cBhJp+L/TzdjEGNEu/u94VuWB0see/jr8+df/YiAI5czMJrVOQBSc+fODq++1OmAb/EukMaqIIJkM1R+9wilO+9Bspnzz/csOuDb8NorXXr+vDkAXL5JxxBoWDOsB1KuGuwna4hk0pTv+z2VtrXYKy/FLl6IVmrnX2ANUq4YG0ZlAA5ulrMIKMg4H56rRREyuYXK+o3UNj6HTJuKmT8XEhZcBJ53PsogEKmOwxxPQB2jITmxNSJbmrOE73RQXb8RmTENwhBJNEATCbQwND4OJpxQJ4yNI2CR+jkXq0LCA8+CQPXRpyAI4rQ0BtfZA6kU4c4Oym1/RJoy4Cbs08g3N4FBg8Dm+Mc5ZSK+KqSSuCMn0GKF6MNjhNt3Is1ZqIdIU4Zw1z7cxyeov/YW4Zu70EoV7DmyRxWL1sdiTph17kWSShEdPUH10acI/7cf9YeJA1XBWrRcofzzB3Efn8R191Jv3xETjM6Wf1U5VwzEaahGEhjDWVZwDkmnCF7YSvD8VqQ5g4iLzxI5ZFKWcPtOwrf3IC3N1Db8HS1XGJdNSqwLVryxmDGBy3OxLHomEZtuDANV8Dyig4fRvgGi9z6ARJLE9IimxVHs21Ahk4oBsk2Eu/dR39qOtDSPsYKixoL1EgBsyo3RgdUNc9iEOaPSjWYtWhgi2PJfSKdRF6dT0GtIzXFMWhoiCSDSUXXEWmrPvoQGAaNKqsSXFWsS53BBA8vIWVouzVnCvQeIDh3BTkqRaIlinBDqg4bkDEfTJRHqiK3hHNKUIdp7EPf+ESSTPpOWMqbcjiPQsEAY1lWcO6MDqmi9jvvoONQDopohOduRWeDQSJCU4gIhMd1h0sBpa1uLjhQJ9x6AZDJOSQGcEoXjIzMmcHCFAETVWmm0ojVOUntyE+GeA3GhiZRwSMgsjEhMdtgsqAMxYFJKYoaecZ8q7mjnmHorSBAgteoIACtWjJHivj4BcIXhXhkpIp6nOIV0CnfkOMGLr8biovHVTgxkljgSSYfR2Aqp2Q5vikPDhhdF0FJp1PzieSojJaLCcN9YzHExUO/tPRx19ymed2bh7FlQq40Gkm2KC3nT1JDj9Ra6oiyeOhIzdHwZUY21QCR2gefhuvu03tN7+CwXbN62TTHCSKVrd/HdgyLWGAWIIrwrlkAyEWu4BW+yI1IhIwFvVubwXnU6zekamgKbVTgtIyKYJZ+P40gVscYU9x+SYvXkbozEmKcJ5MAJQjfsLry1sytZrQme57RUwfvyNdhFC9ByDdskmGZIOMe+2iwOBVN5eeRzHI2mkMBhWsBmgFqIzJyKd90X4xKd8FyyGkh++86e/bALhFzjqm4a2aFu2TJvhVApvfH2M6ld+4XJLY5agEybQupHd6DFMpI0GBt7Z71/DW9U5nIsbOHBgaVEajBWkYyHGxoh+Y3l2MULoFSGyS0utXu/VN7c8cxKody+bJl3Wm1GY2D1tm1OncrxwpE/nVz3WCEdRkYTntPCMKnbbiH1vW8THBsgqXBcp7CrMouaWgajNLuqszgZZUkaQ9hfwi6cR/qnP0BLFdSzLhU5c3LdY0Od+SPr1Km8vm2bGxcDAGvAISvMN42c6t/yyk9Y94TxZs2INIpUKxWyD91D8vt3UNo/QjoYxhqHNYK1Bmc9bFKpHhhCs1PIbvgt5qIZaLmCvWhmJOs2mt5XXlp1k5EeZIVZc4GXEprLWQT2Zef/IfrbUzqkQT3f06l+X7cWykN66rkXtXjXt/S+5bfrnKvv1blX/VLv/uqtOnTjF7Tzuyt18N19WijmNd91XIc0qEePP617m+atRaC9tfV816VxTTSXswDvNl28rvTwX7RQ9J3f36N+T6f65SEtDPSrv+dt/efzr+sLT2/RgX89q/7O3eoXC1oo9Kvf26WFku9Kax/R/c0L1o8e7JNeRuci0cG0+/tX3Rv4XSeiURJ9XeoPDWpYzmtY8bVQHlF/eDAe6+1Sv/tENHD3fUEH0x44DX6+Z9n/AVIlgBRojGjmAAAAAElFTkSuQmCC">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+:root {
+  --navy:   #0d1b2a;
+  --navy2:  #162235;
+  --navy3:  #1e304a;
+  --blue:   #2563eb;
+  --blue2:  #3b82f6;
+  --fire:   #f97316;
+  --fire2:  #fb923c;
+  --red:    #dc2626;
+  --green:  #16a34a;
+  --amber:  #d97706;
+  --slate:  #64748b;
+  --light:  #f1f5f9;
+  --white:  #ffffff;
+  --border: #e2e8f0;
+  --pass-bg:   #f0fdf4;
+  --fail-bg:   #fef2f2;
+  --na-bg:     #f8fafc;
+  --pass-ring: #16a34a;
+  --fail-ring: #dc2626;
+  --na-ring:   #94a3b8;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+html { font-size: 16px; }
+body { font-family: 'DM Sans', sans-serif; background: var(--light); color: var(--navy); min-height: 100vh; }
+
+/* ── TOP BAR ── */
+#top-bar {
+  background: var(--navy);
+  color: white;
+  padding: 11px 16px;
+  display: flex; align-items: center; gap: 10px;
+  position: sticky; top: 0; z-index: 200;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.25);
+}
+#top-bar h1 { font-size: 0.92rem; font-weight: 700; flex: 1; letter-spacing: 0.02em; }
+.nav-hamburger { position: relative; }
+.hamburger-btn { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: white; padding: 5px 9px; border-radius: 6px; cursor: pointer; font-size: 1rem; line-height: 1; }
+.nav-menu { display: none; position: absolute; top: calc(100% + 6px); left: 0; background: var(--navy2); border: 1px solid rgba(255,255,255,0.15); border-radius: 8px; min-width: 210px; box-shadow: 0 8px 24px rgba(0,0,0,0.4); z-index: 300; overflow: hidden; }
+.nav-menu.open { display: block; }
+.nav-menu a { display: block; padding: 10px 16px; color: rgba(255,255,255,0.85); text-decoration: none; font-size: 0.82rem; border-bottom: 1px solid rgba(255,255,255,0.07); }
+.nav-menu a:hover { background: rgba(255,255,255,0.08); color: white; }
+.nav-menu a.active { color: var(--fire2); font-weight: 600; }
+.conn-status-pill { font-size: 0.7rem; padding: 3px 9px; border-radius: 10px; font-weight: 600; white-space: nowrap; }
+.conn-status-pill.ok   { background: rgba(22,163,74,0.2); color: #86efac; border: 1px solid rgba(22,163,74,0.3); }
+.conn-status-pill.err  { background: rgba(220,38,38,0.2); color: #fca5a5; border: 1px solid rgba(220,38,38,0.3); }
+.conn-status-pill.warn { background: rgba(217,119,6,0.2); color: #fcd34d; border: 1px solid rgba(217,119,6,0.3); }
+.conn-toggle { background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.18); color: rgba(255,255,255,0.75); padding: 4px 9px; border-radius: 5px; cursor: pointer; font-size: 0.7rem; white-space: nowrap; }
+
+/* ── CONN DRAWER ── */
+#conn-drawer { background: #0a1422; border-bottom: 1px solid rgba(255,255,255,0.08); overflow: hidden; max-height: 0; transition: max-height 0.3s ease; }
+#conn-drawer.open { max-height: 200px; }
+.conn-drawer-inner { padding: 12px 16px; display: flex; gap: 14px; flex-wrap: wrap; align-items: flex-end; }
+.conn-field { display: flex; flex-direction: column; gap: 3px; }
+.conn-field label { font-size: 0.65rem; color: #94a3b8; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; }
+.conn-field input { background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); color: white; padding: 6px 10px; border-radius: 5px; font-size: 0.78rem; font-family: 'DM Mono', monospace; width: 230px; }
+.conn-field input::placeholder { color: rgba(255,255,255,0.3); }
+.conn-btn { background: var(--blue); color: white; border: none; padding: 7px 14px; border-radius: 5px; cursor: pointer; font-size: 0.78rem; font-weight: 600; white-space: nowrap; align-self: flex-end; font-family: inherit; }
+.conn-btn:hover { background: var(--blue2); }
+
+/* ── MAIN LAYOUT ── */
+#app { max-width: 900px; margin: 0 auto; padding: 16px; }
+
+/* ── STEP WIZARD ── */
+#step-nav {
+  display: flex; gap: 0; margin-bottom: 20px;
+  background: white; border-radius: 10px; overflow: hidden;
+  box-shadow: 0 1px 6px rgba(0,0,0,0.08); border: 1px solid var(--border);
+}
+.step-tab {
+  flex: 1; padding: 10px 8px; text-align: center; cursor: pointer;
+  font-size: 0.72rem; font-weight: 600; color: var(--slate);
+  border-right: 1px solid var(--border); transition: all 0.15s;
+  position: relative; line-height: 1.3;
+}
+.step-tab:last-child { border-right: none; }
+.step-tab.active { background: var(--navy); color: white; }
+.step-tab.done { background: var(--pass-bg); color: var(--green); }
+.step-tab .step-num { display: block; font-size: 0.65rem; opacity: 0.7; margin-bottom: 2px; }
+.step-tab .step-check { display: none; }
+.step-tab.done .step-check { display: inline; }
+.step-tab.done .step-num { display: none; }
+
+/* ── CARDS ── */
+.card {
+  background: white; border-radius: 10px; border: 1px solid var(--border);
+  box-shadow: 0 1px 6px rgba(0,0,0,0.06); margin-bottom: 14px; overflow: hidden;
+}
+.card-header {
+  background: var(--navy); color: white;
+  padding: 10px 16px; display: flex; align-items: center; gap: 10px;
+  font-size: 0.88rem; font-weight: 700;
+}
+.card-header .icon { font-size: 1.1rem; }
+.card-header span { flex: 1; }
+.card-body { padding: 16px; }
+
+/* ── FORM FIELDS ── */
+.field-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.field-grid.cols-3 { grid-template-columns: 1fr 1fr 1fr; }
+.field-grid.cols-1 { grid-template-columns: 1fr; }
+.field-group { display: flex; flex-direction: column; gap: 4px; }
+.field-group.span-2 { grid-column: span 2; }
+.field-group label { font-size: 0.72rem; font-weight: 600; color: var(--slate); text-transform: uppercase; letter-spacing: 0.05em; }
+.field-group input, .field-group select, .field-group textarea {
+  border: 1.5px solid var(--border); border-radius: 7px;
+  padding: 9px 11px; font-size: 0.88rem; font-family: inherit;
+  color: var(--navy); outline: none; width: 100%;
+  background: white; transition: border-color 0.15s;
+}
+.field-group input:focus, .field-group select:focus, .field-group textarea:focus { border-color: var(--blue); background: #eff6ff; }
+.field-group textarea { resize: vertical; min-height: 60px; }
+
+/* ── PROPERTY SELECT SEARCH ── */
+#prop-search-wrap { position: relative; }
+#prop-search {
+  border: 1.5px solid var(--border); border-radius: 7px;
+  padding: 9px 32px 9px 11px; font-size: 0.88rem; font-family: inherit;
+  color: var(--navy); outline: none; width: 100%; background: white;
+}
+#prop-search:focus { border-color: var(--blue); background: #eff6ff; }
+#prop-search-clear { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); cursor: pointer; color: var(--slate); font-size: 0.8rem; display: none; }
+#property-select { margin-top: 5px; }
+
+/* ── SYSTEM SELECTOR ── */
+#systems-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;
+}
+.sys-toggle {
+  border: 2px solid var(--border); border-radius: 8px; padding: 10px 8px;
+  text-align: center; cursor: pointer; transition: all 0.15s;
+  font-size: 0.74rem; font-weight: 600; color: var(--slate);
+  user-select: none; line-height: 1.3;
+}
+.sys-toggle .sys-icon { font-size: 1.3rem; display: block; margin-bottom: 3px; }
+.sys-toggle.active { border-color: var(--blue); background: #eff6ff; color: var(--blue); }
+.sys-toggle.active .sys-icon { filter: none; }
+
+/* ── SYSTEM PANELS ── */
+.sys-panel { margin-bottom: 16px; }
+.sys-panel-header {
+  background: var(--navy2); color: white; padding: 10px 14px;
+  border-radius: 8px 8px 0 0; display: flex; align-items: center; gap: 8px;
+  font-size: 0.85rem; font-weight: 700; cursor: pointer;
+}
+.sys-panel-header .collapse-arrow { margin-left: auto; font-size: 0.75rem; transition: transform 0.2s; }
+.sys-panel-header.collapsed .collapse-arrow { transform: rotate(-90deg); }
+.sys-panel-body { border: 1.5px solid var(--navy2); border-top: none; border-radius: 0 0 8px 8px; padding: 14px; background: white; }
+.sys-panel-body.hidden { display: none; }
+
+/* ── INSPECTION ROWS ── */
+.inspect-row {
+  display: grid; grid-template-columns: 1fr auto auto auto; gap: 8px;
+  align-items: start; padding: 8px 0; border-bottom: 1px solid var(--border);
+}
+.inspect-row:last-child { border-bottom: none; }
+.inspect-label { font-size: 0.82rem; font-weight: 500; color: var(--navy); padding-top: 6px; }
+.inspect-label small { display: block; font-size: 0.7rem; color: var(--slate); font-weight: 400; margin-top: 1px; }
+
+/* Radio button groups */
+.pf-group { display: flex; gap: 4px; }
+.pf-btn {
+  padding: 5px 10px; border-radius: 6px; border: 1.5px solid var(--border);
+  font-size: 0.72rem; font-weight: 700; cursor: pointer; transition: all 0.12s;
+  white-space: nowrap; font-family: inherit; background: white;
+  min-width: 44px; text-align: center;
+}
+.pf-btn.pass  { border-color: var(--pass-ring); color: var(--pass-ring); }
+.pf-btn.fail  { border-color: var(--fail-ring); color: var(--fail-ring); }
+.pf-btn.na    { border-color: var(--na-ring);   color: var(--na-ring); }
+.pf-btn.pass.selected  { background: var(--pass-bg); box-shadow: 0 0 0 2px var(--pass-ring); }
+.pf-btn.fail.selected  { background: var(--fail-bg); box-shadow: 0 0 0 2px var(--fail-ring); }
+.pf-btn.na.selected    { background: var(--na-bg);   box-shadow: 0 0 0 2px var(--na-ring); }
+
+.deficiency-row {
+  grid-column: span 4; margin-top: 4px; display: none;
+}
+.deficiency-row.show { display: flex; gap: 6px; }
+.deficiency-row input {
+  flex: 1; border: 1.5px solid var(--fail-ring); border-radius: 6px;
+  padding: 6px 10px; font-size: 0.8rem; color: var(--navy); font-family: inherit;
+  background: var(--fail-bg); outline: none;
+}
+.deficiency-row input::placeholder { color: #fca5a5; }
+
+/* ── DATA FIELDS INLINE ── */
+.data-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px; }
+.data-row.cols-3 { grid-template-columns: 1fr 1fr 1fr; }
+.data-row.cols-1 { grid-template-columns: 1fr; }
+.data-field { display: flex; flex-direction: column; gap: 3px; }
+.data-field label { font-size: 0.66rem; font-weight: 700; color: var(--slate); text-transform: uppercase; letter-spacing: 0.05em; }
+.data-field input, .data-field select { border: 1.5px solid var(--border); border-radius: 6px; padding: 7px 9px; font-size: 0.82rem; font-family: inherit; color: var(--navy); outline: none; width: 100%; background: #fafafa; }
+.data-field input:focus, .data-field select:focus { border-color: var(--blue); background: #eff6ff; }
+
+/* ── SECTION DIVIDERS ── */
+.sys-section { font-size: 0.7rem; font-weight: 700; color: var(--blue); text-transform: uppercase; letter-spacing: 0.08em; margin: 12px 0 6px; padding-bottom: 4px; border-bottom: 1.5px solid #bfdbfe; }
+
+/* ── EXTINGUISHER TABLE ── */
+.ext-table { width: 100%; border-collapse: collapse; font-size: 0.78rem; margin-top: 6px; }
+.ext-table th { background: var(--navy3); color: white; padding: 6px 8px; font-weight: 600; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.04em; }
+.ext-table td { padding: 6px 6px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+.ext-table input, .ext-table select { border: 1px solid var(--border); border-radius: 4px; padding: 4px 6px; font-size: 0.78rem; font-family: inherit; width: 100%; background: white; outline: none; }
+.ext-table .pf-btn { padding: 3px 7px; font-size: 0.68rem; min-width: 36px; }
+.ext-table .pf-group { gap: 3px; }
+.add-row-btn {
+  background: #eff6ff; color: var(--blue); border: 1.5px dashed var(--blue2);
+  border-radius: 6px; padding: 7px 14px; font-size: 0.78rem; font-weight: 600;
+  cursor: pointer; font-family: inherit; margin-top: 8px; width: 100%;
+}
+.remove-row-btn { background: none; border: none; color: var(--red); cursor: pointer; font-size: 1rem; padding: 2px 4px; }
+
+/* ── DEFICIENCY SUMMARY ── */
+.defic-badge {
+  display: inline-block; background: var(--red); color: white;
+  font-size: 0.65rem; font-weight: 700; padding: 1px 6px; border-radius: 8px;
+  margin-left: 6px; vertical-align: middle;
+}
+
+/* ── OVERALL STATUS ── */
+.overall-status-group { display: flex; gap: 10px; margin-top: 8px; flex-wrap: wrap; }
+.ost-btn {
+  flex: 1; min-width: 100px; padding: 12px 10px; text-align: center;
+  border-radius: 8px; border: 2px solid var(--border); cursor: pointer;
+  font-size: 0.82rem; font-weight: 700; font-family: inherit; background: white;
+  transition: all 0.15s;
+}
+.ost-btn.compliant   { border-color: var(--green); color: var(--green); }
+.ost-btn.deficient   { border-color: var(--amber); color: var(--amber); }
+.ost-btn.impaired    { border-color: var(--red);   color: var(--red);   }
+.ost-btn.compliant.selected  { background: var(--pass-bg); box-shadow: 0 0 0 2px var(--green); }
+.ost-btn.deficient.selected  { background: #fffbeb; box-shadow: 0 0 0 2px var(--amber); }
+.ost-btn.impaired.selected   { background: var(--fail-bg); box-shadow: 0 0 0 2px var(--red); }
+
+/* ── SIGNATURE ── */
+#sig-canvas {
+  border: 2px solid var(--border); border-radius: 8px; background: white;
+  cursor: crosshair; display: block; width: 100%; max-width: 500px; height: 100px;
+  touch-action: none;
+}
+.sig-clear { background: none; border: 1px solid var(--border); border-radius: 5px; padding: 4px 12px; font-size: 0.75rem; cursor: pointer; color: var(--slate); font-family: inherit; margin-top: 6px; }
+
+/* ── ACTION BUTTONS ── */
+.btn-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 8px; }
+.btn-primary {
+  background: var(--navy); color: white; border: none; padding: 12px 24px;
+  border-radius: 8px; font-size: 0.9rem; font-weight: 700; cursor: pointer;
+  font-family: inherit; display: flex; align-items: center; gap: 8px;
+  transition: background 0.15s;
+}
+.btn-primary:hover { background: var(--navy3); }
+.btn-primary.fire { background: var(--fire); }
+.btn-primary.fire:hover { background: var(--fire2); }
+.btn-primary.green { background: var(--green); }
+.btn-secondary {
+  background: white; color: var(--navy); border: 1.5px solid var(--border);
+  padding: 11px 20px; border-radius: 8px; font-size: 0.88rem; font-weight: 600;
+  cursor: pointer; font-family: inherit; transition: all 0.15s;
+}
+.btn-secondary:hover { border-color: var(--blue); color: var(--blue); }
+.btn-danger {
+  background: white; color: var(--red); border: 1.5px solid var(--red);
+  padding: 11px 20px; border-radius: 8px; font-size: 0.88rem; font-weight: 600;
+  cursor: pointer; font-family: inherit;
+}
+
+/* ── SAVE/LOAD INDICATOR ── */
+#save-indicator {
+  font-size: 0.72rem; color: var(--green); font-weight: 600;
+  padding: 3px 8px; background: var(--pass-bg); border-radius: 4px;
+  opacity: 0; transition: opacity 0.3s;
+}
+#save-indicator.show { opacity: 1; }
+
+/* ── TOAST ── */
+#toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(80px); background: var(--navy); color: white; padding: 10px 20px; border-radius: 8px; font-size: 0.85rem; box-shadow: 0 4px 20px rgba(0,0,0,0.35); transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1); z-index: 9999; white-space: nowrap; }
+#toast.show { transform: translateX(-50%) translateY(0); }
+
+/* ── PROGRESS BAR ── */
+.defic-summary { background: var(--fail-bg); border: 1px solid #fecaca; border-radius: 8px; padding: 10px 14px; margin-bottom: 12px; display: none; }
+.defic-summary.show { display: block; }
+.defic-summary h4 { font-size: 0.8rem; color: var(--red); font-weight: 700; margin-bottom: 6px; }
+.defic-item { font-size: 0.78rem; color: #7f1d1d; margin: 2px 0; display: flex; align-items: flex-start; gap: 6px; }
+.defic-item::before { content: '⚠'; flex-shrink: 0; }
+
+/* ── COLLAPSIBLE SECTION ── */
+.section-toggle { display: flex; align-items: center; justify-content: space-between; cursor: pointer; padding: 6px 0; margin: 8px 0 4px; border-bottom: 1.5px solid var(--border); }
+.section-toggle h4 { font-size: 0.78rem; font-weight: 700; color: var(--navy); text-transform: uppercase; letter-spacing: 0.04em; }
+.section-toggle .toggle-arr { font-size: 0.7rem; color: var(--slate); transition: transform 0.2s; }
+.section-toggle.collapsed .toggle-arr { transform: rotate(-90deg); }
+.section-content.hidden { display: none; }
+
+@media (max-width: 600px) {
+  .field-grid { grid-template-columns: 1fr; }
+  .field-grid.cols-3 { grid-template-columns: 1fr 1fr; }
+  .field-group.span-2 { grid-column: span 1; }
+  #systems-grid { grid-template-columns: repeat(3, 1fr); }
+  .inspect-row { grid-template-columns: 1fr; }
+  .pf-group { justify-content: flex-start; }
+  .deficiency-row { grid-column: span 1; }
+}
+</style>
+</head>
+<body>
+
+<div id="top-bar">
+  <div class="nav-hamburger">
+    <button class="hamburger-btn" onclick="toggleNav()">☰</button>
+    <div class="nav-menu" id="nav-menu">
+      <a href="index.html">📋 Work Order</a>
+      <a href="schedule.html">📅 Inspection Schedule</a>
+      <a href="create-invoices.html">🧾 Create QB Invoices</a>
+      <a href="clients.html">👥 Client Management</a>
+      <a href="inspection.html" class="active">🔥 Fire Inspection</a>
+    </div>
+  </div>
+  <h1>🔥 Fire Inspection Report</h1>
+  <span id="conn-status" class="conn-status-pill warn">Not connected</span>
+  <button class="conn-toggle" onclick="toggleDrawer()">⚙ Connect</button>
+</div>
+<div id="conn-drawer">
+  <div class="conn-drawer-inner">
+    <div class="conn-field">
+      <label>Google API Key</label>
+      <input type="password" id="api-key" placeholder="AIzaSy…">
+    </div>
+    <div class="conn-field">
+      <label>OAuth Client ID</label>
+      <input type="text" id="client-id" placeholder="123456….apps.googleusercontent.com">
+    </div>
+    <button class="conn-btn" onclick="initGoogle()">🔗 Connect</button>
+  </div>
+</div>
+
+<div id="app">
+
+  <!-- ── STEP NAV ── -->
+  <div id="step-nav">
+    <div class="step-tab active" data-step="1" onclick="goStep(1)">
+      <span class="step-num">1</span><span class="step-check">✓</span>Property
+    </div>
+    <div class="step-tab" data-step="2" onclick="goStep(2)">
+      <span class="step-num">2</span><span class="step-check">✓</span>Systems
+    </div>
+    <div class="step-tab" data-step="3" onclick="goStep(3)">
+      <span class="step-num">3</span><span class="step-check">✓</span>Inspect
+    </div>
+    <div class="step-tab" data-step="4" onclick="goStep(4)">
+      <span class="step-num">4</span><span class="step-check">✓</span>Report
+    </div>
+  </div>
+
+  <!-- ══ STEP 1: PROPERTY ══ -->
+  <div id="step-1">
+    <div class="card">
+      <div class="card-header"><span class="icon">🏢</span><span>Property Information</span></div>
+      <div class="card-body">
+        <div class="field-grid">
+          <div class="field-group span-2">
+            <label>Property Name</label>
+            <div id="prop-search-wrap">
+              <input type="text" id="prop-search" placeholder="🔍 Search properties…" oninput="filterPropDropdown(this.value)" autocomplete="off">
+              <span id="prop-search-clear" onclick="clearPropSearch()">✕</span>
+            </div>
+            <select id="property-select" onchange="onPropertySelect()" style="border:1.5px solid var(--border);border-radius:7px;padding:9px 11px;font-size:0.88rem;font-family:inherit;color:var(--navy);outline:none;width:100%;background:white;margin-top:5px;">
+              <option value="">— Connect Google to load properties —</option>
+            </select>
+            <div id="prop-loading" style="display:none;font-size:0.75rem;color:var(--slate);margin-top:3px;">Loading…</div>
+          </div>
+          <div class="field-group">
+            <label>Client / Company</label>
+            <input type="text" id="client-company">
+          </div>
+          <div class="field-group">
+            <label>Service Address</label>
+            <input type="text" id="service-address">
+          </div>
+          <div class="field-group">
+            <label>City / State / ZIP</label>
+            <input type="text" id="city-state-zip">
+          </div>
+          <div class="field-group">
+            <label>Property Contact</label>
+            <input type="text" id="property-contact">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><span class="icon">📋</span><span>Inspection Details</span></div>
+      <div class="card-body">
+        <div class="field-grid">
+          <div class="field-group">
+            <label>Date of Inspection</label>
+            <input type="date" id="insp-date">
+          </div>
+          <div class="field-group">
+            <label>Report Type</label>
+            <select id="report-type">
+              <option>Annual</option>
+              <option>Semi-Annual</option>
+              <option>Quarterly</option>
+              <option>Monthly</option>
+              <option>5-Year</option>
+              <option>Acceptance Test</option>
+              <option>Retest / Repair</option>
+              <option>Unable to Test</option>
+            </select>
+          </div>
+          <div class="field-group">
+            <label>Inspector Name</label>
+            <input type="text" id="inspector-name">
+          </div>
+          <div class="field-group">
+            <label>License / Cert #</label>
+            <input type="text" id="inspector-cert">
+          </div>
+          <div class="field-group">
+            <label>Company Name</label>
+            <input type="text" id="company-name" value="Fire Life Protection Systems">
+          </div>
+          <div class="field-group">
+            <label>Company License #</label>
+            <input type="text" id="company-license">
+          </div>
+          <div class="field-group">
+            <label>NFPA Standards Reference</label>
+            <input type="text" id="nfpa-ref" placeholder="e.g. NFPA 72, NFPA 25">
+          </div>
+          <div class="field-group">
+            <label>Weather Conditions</label>
+            <input type="text" id="weather" placeholder="Clear, 65°F">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn-primary" onclick="goStep(2)">Next: Select Systems →</button>
+    </div>
+  </div>
+
+  <!-- ══ STEP 2: SYSTEMS ══ -->
+  <div id="step-2" style="display:none;">
+    <div class="card">
+      <div class="card-header"><span class="icon">⚙️</span><span>Systems Present at This Building</span></div>
+      <div class="card-body">
+        <p style="font-size:0.82rem;color:var(--slate);margin-bottom:12px;">Tap all systems that exist at this property. Your selections are saved per-building for next year.</p>
+        <div id="systems-grid">
+          <div class="sys-toggle" data-sys="fire-alarm" onclick="toggleSys(this)">
+            <span class="sys-icon">🔔</span>Fire Alarm
+          </div>
+          <div class="sys-toggle" data-sys="sprinkler" onclick="toggleSys(this)">
+            <span class="sys-icon">💧</span>Sprinkler System
+          </div>
+          <div class="sys-toggle" data-sys="fire-pump" onclick="toggleSys(this)">
+            <span class="sys-icon">🔄</span>Fire Pump
+          </div>
+          <div class="sys-toggle" data-sys="standpipe" onclick="toggleSys(this)">
+            <span class="sys-icon">🚿</span>Standpipe
+          </div>
+          <div class="sys-toggle" data-sys="hood" onclick="toggleSys(this)">
+            <span class="sys-icon">🍳</span>Kitchen Hood Suppression
+          </div>
+          <div class="sys-toggle" data-sys="extinguisher" onclick="toggleSys(this)">
+            <span class="sys-icon">🧯</span>Extinguishers
+          </div>
+          <div class="sys-toggle" data-sys="hydrant" onclick="toggleSys(this)">
+            <span class="sys-icon">🔴</span>Private Hydrants
+          </div>
+          <div class="sys-toggle" data-sys="bda" onclick="toggleSys(this)">
+            <span class="sys-icon">📡</span>BDA / Emergency Radio
+          </div>
+          <div class="sys-toggle" data-sys="smoke-control" onclick="toggleSys(this)">
+            <span class="sys-icon">💨</span>Smoke Control
+          </div>
+          <div class="sys-toggle" data-sys="gas-detection" onclick="toggleSys(this)">
+            <span class="sys-icon">⚗️</span>Gas Detection
+          </div>
+          <div class="sys-toggle" data-sys="special-suppression" onclick="toggleSys(this)">
+            <span class="sys-icon">🧪</span>Special Suppression
+          </div>
+          <div class="sys-toggle" data-sys="backflow" onclick="toggleSys(this)">
+            <span class="sys-icon">🔁</span>Backflow Prevention
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn-secondary" onclick="goStep(1)">← Back</button>
+      <button class="btn-primary" onclick="buildInspectionForms()">Next: Inspect →</button>
+      <span id="save-indicator">✓ Saved</span>
+    </div>
+  </div>
+
+  <!-- ══ STEP 3: INSPECTION FORMS ══ -->
+  <div id="step-3" style="display:none;">
+    <div id="defic-summary" class="defic-summary">
+      <h4>⚠ Active Deficiencies</h4>
+      <div id="defic-list"></div>
+    </div>
+    <div id="sys-forms"></div>
+    <div class="btn-row">
+      <button class="btn-secondary" onclick="goStep(2)">← Back</button>
+      <button class="btn-primary" onclick="goStep(4)">Next: Review & Sign →</button>
+    </div>
+  </div>
+
+  <!-- ══ STEP 4: REPORT ══ -->
+  <div id="step-4" style="display:none;">
+    <div class="card">
+      <div class="card-header"><span class="icon">📊</span><span>Overall System Status</span></div>
+      <div class="card-body">
+        <p style="font-size:0.82rem;color:var(--slate);margin-bottom:8px;">Select the overall compliance status for this inspection report:</p>
+        <div class="overall-status-group">
+          <button class="ost-btn compliant" onclick="setOverallStatus('COMPLIANT',this)">✅ COMPLIANT<br><small style="font-weight:400;font-size:0.7rem;">No deficiencies found</small></button>
+          <button class="ost-btn deficient" onclick="setOverallStatus('DEFICIENT',this)">⚠ DEFICIENT<br><small style="font-weight:400;font-size:0.7rem;">Non-critical issues noted</small></button>
+          <button class="ost-btn impaired" onclick="setOverallStatus('IMPAIRED',this)">🚨 IMPAIRED<br><small style="font-weight:400;font-size:0.7rem;">System out of service</small></button>
+        </div>
+        <div id="overall-status-val" style="display:none;"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><span class="icon">📝</span><span>General Notes & Recommendations</span></div>
+      <div class="card-body">
+        <div class="field-group">
+          <label>Additional Comments / Recommendations</label>
+          <textarea id="general-notes" rows="4" placeholder="Note any general observations, access issues, equipment not tested, or recommendations for the building owner…"></textarea>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><span class="icon">✍️</span><span>Inspector Signature</span></div>
+      <div class="card-body">
+        <p style="font-size:0.78rem;color:var(--slate);margin-bottom:8px;">Sign below to certify this inspection report:</p>
+        <canvas id="sig-canvas" width="500" height="100"></canvas>
+        <button class="sig-clear" onclick="clearSig()">Clear Signature</button>
+        <div style="margin-top:12px;" class="field-grid">
+          <div class="field-group">
+            <label>Print Name</label>
+            <input type="text" id="sig-name">
+          </div>
+          <div class="field-group">
+            <label>Date Signed</label>
+            <input type="date" id="sig-date">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="border-color:var(--fire);background:#fff7ed;">
+      <div class="card-header" style="background:var(--fire);"><span class="icon">📄</span><span>Generate Inspection Report PDF</span></div>
+      <div class="card-body">
+        <p style="font-size:0.82rem;color:#92400e;margin-bottom:12px;">
+          Generate a professional PDF report formatted for upload to <strong>The Compliance Engine (Brycer)</strong> at <em>thecomplianceengine.com</em>. After downloading, log in to TCE and attach this PDF to the appropriate system record.
+        </p>
+        <div class="btn-row">
+          <button class="btn-primary fire" onclick="generatePDF()">📄 Download PDF Report</button>
+          <button class="btn-primary green" onclick="saveToCloud()">☁ Save to Drive</button>
+          <button class="btn-secondary" onclick="goStep(3)">← Back to Inspection</button>
+        </div>
+        <div id="pdf-status" style="margin-top:8px;font-size:0.8rem;color:var(--green);"></div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /app -->
+
+<div id="toast"></div>
+<script src="https://accounts.google.com/gsi/client"></script>
+<script>
+// ─────────────────────────────────────────────────────────────────────────────
+// CONFIG
+// ─────────────────────────────────────────────────────────────────────────────
+const SHEET_ID  = '1_Koq_v0RjsFbQ_c2qZh-eQpGQT2-0IkOal-I4CjSJrI';
+const SHEET_GID = '1899870347';
+const SCOPES    = 'https://www.googleapis.com/auth/spreadsheets.readonly https://www.googleapis.com/auth/drive';
+
+let accessToken = null;
+let tokenClient = null;
+let clientData  = {};
+let currentStep = 1;
+let activeSystems = new Set();
+let overallStatus = '';
+let sigDrawing = false;
+let sigCtx = null;
+let sigHasData = false;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// NAV
+// ─────────────────────────────────────────────────────────────────────────────
+function toggleNav() { document.getElementById('nav-menu').classList.toggle('open'); }
+document.addEventListener('click', e => {
+  if (!e.target.closest('.nav-hamburger')) document.getElementById('nav-menu').classList.remove('open');
+});
+function toggleDrawer() { document.getElementById('conn-drawer').classList.toggle('open'); }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// STEP WIZARD
+// ─────────────────────────────────────────────────────────────────────────────
+function goStep(n) {
+  document.getElementById('step-' + currentStep).style.display = 'none';
+  document.getElementById('step-' + n).style.display = 'block';
+  document.querySelectorAll('.step-tab').forEach(t => {
+    const s = parseInt(t.dataset.step);
+    t.classList.remove('active','done');
+    if (s === n) t.classList.add('active');
+    else if (s < n) t.classList.add('done');
+  });
+  currentStep = n;
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  if (n === 3) updateDeficiencySummary();
+  if (n === 4) {
+    const today = new Date().toISOString().split('T')[0];
+    if (!document.getElementById('sig-date').value) document.getElementById('sig-date').value = today;
+    updateDeficiencySummary();
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// GOOGLE AUTH
+// ─────────────────────────────────────────────────────────────────────────────
+function initGoogle() {
+  const apiKey   = document.getElementById('api-key').value.trim();
+  const clientId = document.getElementById('client-id').value.trim();
+  if (!apiKey || !clientId) { toast('⚠ Enter API Key and Client ID'); return; }
+  localStorage.setItem('flips_api_key', apiKey);
+  localStorage.setItem('flips_client_id', clientId);
+  setStatus('Connecting…', '');
+  try {
+    tokenClient = google.accounts.oauth2.initTokenClient({
+      client_id: clientId, scope: SCOPES,
+      callback: async (resp) => {
+        if (resp.error) { setStatus('✗ ' + resp.error, 'err'); return; }
+        accessToken = resp.access_token;
+        localStorage.setItem('flips_access_token', accessToken);
+        localStorage.setItem('flips_token_expiry', Date.now() + 55 * 60 * 1000);
+        setStatus('✓ Connected', 'ok');
+        loadSheet();
+      },
+      error_callback: (err) => setStatus('✗ ' + (err.message || err.type), 'err')
+    });
+    tokenClient.requestAccessToken({ prompt: '' });
+  } catch(e) { setStatus('✗ ' + e.message, 'err'); }
+}
+
+async function googleFetch(url, method = 'GET', body = null) {
+  const opts = { method, headers: { Authorization: 'Bearer ' + accessToken, 'Content-Type': 'application/json' } };
+  if (body) opts.body = JSON.stringify(body);
+  let res = await fetch(url, opts);
+  if (res.status === 401 && tokenClient) {
+    toast('⏳ Reconnecting…');
+    await new Promise((resolve, reject) => {
+      tokenClient.callback = async (resp) => {
+        if (resp.error) { reject(new Error(resp.error)); return; }
+        accessToken = resp.access_token;
+        localStorage.setItem('flips_access_token', accessToken);
+        localStorage.setItem('flips_token_expiry', Date.now() + 55 * 60 * 1000);
+        resolve();
+      };
+      tokenClient.requestAccessToken({ prompt: '' });
+    });
+    const opts2 = { method, headers: { Authorization: 'Bearer ' + accessToken, 'Content-Type': 'application/json' } };
+    if (body) opts2.body = JSON.stringify(body);
+    res = await fetch(url, opts2);
+  }
+  return res;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// LOAD CLIENT SHEET
+// ─────────────────────────────────────────────────────────────────────────────
+async function loadSheet(forceRefresh = false) {
+  const CACHE_KEY = 'flips_client_cache';
+  const CACHE_TTL = 30 * 60 * 1000;
+  if (!forceRefresh) {
+    try {
+      const cached = JSON.parse(sessionStorage.getItem(CACHE_KEY) || 'null');
+      if (cached && (Date.now() - cached.ts) < CACHE_TTL) {
+        clientData = cached.data; buildDropdown(); return;
+      }
+    } catch(_) {}
+  }
+  document.getElementById('prop-loading').style.display = 'block';
+  try {
+    const metaRes = await googleFetch(`https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}?fields=sheets.properties`);
+    if (!metaRes.ok) throw new Error('Sheet error ' + metaRes.status);
+    const metaJson = await metaRes.json();
+    let tabName = metaJson.sheets[0].properties.title;
+    for (const s of metaJson.sheets) {
+      if (String(s.properties.sheetId) === String(SHEET_GID)) { tabName = s.properties.title; break; }
+    }
+    const valRes = await googleFetch(`https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${encodeURIComponent(tabName)}`);
+    const valJson = await valRes.json();
+    const rows = valJson.values || [];
+    if (rows.length < 2) { toast('Sheet appears empty'); return; }
+    const headers = rows[0].map(h => (h||'').trim().toLowerCase());
+    clientData = {};
+    for (let i = 1; i < rows.length; i++) {
+      const obj = {};
+      headers.forEach((h, idx) => { obj[h] = (rows[i][idx] || '').trim(); });
+      const nameKey = headers.find(h => ['property name','property','name'].some(k => h.includes(k))) || headers[0];
+      const label = obj[nameKey] || `Row ${i + 1}`;
+      if (label.trim()) clientData[label] = obj;
+    }
+    try { sessionStorage.setItem(CACHE_KEY, JSON.stringify({ ts: Date.now(), data: clientData })); } catch(_) {}
+    buildDropdown();
+    toast('✓ Loaded ' + Object.keys(clientData).length + ' properties');
+  } catch(e) {
+    setStatus('⚠ ' + e.message, 'err');
+  } finally {
+    document.getElementById('prop-loading').style.display = 'none';
+  }
+}
+
+function buildDropdown() {
+  const sel = document.getElementById('property-select');
+  sel.innerHTML = '<option value="">— Select property —</option>';
+  Object.keys(clientData).sort().forEach(name => {
+    const o = document.createElement('option');
+    o.value = name; o.textContent = name;
+    sel.appendChild(o);
+  });
+}
+
+function filterPropDropdown(query) {
+  const sel   = document.getElementById('property-select');
+  const clear = document.getElementById('prop-search-clear');
+  const q = query.trim().toLowerCase();
+  clear.style.display = q ? 'block' : 'none';
+  const names = Object.keys(clientData).sort();
+  sel.innerHTML = '';
+  const ph = document.createElement('option');
+  const matches = names.filter(n => !q || n.toLowerCase().includes(q));
+  ph.value = ''; ph.textContent = q ? `— ${matches.length} match${matches.length !== 1 ? 'es' : ''} —` : '— Select property —';
+  sel.appendChild(ph);
+  matches.forEach(name => {
+    const o = document.createElement('option');
+    o.value = name; o.textContent = name;
+    sel.appendChild(o);
+  });
+  if (matches.length === 1) { sel.value = matches[0]; onPropertySelect(); }
+}
+
+function clearPropSearch() {
+  document.getElementById('prop-search').value = '';
+  document.getElementById('prop-search-clear').style.display = 'none';
+  filterPropDropdown('');
+}
+
+function onPropertySelect() {
+  const propName = document.getElementById('property-select').value;
+  if (!propName || !clientData[propName]) return;
+  const d = clientData[propName];
+  const fill = (id, ...keys) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    for (const k of keys) {
+      const match = Object.keys(d).find(h => h.includes(k));
+      if (match && d[match]) { el.value = d[match]; return; }
+    }
+    el.value = '';
+  };
+  fill('client-company', 'management','client','company');
+  fill('service-address', 'service address','address');
+  fill('city-state-zip', 'city','zip');
+  fill('property-contact', 'property manager','contact name');
+
+  // Load saved building config if exists
+  const saved = loadBuildingConfig(propName);
+  if (saved && saved.systems) {
+    activeSystems = new Set(saved.systems);
+    document.querySelectorAll('.sys-toggle').forEach(el => {
+      el.classList.toggle('active', activeSystems.has(el.dataset.sys));
+    });
+    if (saved.systems.length > 0) toast('✓ Loaded saved system config for this building');
+  } else {
+    activeSystems = new Set();
+    document.querySelectorAll('.sys-toggle').forEach(el => el.classList.remove('active'));
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// BUILDING CONFIG — save/load system selections per property (localStorage)
+// ─────────────────────────────────────────────────────────────────────────────
+function buildingConfigKey(propName) {
+  return 'flips_bldg_' + propName.replace(/[^a-zA-Z0-9]/g, '_').slice(0, 80);
+}
+function saveBuildingConfig() {
+  const propName = document.getElementById('property-select').value;
+  if (!propName) return;
+  const config = { systems: [...activeSystems], savedAt: new Date().toISOString() };
+  localStorage.setItem(buildingConfigKey(propName), JSON.stringify(config));
+  const ind = document.getElementById('save-indicator');
+  ind.classList.add('show');
+  setTimeout(() => ind.classList.remove('show'), 2000);
+}
+function loadBuildingConfig(propName) {
+  try { return JSON.parse(localStorage.getItem(buildingConfigKey(propName)) || 'null'); } catch(_) { return null; }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SYSTEM TOGGLES
+// ─────────────────────────────────────────────────────────────────────────────
+function toggleSys(el) {
+  const sys = el.dataset.sys;
+  if (activeSystems.has(sys)) { activeSystems.delete(sys); el.classList.remove('active'); }
+  else { activeSystems.add(sys); el.classList.add('active'); }
+  saveBuildingConfig();
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// BUILD INSPECTION FORMS
+// ─────────────────────────────────────────────────────────────────────────────
+function buildInspectionForms() {
+  if (activeSystems.size === 0) { toast('⚠ Select at least one system'); return; }
+  saveBuildingConfig();
+  const container = document.getElementById('sys-forms');
+  container.innerHTML = '';
+
+  if (activeSystems.has('fire-alarm'))        container.appendChild(buildFireAlarmPanel());
+  if (activeSystems.has('sprinkler'))         container.appendChild(buildSprinklerPanel());
+  if (activeSystems.has('fire-pump'))         container.appendChild(buildFirePumpPanel());
+  if (activeSystems.has('standpipe'))         container.appendChild(buildStandpipePanel());
+  if (activeSystems.has('hood'))              container.appendChild(buildHoodPanel());
+  if (activeSystems.has('extinguisher'))      container.appendChild(buildExtinguisherPanel());
+  if (activeSystems.has('hydrant'))           container.appendChild(buildHydrantPanel());
+  if (activeSystems.has('bda'))               container.appendChild(buildBDAPanel());
+  if (activeSystems.has('smoke-control'))     container.appendChild(buildSmokeControlPanel());
+  if (activeSystems.has('gas-detection'))     container.appendChild(buildGasDetectionPanel());
+  if (activeSystems.has('special-suppression')) container.appendChild(buildSpecialSuppressionPanel());
+  if (activeSystems.has('backflow'))          container.appendChild(buildBackflowPanel());
+
+  goStep(3);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PANEL BUILDER HELPERS
+// ─────────────────────────────────────────────────────────────────────────────
+function makePanel(id, icon, title, bodyHtml) {
+  const div = document.createElement('div');
+  div.className = 'sys-panel';
+  div.id = 'panel-' + id;
+  div.innerHTML = `
+    <div class="sys-panel-header" onclick="togglePanel('${id}')">
+      <span>${icon}</span><span>${title}</span>
+      <span class="collapse-arrow">▼</span>
+    </div>
+    <div class="sys-panel-body" id="panel-body-${id}">${bodyHtml}</div>`;
+  return div;
+}
+
+function togglePanel(id) {
+  const header = document.querySelector('#panel-' + id + ' .sys-panel-header');
+  const body   = document.getElementById('panel-body-' + id);
+  header.classList.toggle('collapsed');
+  body.classList.toggle('hidden');
+}
+
+function makeRow(itemId, label, sublabel, opts) {
+  const extra = opts || {};
+  const naBtn = extra.noNA ? '' : `<button class="pf-btn na" onclick="setPF(this,'${itemId}','N/A')">N/A</button>`;
+  return `
+    <div class="inspect-row" id="row-${itemId}">
+      <div class="inspect-label">${label}${sublabel ? `<small>${sublabel}</small>` : ''}</div>
+      <div class="pf-group">
+        <button class="pf-btn pass" onclick="setPF(this,'${itemId}','PASS')">PASS</button>
+        <button class="pf-btn fail" onclick="setPF(this,'${itemId}','FAIL')">FAIL</button>
+        ${naBtn}
+      </div>
+      <div class="deficiency-row" id="defic-${itemId}">
+        <input type="text" id="defic-txt-${itemId}" placeholder="Describe deficiency / location…" oninput="updateDeficiencySummary()">
+      </div>
+    </div>`;
+}
+
+function dataRow(...fields) {
+  const cols = fields.length <= 2 ? 2 : (fields.length === 3 ? 3 : 2);
+  const clsMap = { 2: 'cols-2', 3: 'cols-3', 1: 'cols-1' };
+  const html = fields.map(f => `
+    <div class="data-field">
+      <label>${f.label}</label>
+      <input type="${f.type||'text'}" id="${f.id}" placeholder="${f.placeholder||''}">
+    </div>`).join('');
+  return `<div class="data-row ${cols === 3 ? 'cols-3' : ''}">${html}</div>`;
+}
+
+function sectionDiv(title) {
+  return `<div class="sys-section">${title}</div>`;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SYSTEM PANELS
+// ─────────────────────────────────────────────────────────────────────────────
+function buildFireAlarmPanel() {
+  const body = `
+    ${sectionDiv('Panel Information')}
+    ${dataRow(
+      {id:'fa-mfr',     label:'Panel Manufacturer', placeholder:'e.g. Honeywell, EST'},
+      {id:'fa-model',   label:'Panel Model'},
+      {id:'fa-serial',  label:'Serial #'}
+    )}
+    ${dataRow(
+      {id:'fa-type',    label:'Panel Type (Conventional/Addressable)'},
+      {id:'fa-zones',   label:'# of Zones / Loops', type:'number'},
+      {id:'fa-year',    label:'Year Installed', type:'number'}
+    )}
+    ${dataRow(
+      {id:'fa-monitoring', label:'Monitoring Company'},
+      {id:'fa-monacct',    label:'Monitoring Account #'}
+    )}
+
+    ${sectionDiv('Control Panel & Power')}
+    ${makeRow('fa-panel-cond','Control Panel Condition','Visual — no damage, labels intact')}
+    ${makeRow('fa-battery','Battery / Backup Power','24-hr minimum backup; date on batteries')}
+    ${makeRow('fa-batt-date','Battery Date Check','Replace if > 3 years or failed load test')}
+    ${dataRow({id:'fa-batt-replace-date', label:'Battery Install Date', type:'date'})}
+    ${makeRow('fa-ac-power','AC Power Indicator','Green LED illuminated')}
+    ${makeRow('fa-tamper','Tamper Signals','All supervisory tampers tested and restored')}
+    ${makeRow('fa-trouble','Trouble Signals','No active troubles on panel')}
+
+    ${sectionDiv('Detection Devices')}
+    ${dataRow(
+      {id:'fa-smoke-count',    label:'# Smoke Detectors', type:'number'},
+      {id:'fa-heat-count',     label:'# Heat Detectors', type:'number'},
+      {id:'fa-pull-count',     label:'# Pull Stations', type:'number'}
+    )}
+    ${makeRow('fa-smoke-test','Smoke Detectors Functional','Representative sample tested per NFPA 72')}
+    ${makeRow('fa-heat-test','Heat Detectors Functional','Fixed temp or rate-of-rise — tested')}
+    ${makeRow('fa-pull-test','Manual Pull Stations','Each pull station tested')}
+    ${makeRow('fa-duct-smoke','Duct Smoke Detectors','Tested per NFPA 72 — HVAC shut down confirmed')}
+    ${makeRow('fa-co','CO Detectors (if present)','Functional test performed')}
+
+    ${sectionDiv('Notification Appliances')}
+    ${makeRow('fa-horns','Horns / Strobes / Speakers','Audible and visual — all activated')}
+    ${makeRow('fa-horn-sync','Horn Synchronization','Synchronized properly')}
+    ${makeRow('fa-mass-notif','Mass Notification (if present)','Message clarity and audibility confirmed')}
+
+    ${sectionDiv('Supervisory & Monitoring')}
+    ${makeRow('fa-valve-super','Valve Supervisory Switches','All closed valves indicated on panel')}
+    ${makeRow('fa-waterflow','Waterflow Alarms','Flow alarm activates within 90 seconds')}
+    ${makeRow('fa-monitoring-test','Central Station Transmission','Alarm and trouble signals received at CS')}
+    ${makeRow('fa-annunciator','Remote Annunciators','Indicating correct zones')}
+    ${makeRow('fa-elevator','Elevator Recall (if present)','Floor-level and lobby recall tested')}
+    ${makeRow('fa-door-release','Door Holders / Door Release','All released on alarm')}
+    ${makeRow('fa-suppression-rel','Suppression System Release','Agent release tested (if applicable)')}
+
+    ${sectionDiv('Documentation & Tags')}
+    ${makeRow('fa-tags','Panel Tags / Labels','Current inspection tag affixed')}
+    ${makeRow('fa-logbook','System Log / As-Builts Available','On-site documentation accessible')}
+    ${dataRow(
+      {id:'fa-last-insp', label:'Previous Inspection Date', type:'date'},
+      {id:'fa-defic-from-last', label:'Prior Deficiencies Corrected?'},
+    )}
+    <div class="field-group" style="margin-top:8px;">
+      <label>Fire Alarm System Notes</label>
+      <textarea id="fa-notes" rows="3" placeholder="Additional notes, observations…"></textarea>
+    </div>`;
+  return makePanel('fire-alarm', '🔔', 'Fire Alarm System (NFPA 72)', body);
+}
+
+function buildSprinklerPanel() {
+  const body = `
+    ${sectionDiv('System Configuration')}
+    <div class="data-row cols-3">
+      <div class="data-field"><label>System Type</label>
+        <select id="sp-type"><option>Wet Pipe</option><option>Dry Pipe</option><option>Pre-Action</option><option>Deluge</option><option>Foam-Water</option><option>Glycol</option><option>Nitrogen-Filled</option></select>
+      </div>
+      <div class="data-field"><label>Manufacturer / Make</label><input type="text" id="sp-mfr"></div>
+      <div class="data-field"><label>Year Installed</label><input type="number" id="sp-year"></div>
+    </div>
+    ${dataRow(
+      {id:'sp-heads',    label:'Total # of Sprinkler Heads', type:'number'},
+      {id:'sp-coverage', label:'Coverage Area (sq ft)', type:'number'},
+      {id:'sp-hazard',   label:'Hazard Classification'}
+    )}
+    ${dataRow(
+      {id:'sp-water-src', label:'Water Supply Source'},
+      {id:'sp-static-psi',label:'Static Pressure (PSI)', type:'number'},
+      {id:'sp-residual-psi', label:'Residual Pressure (PSI)', type:'number'}
+    )}
+
+    ${sectionDiv('Valves & Controls')}
+    ${makeRow('sp-main-drain','Main Drain Test','Static and residual pressures recorded')}
+    ${makeRow('sp-control-valve','Control Valve(s) Open & Supervised','All open; tamper switches operational')}
+    ${makeRow('sp-os-y','OS&Y / Gate Valves','All fully open and locked/chained')}
+    ${makeRow('sp-piv','Post Indicator Valves (PIV)','Open and supervised; tamper alarm tested')}
+    ${makeRow('sp-check-valve','Check Valves','No back-flow; proper operation')}
+    ${makeRow('sp-gauges','Pressure Gauges','Calibrated or replaced within 5 years')}
+
+    ${sectionDiv('Waterflow Alarm')}
+    ${makeRow('sp-waterflow','Waterflow Alarm Test','Activates within 90 seconds via inspector test connection')}
+    ${makeRow('sp-waterflow-cs','Central Station Transmission','CS received waterflow alarm')}
+    ${dataRow({id:'sp-wf-time', label:'Waterflow Response Time (sec)', type:'number'})}
+
+    ${sectionDiv('Sprinkler Heads')}
+    ${makeRow('sp-heads-visual','Visual Inspection of Heads','100% — no damage, paint, corrosion, obstructions')}
+    ${makeRow('sp-heads-clearance','18-inch Clearance Below Heads','Storage below 18" of any deflector')}
+    ${makeRow('sp-spare-heads','Spare Sprinkler Head Cabinet','Correct type/temp rating; wrench present')}
+    ${makeRow('sp-head-type-match','Head Type Consistency','All listed and appropriate for hazard')}
+    ${dataRow({id:'sp-spare-types', label:'Spare Head Types in Cabinet'})}
+
+    ${sectionDiv('Pipe & Hangers')}
+    ${makeRow('sp-pipe-visual','Pipe Visual Inspection','No damage, corrosion, leaks, missing hangers')}
+    ${makeRow('sp-hanger-spacing','Hanger Spacing & Condition','Per NFPA 13 requirements')}
+    ${makeRow('sp-pipe-support','Seismic Bracing (if req\'d)','Intact and undamaged')}
+
+    ${sectionDiv('Dry Pipe / Pre-Action (if applicable)')}
+    ${makeRow('sp-air-pressure','Air/Nitrogen Pressure','At set pressure — no excessive leakage')}
+    ${makeRow('sp-dp-valve','Dry Pipe / Deluge Valve','No corrosion; priming water level correct')}
+    ${makeRow('sp-low-air','Low Air Alarm','Tested and transmitted to panel')}
+    ${makeRow('sp-quick-open','Quick Opening Device (if present)','Operational')}
+    ${dataRow(
+      {id:'sp-trip-date', label:'Last Trip Test Date', type:'date'},
+      {id:'sp-trip-psi',  label:'Trip Pressure (PSI)', type:'number'}
+    )}
+
+    ${sectionDiv('5-Year Items (if due)')}
+    ${makeRow('sp-5yr-pipe','5-Year Internal Pipe Inspection','Obstruction investigation performed',{noNA:false})}
+    ${makeRow('sp-5yr-fdc','FDC Hydrostatic / Forward Flow Test','200 PSI for 2 hrs or per standard',{noNA:false})}
+    ${makeRow('sp-gauges-5yr','Gauge Replacement / Recalibration','All gauges replaced or tested',{noNA:false})}
+    ${dataRow({id:'sp-5yr-due', label:'5-Year Items Next Due Date', type:'date'})}
+
+    <div class="field-group" style="margin-top:8px;">
+      <label>Sprinkler System Notes</label>
+      <textarea id="sp-notes" rows="3"></textarea>
+    </div>`;
+  return makePanel('sprinkler', '💧', 'Sprinkler System (NFPA 25)', body);
+}
+
+function buildFirePumpPanel() {
+  const body = `
+    ${sectionDiv('Pump Information')}
+    ${dataRow(
+      {id:'fp-mfr',      label:'Pump Manufacturer'},
+      {id:'fp-model',    label:'Model'},
+      {id:'fp-serial',   label:'Serial #'}
+    )}
+    ${dataRow(
+      {id:'fp-type',     label:'Driver Type (Electric/Diesel)'},
+      {id:'fp-rated-gpm',label:'Rated GPM', type:'number'},
+      {id:'fp-rated-psi',label:'Rated PSI', type:'number'}
+    )}
+    ${dataRow(
+      {id:'fp-rpm',      label:'Rated RPM', type:'number'},
+      {id:'fp-hp',       label:'Horsepower', type:'number'},
+      {id:'fp-year',     label:'Year Installed', type:'number'}
+    )}
+
+    ${sectionDiv('Controller & Jockey Pump')}
+    ${makeRow('fp-controller-cond','Fire Pump Controller Condition','No damage; door closed; no alarms')}
+    ${makeRow('fp-controller-auto','Controller in AUTO','Selector switch in AUTO position')}
+    ${makeRow('fp-jockey-type','Jockey Pump (Pressure Maintenance)','Present and operational')}
+    ${dataRow(
+      {id:'fp-jockey-start',  label:'Jockey Start Pressure (PSI)', type:'number'},
+      {id:'fp-jockey-stop',   label:'Jockey Stop Pressure (PSI)', type:'number'}
+    )}
+    ${makeRow('fp-jockey-cycles','Jockey Pump Cycling','Starts and stops within normal range')}
+
+    ${sectionDiv('Churn / No-Flow Test')}
+    ${makeRow('fp-churn-test','Churn Test Performed','No-flow test for rated speed')}
+    ${dataRow(
+      {id:'fp-churn-suction', label:'Churn Suction Pressure (PSI)', type:'number'},
+      {id:'fp-churn-discharge',label:'Churn Discharge Pressure (PSI)', type:'number'},
+      {id:'fp-churn-rpm',     label:'Churn RPM', type:'number'}
+    )}
+    ${dataRow(
+      {id:'fp-churn-volts',   label:'Voltage (all phases)', placeholder:'e.g. 480/480/480'},
+      {id:'fp-churn-amps',    label:'Amps (all phases)', placeholder:'e.g. 42/42/42'}
+    )}
+
+    ${sectionDiv('100% Flow Test (Annual)')}
+    ${makeRow('fp-flow-test','100% Rated Flow Test','GPM, PSI, RPM at rated load')}
+    ${dataRow(
+      {id:'fp-flow-gpm',      label:'Flow Rate (GPM)', type:'number'},
+      {id:'fp-flow-suction',  label:'Suction Pressure (PSI)', type:'number'},
+      {id:'fp-flow-discharge',label:'Discharge Pressure (PSI)', type:'number'}
+    )}
+    ${dataRow(
+      {id:'fp-flow-rpm',      label:'RPM at Flow', type:'number'},
+      {id:'fp-flow-volts',    label:'Voltage at Flow'},
+      {id:'fp-flow-amps',     label:'Amps at Flow'}
+    )}
+
+    ${sectionDiv('Diesel Engine (if applicable)')}
+    ${makeRow('fp-diesel-start','Engine Auto Start','Starts within 10 seconds')}
+    ${makeRow('fp-diesel-fuel','Fuel Level (≥2/3 full)','Adequate fuel for full run')}
+    ${makeRow('fp-diesel-battery','Engine Batteries','Both main and backup fully charged')}
+    ${makeRow('fp-diesel-coolant','Coolant Level','Within acceptable range')}
+    ${makeRow('fp-diesel-run','Engine Run Time','Ran minimum 30 minutes under load')}
+    ${dataRow(
+      {id:'fp-diesel-oil',    label:'Oil Pressure (PSI)', type:'number'},
+      {id:'fp-diesel-temp',   label:'Coolant Temp (°F)', type:'number'},
+      {id:'fp-diesel-hours',  label:'Engine Hours', type:'number'}
+    )}
+
+    ${sectionDiv('Alarms & Supervision')}
+    ${makeRow('fp-power-fail-alarm','Power Failure Alarm','Loss of power transmitted to fire alarm panel')}
+    ${makeRow('fp-phase-alarm','Phase Reversal / Loss Alarm','Tested and operational')}
+    ${makeRow('fp-room-temp','Pump Room Temperature','Maintained above 40°F')}
+    ${makeRow('fp-suction-valve','Suction Valve Open & Supervised','Fully open; tamper alarm tested')}
+
+    <div class="field-group" style="margin-top:8px;">
+      <label>Fire Pump Notes</label>
+      <textarea id="fp-notes" rows="3"></textarea>
+    </div>`;
+  return makePanel('fire-pump', '🔄', 'Fire Pump (NFPA 25 Ch. 8)', body);
+}
+
+function buildStandpipePanel() {
+  const body = `
+    ${sectionDiv('System Information')}
+    <div class="data-row cols-3">
+      <div class="data-field"><label>Standpipe Class</label>
+        <select id="std-class"><option>Class I (FD use)</option><option>Class II (Occupant use)</option><option>Class III (Combined)</option></select>
+      </div>
+      <div class="data-field"><label>System Type</label>
+        <select id="std-type"><option>Wet</option><option>Dry</option><option>Manual Wet</option><option>Manual Dry</option><option>Semi-Automatic Dry</option></select>
+      </div>
+      <div class="data-field"><label># of Standpipes / Risers</label><input type="number" id="std-count"></div>
+    </div>
+    ${dataRow(
+      {id:'std-floors', label:'# of Floors Served', type:'number'},
+      {id:'std-hose-stations', label:'# of Hose Stations', type:'number'}
+    )}
+
+    ${sectionDiv('Hose Connections & Valves')}
+    ${makeRow('std-fdc','FDC (Fire Dept. Connection) Condition','Caps secure; no damage; plugs present')}
+    ${makeRow('std-fdc-sign','FDC Signage','Properly identified with address')}
+    ${makeRow('std-hose-valves','Hose Valves — All Floors','Operate freely; no leaks; identified')}
+    ${makeRow('std-prv','Pressure Reducing Valves (PRV)','Static ≤ 175 PSI; residual ≥ 100 PSI at outlet')}
+    ${dataRow(
+      {id:'std-prv-static',   label:'PRV Static Pressure (PSI)', type:'number'},
+      {id:'std-prv-residual', label:'PRV Residual Pressure (PSI)', type:'number'}
+    )}
+    ${makeRow('std-check-valve','Check Valves','Proper operation; no back-flow')}
+
+    ${sectionDiv('Flow Test')}
+    ${makeRow('std-flow-test','Flow Test (Every 5 Years)','Highest outlet flowed at minimum requirements')}
+    ${dataRow(
+      {id:'std-flow-psi',   label:'Flow Test Pressure (PSI)', type:'number'},
+      {id:'std-flow-gpm',   label:'Flow Rate (GPM)', type:'number'},
+      {id:'std-flow-date',  label:'Last Flow Test Date', type:'date'}
+    )}
+
+    ${sectionDiv('Hose Equipment (Class II/III)')}
+    ${makeRow('std-hose-cond','Hose Condition','No damage, mold, mildew; properly racked')}
+    ${makeRow('std-nozzle','Nozzle Condition','Present, undamaged, compatible type')}
+    ${makeRow('std-cabinet','Hose Cabinet','Accessible; not blocked; label visible')}
+
+    <div class="field-group" style="margin-top:8px;">
+      <label>Standpipe Notes</label>
+      <textarea id="std-notes" rows="3"></textarea>
+    </div>`;
+  return makePanel('standpipe', '🚿', 'Standpipe System (NFPA 25 Ch. 6)', body);
+}
+
+function buildHoodPanel() {
+  const body = `
+    ${sectionDiv('System Information')}
+    ${dataRow(
+      {id:'hood-mfr',      label:'System Manufacturer'},
+      {id:'hood-model',    label:'Model / Cylinder #'},
+      {id:'hood-install',  label:'Year Installed', type:'number'}
+    )}
+    ${dataRow(
+      {id:'hood-agent',    label:'Suppression Agent Type', placeholder:'e.g. Wet Chemical'},
+      {id:'hood-nozzle-count', label:'# of Nozzles', type:'number'},
+      {id:'hood-last-service', label:'Last Service Date', type:'date'}
+    )}
+    ${dataRow(
+      {id:'hood-area',     label:'Kitchen Equipment Protected', placeholder:'Fryers, grills, etc.'},
+      {id:'hood-appliance',label:'Appliance Manufacturer'},
+    )}
+
+    ${sectionDiv('Agent Cylinders & Actuation')}
+    ${makeRow('hood-cylinder-wt','Cylinder Weight / Pressure Check','Within manufacturer spec; not expired')}
+    ${dataRow(
+      {id:'hood-cyl-wt-actual',   label:'Actual Cylinder Weight (lbs)'},
+      {id:'hood-cyl-wt-min',      label:'Min Acceptable Weight (lbs)'}
+    )}
+    ${makeRow('hood-pull-station','Manual Pull Station','Accessible; pin and seal intact')}
+    ${makeRow('hood-auto-detect','Fusible Links / Detectors','Replaced as required; properly positioned')}
+    ${makeRow('hood-micro-switch','Micro-Switch Actuation','Gas shut-off activates on system discharge')}
+
+    ${sectionDiv('Nozzles & Distribution')}
+    ${makeRow('hood-nozzle-cond','Nozzle Condition','No blockage; proper orientation and caps')}
+    ${makeRow('hood-nozzle-coverage','Nozzle Coverage','All appliances and plenum protected per design')}
+    ${makeRow('hood-duct-protected','Duct & Plenum Protection','Entire duct and plenum covered')}
+
+    ${sectionDiv('Interlock & Suppression Test')}
+    ${makeRow('hood-gas-shutoff','Gas Shutoff Interlock','Gas valve closes on system activation')}
+    ${makeRow('hood-power-shutoff','Electrical Interlock','Power to cooking equipment cut on alarm')}
+    ${makeRow('hood-fa-integration','Fire Alarm Integration','Alarm transmitted to fire alarm panel')}
+    ${makeRow('hood-ansul-reset','System Reset Procedure Verified','Staff aware of reset; recharge service tag')}
+
+    ${sectionDiv('Hood & Grease Management')}
+    ${makeRow('hood-grease-buildup','Grease Buildup — Hood & Filters','Excessive grease noted (document)')}
+    ${makeRow('hood-filter-cond','Filter Condition & Clearance','Filters in place; properly seated')}
+    ${makeRow('hood-service-tag','Current Inspection Tag Affixed','Tag shows contractor, date, and next due')}
+    ${dataRow(
+      {id:'hood-next-service', label:'Next Semi-Annual Service Due', type:'date'},
+      {id:'hood-tag-color',    label:'Tag Color / ID'}
+    )}
+
+    <div class="field-group" style="margin-top:8px;">
+      <label>Kitchen Hood Suppression Notes</label>
+      <textarea id="hood-notes" rows="3"></textarea>
+    </div>`;
+  return makePanel('hood', '🍳', 'Kitchen Hood Suppression (NFPA 17A)', body);
+}
+
+function buildExtinguisherPanel() {
+  const extTable = `
+    <p style="font-size:0.78rem;color:var(--slate);margin-bottom:6px;">Log each extinguisher. Add rows for all units at this property.</p>
+    <table class="ext-table" id="ext-table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Location</th>
+          <th>Type / Class</th>
+          <th>Size / Rating</th>
+          <th>Last Mfr Date</th>
+          <th>Pressure</th>
+          <th>Seal/Pin</th>
+          <th>Label</th>
+          <th>Overall</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="ext-tbody"></tbody>
+    </table>
+    <button class="add-row-btn" onclick="addExtRow()">+ Add Extinguisher</button>
+    ${sectionDiv('Extinguisher Inspection Notes')}
+    ${makeRow('ext-mounted','All Extinguishers Properly Mounted','Height accessible; not obstructed')}
+    ${makeRow('ext-signage','Location Signage','Sign above each extinguisher visible')}
+    ${makeRow('ext-6yr','6-Year Maintenance (if due)','Internal examination per NFPA 10',{noNA:false})}
+    ${makeRow('ext-hydro','Hydrostatic Test (if due)','Per NFPA 10 test intervals',{noNA:false})}
+    <div class="field-group" style="margin-top:8px;">
+      <label>Extinguisher General Notes</label>
+      <textarea id="ext-notes" rows="2"></textarea>
+    </div>`;
+  const panel = makePanel('extinguisher', '🧯', 'Portable Fire Extinguishers (NFPA 10)', extTable);
+  // Add initial rows after panel created
+  setTimeout(() => { addExtRow(); addExtRow(); }, 10);
+  return panel;
+}
+
+let extRowCount = 0;
+function addExtRow() {
+  extRowCount++;
+  const n = extRowCount;
+  const tbody = document.getElementById('ext-tbody');
+  if (!tbody) return;
+  const tr = document.createElement('tr');
+  tr.id = 'ext-row-' + n;
+  tr.innerHTML = `
+    <td style="text-align:center;font-weight:600;color:var(--slate);font-size:0.75rem;">${n}</td>
+    <td><input type="text" id="ext-loc-${n}" placeholder="Room, Floor, Area"></td>
+    <td><select id="ext-type-${n}" style="min-width:80px;">
+      <option>ABC Dry Chem</option><option>CO2</option><option>Water</option>
+      <option>Wet Chemical</option><option>Halon</option><option>Clean Agent</option><option>Class D</option><option>Class K</option>
+    </select></td>
+    <td><input type="text" id="ext-size-${n}" placeholder="2.5 lb / 2A:10BC"></td>
+    <td><input type="month" id="ext-mfr-${n}"></td>
+    <td><input type="text" id="ext-psi-${n}" placeholder="In range?" style="width:65px;"></td>
+    <td>
+      <div class="pf-group">
+        <button class="pf-btn pass" onclick="setPFTable(this,'ext-seal-${n}','PASS')">✓</button>
+        <button class="pf-btn fail" onclick="setPFTable(this,'ext-seal-${n}','FAIL')">✗</button>
+      </div>
+      <input type="hidden" id="ext-seal-${n}">
+    </td>
+    <td>
+      <div class="pf-group">
+        <button class="pf-btn pass" onclick="setPFTable(this,'ext-label-${n}','PASS')">✓</button>
+        <button class="pf-btn fail" onclick="setPFTable(this,'ext-label-${n}','FAIL')">✗</button>
+      </div>
+      <input type="hidden" id="ext-label-${n}">
+    </td>
+    <td>
+      <div class="pf-group">
+        <button class="pf-btn pass" onclick="setPFTable(this,'ext-overall-${n}','PASS')">PASS</button>
+        <button class="pf-btn fail" onclick="setPFTable(this,'ext-overall-${n}','FAIL')">FAIL</button>
+      </div>
+      <input type="hidden" id="ext-overall-${n}">
+    </td>
+    <td><button class="remove-row-btn" onclick="document.getElementById('ext-row-${n}').remove()">✕</button></td>`;
+  tbody.appendChild(tr);
+}
+
+function setPFTable(btn, id, val) {
+  const input = document.getElementById(id);
+  if (input) input.value = val;
+  const group = btn.closest('.pf-group');
+  group.querySelectorAll('.pf-btn').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+}
+
+function buildHydrantPanel() {
+  const body = `
+    ${sectionDiv('Hydrant Inventory')}
+    ${dataRow(
+      {id:'hy-count',   label:'# of Private Hydrants', type:'number'},
+      {id:'hy-type',    label:'Hydrant Type', placeholder:'Wet barrel, Dry barrel'},
+      {id:'hy-last-flow', label:'Last Flow Test Date', type:'date'}
+    )}
+
+    ${sectionDiv('Annual Inspection Items')}
+    ${makeRow('hy-caps','Caps / Threads Condition','All outlets capped; no damage to threads')}
+    ${makeRow('hy-drainage','Drainage','Drains freely after operation')}
+    ${makeRow('hy-painted','Color Coding','Properly painted per NFPA/AWWA flow class')}
+    ${makeRow('hy-clearance','Clearance Around Hydrant','3-ft min clearance; accessible')}
+    ${makeRow('hy-operation','Operation Tested','Opens and closes smoothly; no leaks')}
+    ${makeRow('hy-gate-valve','Control Valve / Gate Valve','Fully open; tamper supervised')}
+    ${makeRow('hy-outlet-threads','Outlet Thread Compatibility','NST or local FD connection standard')}
+
+    ${sectionDiv('Flow Test (Annual or Per AHJ)')}
+    ${makeRow('hy-flow-test','Flow Test Performed','Documented GPM and residual pressure')}
+    ${dataRow(
+      {id:'hy-flow-static',   label:'Static Pressure (PSI)', type:'number'},
+      {id:'hy-flow-residual', label:'Residual Pressure (PSI)', type:'number'},
+      {id:'hy-flow-gpm',      label:'Flow Rate (GPM)', type:'number'}
+    )}
+
+    <div class="field-group" style="margin-top:8px;">
+      <label>Hydrant Notes / Locations</label>
+      <textarea id="hy-notes" rows="3" placeholder="Note each hydrant location and any specific conditions…"></textarea>
+    </div>`;
+  return makePanel('hydrant', '🔴', 'Private Fire Hydrants (NFPA 25 Ch. 7)', body);
+}
+
+function buildBDAPanel() {
+  const body = `
+    ${sectionDiv('System Information')}
+    ${dataRow(
+      {id:'bda-mfr',      label:'BDA Manufacturer'},
+      {id:'bda-model',    label:'Model'},
+      {id:'bda-install',  label:'Year Installed', type:'number'}
+    )}
+    ${dataRow(
+      {id:'bda-freqs',    label:'Frequencies Covered', placeholder:'e.g. 800 MHz, 700 MHz'},
+      {id:'bda-coverage-floors', label:'Floors / Areas Covered'},
+      {id:'bda-ahj-cert', label:'AHJ-Approved Certificate / FCC License'}
+    )}
+
+    ${sectionDiv('Signal Strength Testing')}
+    ${makeRow('bda-uplink','Uplink Signal Strength ≥ -95 dBm','Minimum inbound signal on all critical areas')}
+    ${makeRow('bda-downlink','Downlink Signal Strength ≥ -95 dBm','Minimum outbound from BDA in critical areas')}
+    ${makeRow('bda-coverage','Critical Area Coverage','All stairwells, elevators, garage levels covered')}
+    ${dataRow(
+      {id:'bda-min-signal', label:'Minimum Signal Strength Recorded (dBm)'},
+      {id:'bda-worst-loc',  label:'Worst Coverage Location'}
+    )}
+
+    ${sectionDiv('Equipment Condition')}
+    ${makeRow('bda-power','Primary Power','Connected to dedicated circuit or UPS')}
+    ${makeRow('bda-backup-power','Backup Power (12-hr minimum)','Battery or generator backup tested')}
+    ${makeRow('bda-donor-antenna','Donor Antenna Condition','Mounted correctly; no physical damage')}
+    ${makeRow('bda-internal-antenna','Internal Antenna / Cabling','No damage; connections tight')}
+    ${makeRow('bda-alarms','Trouble / Alarm Indicators','No active alarms on BDA head-end')}
+    ${makeRow('bda-fa-interface','Fire Alarm Panel Interface','Trouble and alarm points connected per NFPA 72')}
+
+    ${sectionDiv('Documentation')}
+    ${makeRow('bda-permit','Active Permit / Registration','Current permit on file')}
+    ${makeRow('bda-coverage-map','Coverage Map Available','Floor plan showing coverage zones on site')}
+    ${dataRow({id:'bda-next-test', label:'Next Required Test Date', type:'date'})}
+
+    <div class="field-group" style="margin-top:8px;">
+      <label>BDA / Emergency Radio Notes</label>
+      <textarea id="bda-notes" rows="3"></textarea>
+    </div>`;
+  return makePanel('bda', '📡', 'BDA / Emergency Radio Communication (NFPA 72 Ch. 24)', body);
+}
+
+function buildSmokeControlPanel() {
+  const body = `
+    ${sectionDiv('System Configuration')}
+    <div class="data-row cols-3">
+      <div class="data-field"><label>System Type</label>
+        <select id="sc-type"><option>Pressurization</option><option>Exhaust Only</option><option>Combined Injection/Exhaust</option><option>Zoned Smoke Control</option><option>Atrium Smoke Exhaust</option></select>
+      </div>
+      <div class="data-field"><label># of Smoke Zones</label><input type="number" id="sc-zones"></div>
+      <div class="data-field"><label>Year Installed</label><input type="number" id="sc-year"></div>
+    </div>
+    ${dataRow(
+      {id:'sc-fans',   label:'# of Supply/Exhaust Fans', type:'number'},
+      {id:'sc-dampers',label:'# of Smoke/Fire Dampers', type:'number'}
+    )}
+
+    ${sectionDiv('Fan & Equipment Testing')}
+    ${makeRow('sc-fans-op','All Fans Operational','Start and run correctly per design')}
+    ${makeRow('sc-cfm','Airflow CFM Verified','Measured airflow within 10% of design')}
+    ${makeRow('sc-pressure','Pressure Differential','Meets design (typically 0.05 in. w.g. min)')}
+    ${dataRow({id:'sc-pressure-val', label:'Measured Pressure Differential (in. w.g.)'})}
+
+    ${sectionDiv('Dampers')}
+    ${makeRow('sc-dampers-op','Smoke Dampers Operational','All zones tested — close/open verified')}
+    ${makeRow('sc-fire-dampers','Fire Dampers Operational','Fusible links intact or actuators verified')}
+    ${makeRow('sc-damper-access','Access Panels for Dampers','All accessible; labeled')}
+
+    ${sectionDiv('Controls & Integration')}
+    ${makeRow('sc-control-panel','Control Panel / FCC Operational','No active faults; correct mode displays')}
+    ${makeRow('sc-fa-integration','Fire Alarm Integration','System activates upon FA signal')}
+    ${makeRow('sc-override','Manual Override Stations','FCC manual controls tested in each zone')}
+    ${makeRow('sc-detector-input','Smoke Detector Input','All input points trigger correct zones')}
+
+    <div class="field-group" style="margin-top:8px;">
+      <label>Smoke Control Notes</label>
+      <textarea id="sc-notes" rows="3"></textarea>
+    </div>`;
+  return makePanel('smoke-control', '💨', 'Smoke Control System (NFPA 92)', body);
+}
+
+function buildGasDetectionPanel() {
+  const body = `
+    ${sectionDiv('System Information')}
+    ${dataRow(
+      {id:'gd-mfr',    label:'Manufacturer'},
+      {id:'gd-model',  label:'Model'},
+      {id:'gd-gas-type', label:'Gas Type Monitored', placeholder:'Natural Gas, CO, H2, etc.'}
+    )}
+    ${dataRow(
+      {id:'gd-sensor-count', label:'# of Sensors', type:'number'},
+      {id:'gd-zones',        label:'# of Zones'},
+      {id:'gd-install-date', label:'Year Installed', type:'number'}
+    )}
+
+    ${sectionDiv('Sensor Testing')}
+    ${makeRow('gd-sensor-test','Sensor Calibration / Bump Test','All sensors tested with calibration gas')}
+    ${dataRow(
+      {id:'gd-alarm-setpoint-lo', label:'Low Alarm Setpoint (%LEL or PPM)'},
+      {id:'gd-alarm-setpoint-hi', label:'High Alarm Setpoint (%LEL or PPM)'}
+    )}
+    ${makeRow('gd-alarm-test','Alarm Activation Test','Audio/visual alarms activate at setpoints')}
+    ${makeRow('gd-gas-shutoff','Gas Valve Shutoff Test','Main gas valve closes on high alarm signal')}
+    ${makeRow('gd-ventilation','Ventilation Interlock','Ventilation fans activate on detection')}
+
+    ${sectionDiv('Electronics & Power')}
+    ${makeRow('gd-power','Primary Power','Connected and stable')}
+    ${makeRow('gd-backup','Backup Power','Battery backup functional')}
+    ${makeRow('gd-control-panel','Control Panel Condition','No faults; all zones showing normal')}
+    ${makeRow('gd-fa-integration','FA Panel Integration','Gas alarm transmitted to fire alarm panel')}
+
+    ${sectionDiv('Sensor Replacement')}
+    ${dataRow(
+      {id:'gd-sensor-age',  label:'Sensor Age / Last Replacement Date'},
+      {id:'gd-sensor-due',  label:'Next Replacement Due Date', type:'date'}
+    )}
+    ${makeRow('gd-calibration-cert','Calibration Certification Current','Gas calibration cert on file and up to date')}
+
+    <div class="field-group" style="margin-top:8px;">
+      <label>Gas Detection Notes</label>
+      <textarea id="gd-notes" rows="3"></textarea>
+    </div>`;
+  return makePanel('gas-detection', '⚗️', 'Gas Detection System', body);
+}
+
+function buildSpecialSuppressionPanel() {
+  const body = `
+    ${sectionDiv('System Information')}
+    <div class="data-row cols-3">
+      <div class="data-field"><label>System Type</label>
+        <select id="ss-type"><option>Clean Agent (FM-200/Novec)</option><option>CO2</option><option>Dry Chemical</option><option>Foam (AFFF/AR-AFFF)</option><option>Water Mist</option><option>Halon 1301</option><option>Other</option></select>
+      </div>
+      <div class="data-field"><label>Manufacturer</label><input type="text" id="ss-mfr"></div>
+      <div class="data-field"><label>Protected Hazard / Area</label><input type="text" id="ss-area" placeholder="e.g. Server Room, Paint Booth"></div>
+    </div>
+    ${dataRow(
+      {id:'ss-agent',     label:'Agent Name / Chemical'},
+      {id:'ss-cylinders', label:'# of Cylinders / Containers', type:'number'},
+      {id:'ss-install',   label:'Year Installed', type:'number'}
+    )}
+
+    ${sectionDiv('Agent Quantity & Pressure')}
+    ${makeRow('ss-agent-wt','Agent Weight / Pressure Check','Within manufacturer specified range')}
+    ${dataRow(
+      {id:'ss-actual-wt',  label:'Actual Agent Weight (lbs)'},
+      {id:'ss-min-wt',     label:'Min. Required Weight (lbs)'},
+      {id:'ss-pressure',   label:'Cylinder Pressure (PSI)', type:'number'}
+    )}
+
+    ${sectionDiv('Actuation & Detection')}
+    ${makeRow('ss-detection','Detection Devices (Heat/UV/IR/Smoke)','All detectors tested per NFPA standard')}
+    ${makeRow('ss-pull','Manual Pull Station','Accessible; guard/pin intact')}
+    ${makeRow('ss-abort','Abort Switch (if present)','Functional; within design spec delay')}
+    ${makeRow('ss-discharge-time','Discharge Time Delay','Correct delay programmed; horn/strobe pre-alarm')}
+
+    ${sectionDiv('Nozzles & Distribution')}
+    ${makeRow('ss-nozzles','Nozzle Condition','No damage, blockage, or improper orientation')}
+    ${makeRow('ss-coverage','Coverage Integrity','Room/area unchanged; no new penetrations')}
+    ${makeRow('ss-room-integrity','Room Integrity / Door Seals','Doors self-close; no major seal failures')}
+
+    ${sectionDiv('Interlocks & Alarms')}
+    ${makeRow('ss-hvac-shutoff','HVAC Shutdown on Discharge','Air handling stopped during release')}
+    ${makeRow('ss-power-shutoff','Power Shutdown Interlock','Electrical disconnects activate (if required)')}
+    ${makeRow('ss-fa-integration','Fire Alarm Notification','Pre-alarm and discharge signals to FA panel')}
+
+    ${sectionDiv('Documentation')}
+    ${makeRow('ss-recharge-cert','Agent Recharge / Service Certificate','Current certification on file')}
+    ${dataRow(
+      {id:'ss-last-service',label:'Last Full Service Date', type:'date'},
+      {id:'ss-next-service',label:'Next Service Due Date', type:'date'}
+    )}
+
+    <div class="field-group" style="margin-top:8px;">
+      <label>Special Suppression Notes</label>
+      <textarea id="ss-notes" rows="3"></textarea>
+    </div>`;
+  return makePanel('special-suppression', '🧪', 'Special Suppression System (NFPA 2001 / 11 / 17)', body);
+}
+
+function buildBackflowPanel() {
+  const body = `
+    ${sectionDiv('Device Information')}
+    ${dataRow(
+      {id:'bf-mfr',    label:'Manufacturer'},
+      {id:'bf-model',  label:'Model'},
+      {id:'bf-serial', label:'Serial #'}
+    )}
+    <div class="data-row cols-3">
+      <div class="data-field"><label>Device Type</label>
+        <select id="bf-type"><option>Double Check (DC)</option><option>Reduced Pressure (RP/RPZ)</option><option>Pressure Vacuum Breaker (PVB)</option><option>DCDA</option><option>RPDA</option><option>Spill-Resistant PVB</option></select>
+      </div>
+      <div class="data-field"><label>Size (inches)</label><input type="text" id="bf-size" placeholder='e.g. 2"'></div>
+      <div class="data-field"><label>Location</label><input type="text" id="bf-location"></div>
+    </div>
+    ${dataRow(
+      {id:'bf-install',  label:'Year Installed', type:'number'},
+      {id:'bf-purpose',  label:'Service (Fire / Irrigation / Domestic)'}
+    )}
+
+    ${sectionDiv('Test Results')}
+    ${makeRow('bf-test','Backflow Prevention Test Performed','Annual test by certified tester')}
+    ${dataRow(
+      {id:'bf-check1-open',  label:'Check Valve 1 Opening PSI', type:'number'},
+      {id:'bf-check1-close', label:'Check Valve 1 Closing PSI', type:'number'}
+    )}
+    ${dataRow(
+      {id:'bf-check2-open',  label:'Check Valve 2 Opening PSI', type:'number'},
+      {id:'bf-check2-close', label:'Check Valve 2 Closing PSI', type:'number'}
+    )}
+    ${dataRow(
+      {id:'bf-rv-open',   label:'RV Opening Differential PSI', type:'number'},
+      {id:'bf-test-date', label:'Test Date', type:'date'}
+    )}
+    ${makeRow('bf-passed','Device Passed Test','All checks within acceptable range')}
+
+    ${sectionDiv('Physical Condition')}
+    ${makeRow('bf-casing','Device Casing / Body','No cracks, corrosion, or leaks')}
+    ${makeRow('bf-shutoffs','Shutoff Valves','Fully open; easily operable')}
+    ${makeRow('bf-clearance','Required Clearance','Accessible for testing and maintenance')}
+    ${makeRow('bf-freeze','Freeze Protection (if req\'d)','Insulated or in heated enclosure')}
+
+    ${dataRow({id:'bf-cert-number', label:"Tester's Certification #"}, {id:'bf-cert-exp', label:'Cert. Expiration Date', type:'date'})}
+
+    <div class="field-group" style="margin-top:8px;">
+      <label>Backflow Preventer Notes</label>
+      <textarea id="bf-notes" rows="3"></textarea>
+    </div>`;
+  return makePanel('backflow', '🔁', 'Backflow Prevention Device (AWWA / Local Code)', body);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PASS/FAIL LOGIC
+// ─────────────────────────────────────────────────────────────────────────────
+function setPF(btn, itemId, val) {
+  const row = document.getElementById('row-' + itemId);
+  if (!row) return;
+  row.querySelectorAll('.pf-btn').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+  row.dataset.val = val;
+
+  const deficRow = document.getElementById('defic-' + itemId);
+  if (deficRow) {
+    if (val === 'FAIL') deficRow.classList.add('show');
+    else { deficRow.classList.remove('show'); const inp = document.getElementById('defic-txt-' + itemId); if (inp) inp.value = ''; }
+  }
+  updateDeficiencySummary();
+}
+
+function updateDeficiencySummary() {
+  const defics = [];
+  document.querySelectorAll('[id^="defic-txt-"]').forEach(inp => {
+    if (inp.value.trim()) defics.push(inp.value.trim());
+  });
+  // Also collect from row FAIL states without text
+  document.querySelectorAll('.inspect-row').forEach(row => {
+    if (row.dataset.val === 'FAIL') {
+      const id = row.id.replace('row-','');
+      const inp = document.getElementById('defic-txt-' + id);
+      if (!inp || !inp.value.trim()) {
+        const label = row.querySelector('.inspect-label')?.textContent?.trim()?.split('\n')[0] || id;
+        defics.push(label + ' — (no description entered)');
+      }
+    }
+  });
+
+  const sumDiv = document.getElementById('defic-summary');
+  const listDiv = document.getElementById('defic-list');
+  if (!sumDiv || !listDiv) return;
+  if (defics.length > 0) {
+    sumDiv.classList.add('show');
+    listDiv.innerHTML = defics.map(d => `<div class="defic-item">${escHtml(d)}</div>`).join('');
+    // Also auto-suggest DEFICIENT status on step 4
+    if (overallStatus === '') setOverallStatus('DEFICIENT');
+  } else {
+    sumDiv.classList.remove('show');
+    listDiv.innerHTML = '';
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// OVERALL STATUS
+// ─────────────────────────────────────────────────────────────────────────────
+function setOverallStatus(val, btn) {
+  overallStatus = val;
+  document.querySelectorAll('.ost-btn').forEach(b => b.classList.remove('selected'));
+  if (btn) btn.classList.add('selected');
+  else {
+    document.querySelectorAll('.ost-btn').forEach(b => { if (b.textContent.includes(val)) b.classList.add('selected'); });
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SIGNATURE PAD
+// ─────────────────────────────────────────────────────────────────────────────
+function initSig() {
+  const canvas = document.getElementById('sig-canvas');
+  if (!canvas || sigCtx) return;
+  sigCtx = canvas.getContext('2d');
+  sigCtx.strokeStyle = '#0d1b2a';
+  sigCtx.lineWidth = 2;
+  sigCtx.lineCap = 'round';
+  const getPos = (e) => {
+    const r = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / r.width;
+    const scaleY = canvas.height / r.height;
+    const src = e.touches ? e.touches[0] : e;
+    return { x: (src.clientX - r.left) * scaleX, y: (src.clientY - r.top) * scaleY };
+  };
+  canvas.addEventListener('pointerdown', e => {
+    sigDrawing = true; const p = getPos(e);
+    sigCtx.beginPath(); sigCtx.moveTo(p.x, p.y); e.preventDefault();
+  });
+  canvas.addEventListener('pointermove', e => {
+    if (!sigDrawing) return; const p = getPos(e);
+    sigCtx.lineTo(p.x, p.y); sigCtx.stroke(); sigHasData = true; e.preventDefault();
+  });
+  canvas.addEventListener('pointerup', () => sigDrawing = false);
+  canvas.addEventListener('pointerleave', () => sigDrawing = false);
+}
+function clearSig() { if (sigCtx) sigCtx.clearRect(0,0,500,100); sigHasData = false; }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SAVE TO DRIVE
+// ─────────────────────────────────────────────────────────────────────────────
+async function saveToCloud() {
+  if (!accessToken) { toast('⚠ Connect Google first'); return; }
+  const propName = document.getElementById('property-select').value || 'Unknown';
+  const today = new Date().toISOString().split('T')[0];
+  const fileName = `FLIPS Inspection Report - ${propName} - ${today}.json`;
+  const reportData = collectAllData();
+  const content = JSON.stringify(reportData, null, 2);
+  const blob = new Blob([content], { type: 'application/json' });
+  const reader = new FileReader();
+  reader.onload = async () => {
+    const base64 = reader.result.split(',')[1];
+    const meta = JSON.stringify({ name: fileName, mimeType: 'application/json' });
+    const boundary = '-------inspection';
+    const body = `--${boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${meta}\r\n--${boundary}\r\nContent-Type: application/json\r\nContent-Transfer-Encoding: base64\r\n\r\n${base64}\r\n--${boundary}--`;
+    const res = await googleFetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', 'POST', null);
+    // Use raw fetch for multipart
+    const uploadRes = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + accessToken, 'Content-Type': `multipart/related; boundary="-------inspection"` },
+      body
+    });
+    if (uploadRes.ok) { toast('✓ Saved to Google Drive'); document.getElementById('pdf-status').textContent = '✓ Saved to Drive: ' + fileName; }
+    else toast('✗ Drive save failed');
+  };
+  reader.readAsDataURL(blob);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// COLLECT ALL FORM DATA
+// ─────────────────────────────────────────────────────────────────────────────
+function collectAllData() {
+  const v = id => (document.getElementById(id)?.value || '').trim();
+  const deficiencies = [];
+  document.querySelectorAll('.inspect-row').forEach(row => {
+    if (row.dataset.val === 'FAIL') {
+      const id = row.id.replace('row-','');
+      const label = row.querySelector('.inspect-label')?.childNodes[0]?.textContent?.trim() || id;
+      const desc = document.getElementById('defic-txt-' + id)?.value?.trim() || '';
+      deficiencies.push({ item: label, description: desc });
+    }
+  });
+  const extinguishers = [];
+  for (let i = 1; i <= extRowCount; i++) {
+    if (document.getElementById('ext-row-' + i)) {
+      extinguishers.push({
+        location: v('ext-loc-' + i), type: v('ext-type-' + i),
+        size: v('ext-size-' + i), mfrDate: v('ext-mfr-' + i),
+        pressure: v('ext-psi-' + i), seal: v('ext-seal-' + i),
+        label: v('ext-label-' + i), overall: v('ext-overall-' + i)
+      });
+    }
+  }
+  return {
+    meta: { generatedAt: new Date().toISOString(), version: '1.0' },
+    property: { name: v('property-select') || document.getElementById('property-select').options[document.getElementById('property-select').selectedIndex]?.text, company: v('client-company'), address: v('service-address'), cityStateZip: v('city-state-zip'), contact: v('property-contact') },
+    inspection: { date: v('insp-date'), reportType: v('report-type'), inspectorName: v('inspector-name'), inspectorCert: v('inspector-cert'), companyName: v('company-name'), companyLicense: v('company-license'), nfpaRef: v('nfpa-ref'), weather: v('weather') },
+    systems: [...activeSystems],
+    overallStatus,
+    generalNotes: v('general-notes'),
+    deficiencies,
+    extinguishers,
+    signature: { name: v('sig-name'), date: v('sig-date'), hasDrawnSig: sigHasData }
+  };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// GENERATE PDF
+// ─────────────────────────────────────────────────────────────────────────────
+function generatePDF() {
+  const data = collectAllData();
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'letter' });
+  const W = 215.9, M = 14; // page width, margin
+  const usableW = W - (M * 2);
+  let y = M;
+
+  const fonts = { normal: 9, small: 7.5, label: 7, heading: 10, title: 13, section: 8 };
+
+  function checkPage(needed) {
+    if (y + (needed||15) > 270) { doc.addPage(); y = M; drawHeader(); }
+  }
+
+  function drawHeader() {
+    doc.setFillColor(13, 27, 42);
+    doc.rect(0, 0, W, 22, 'F');
+    doc.setTextColor(255,255,255);
+    doc.setFontSize(12); doc.setFont('helvetica','bold');
+    doc.text('FIRE LIFE PROTECTION SYSTEMS', M, 10);
+    doc.setFontSize(7.5); doc.setFont('helvetica','normal');
+    doc.text('Fire Inspection & Protection Services', M, 15.5);
+    doc.setFontSize(8.5); doc.setFont('helvetica','bold');
+    const statusColor = data.overallStatus === 'COMPLIANT' ? [22,163,74] : data.overallStatus === 'IMPAIRED' ? [220,38,38] : [217,119,6];
+    doc.setTextColor(...statusColor);
+    doc.text(data.overallStatus || 'STATUS PENDING', W - M, 10, { align: 'right' });
+    doc.setTextColor(255,255,255);
+    doc.setFontSize(7); doc.setFont('helvetica','normal');
+    doc.text('INSPECTION, TESTING & MAINTENANCE REPORT', W - M, 15.5, { align: 'right' });
+    y = 28;
+  }
+
+  function sectionHdr(title) {
+    checkPage(10);
+    doc.setFillColor(30, 48, 74);
+    doc.rect(M, y, usableW, 6, 'F');
+    doc.setTextColor(255,255,255);
+    doc.setFontSize(fonts.section); doc.setFont('helvetica','bold');
+    doc.text(title.toUpperCase(), M + 3, y + 4);
+    y += 8; doc.setTextColor(0,0,0);
+  }
+
+  function kvPair(label, value, x, colW) {
+    doc.setFontSize(fonts.label); doc.setFont('helvetica','bold');
+    doc.setTextColor(100,116,139);
+    doc.text(label + ':', x, y);
+    doc.setFont('helvetica','normal');
+    doc.setTextColor(0,0,0);
+    doc.setFontSize(fonts.normal);
+    const lines = doc.splitTextToSize(value || '—', colW - 22);
+    doc.text(lines, x + 22, y);
+    return lines.length * 4;
+  }
+
+  function twoCol(pairs) {
+    const half = usableW / 2;
+    let maxH = 0;
+    pairs.forEach((pair, i) => {
+      const x = M + (i % 2) * (half + 2);
+      if (i % 2 === 0 && i > 0) y += maxH + 2;
+      const h = kvPair(pair[0], pair[1], x, half);
+      if (h > maxH) maxH = h;
+    });
+    y += maxH + 3;
+  }
+
+  function inspRow(label, result, deficDesc) {
+    checkPage(8);
+    const resultColor = result === 'PASS' ? [22,163,74] : result === 'FAIL' ? [220,38,38] : [100,116,139];
+    doc.setFontSize(fonts.normal); doc.setFont('helvetica','normal');
+    doc.setTextColor(30,30,30);
+    const lines = doc.splitTextToSize(label, usableW - 26);
+    doc.text(lines, M, y + 0.5);
+    if (result) {
+      doc.setFillColor(...resultColor);
+      doc.roundedRect(W - M - 18, y - 3, 18, 5.5, 1, 1, 'F');
+      doc.setTextColor(255,255,255);
+      doc.setFontSize(fonts.label); doc.setFont('helvetica','bold');
+      doc.text(result, W - M - 9, y + 0.8, { align: 'center' });
+    }
+    y += lines.length * 3.8 + 1;
+    if (result === 'FAIL' && deficDesc) {
+      doc.setFillColor(254,242,242);
+      doc.rect(M + 4, y - 1, usableW - 4, 5, 'F');
+      doc.setTextColor(180,0,0);
+      doc.setFontSize(fonts.label); doc.setFont('helvetica','italic');
+      const dlines = doc.splitTextToSize('⚠ ' + deficDesc, usableW - 10);
+      doc.text(dlines, M + 6, y + 2.5);
+      y += dlines.length * 3.5 + 2;
+      doc.setTextColor(0,0,0);
+    }
+    doc.setDrawColor(230,232,235);
+    doc.line(M, y, M + usableW, y);
+    y += 1.5;
+  }
+
+  // ── Render ──
+  drawHeader();
+
+  // Property & Inspection block
+  doc.setFillColor(248,250,252);
+  doc.rect(M, y, usableW, 32, 'F');
+  doc.setDrawColor(226,232,240);
+  doc.rect(M, y, usableW, 32, 'S');
+  const py = y + 5;
+  doc.setFontSize(fonts.heading); doc.setFont('helvetica','bold'); doc.setTextColor(13,27,42);
+  const propName = data.property.name || 'Property Not Selected';
+  doc.text(propName, M + 4, py);
+  doc.setFontSize(fonts.normal); doc.setFont('helvetica','normal'); doc.setTextColor(80,80,80);
+  doc.text([data.property.address, data.property.cityStateZip].filter(Boolean).join(' · '), M + 4, py + 5);
+  doc.text('Contact: ' + (data.property.contact || '—') + '   Company: ' + (data.property.company || '—'), M + 4, py + 10);
+
+  const rCol = W - M - 80;
+  doc.setFontSize(fonts.label); doc.setFont('helvetica','bold'); doc.setTextColor(100,116,139);
+  doc.text('INSPECTION DATE', rCol, py);
+  doc.setFontSize(fonts.normal); doc.setFont('helvetica','bold'); doc.setTextColor(13,27,42);
+  doc.text(data.inspection.date || '—', rCol, py + 5);
+  doc.setFontSize(fonts.label); doc.setFont('helvetica','bold'); doc.setTextColor(100,116,139);
+  doc.text('REPORT TYPE', rCol, py + 11);
+  doc.setFontSize(fonts.normal); doc.setFont('helvetica','normal'); doc.setTextColor(13,27,42);
+  doc.text(data.inspection.reportType || '—', rCol, py + 16);
+  doc.setFontSize(fonts.label); doc.setFont('helvetica','bold'); doc.setTextColor(100,116,139);
+  doc.text('NFPA STANDARDS', rCol, py + 22);
+  doc.setFontSize(fonts.normal); doc.setFont('helvetica','normal'); doc.setTextColor(13,27,42);
+  doc.text(data.inspection.nfpaRef || 'NFPA 72, 25', rCol, py + 27);
+  y += 36;
+
+  // Inspector info
+  twoCol([
+    ['Inspector', data.inspection.inspectorName],
+    ['License / Cert #', data.inspection.inspectorCert],
+    ['Company', data.inspection.companyName],
+    ['Company License', data.inspection.companyLicense],
+    ['Weather', data.inspection.weather],
+    ['Systems Inspected', data.systems.join(', ')],
+  ]);
+
+  // ── Deficiency Summary ──
+  if (data.deficiencies.length > 0) {
+    checkPage(20);
+    doc.setFillColor(254,226,226);
+    doc.rect(M, y, usableW, 7, 'F');
+    doc.setTextColor(185,28,28); doc.setFontSize(fonts.section); doc.setFont('helvetica','bold');
+    doc.text('⚠  DEFICIENCIES FOUND: ' + data.deficiencies.length + ' ITEM(S)', M + 3, y + 4.5);
+    y += 9;
+    data.deficiencies.forEach(d => {
+      checkPage(10);
+      doc.setFillColor(255,241,242);
+      doc.rect(M, y, usableW, 6, 'F');
+      doc.setTextColor(180,20,20); doc.setFontSize(fonts.normal); doc.setFont('helvetica','normal');
+      const dtext = doc.splitTextToSize('• ' + d.item + (d.description ? ': ' + d.description : ''), usableW - 4);
+      doc.text(dtext, M + 3, y + 4);
+      y += dtext.length * 3.8 + 2;
+    });
+    y += 3;
+  }
+
+  // ── System Inspection Results ──
+  const systemLabels = {
+    'fire-alarm': ['🔔 FIRE ALARM SYSTEM (NFPA 72)', ['fa-panel-cond','fa-battery','fa-batt-date','fa-ac-power','fa-tamper','fa-trouble','fa-smoke-test','fa-heat-test','fa-pull-test','fa-duct-smoke','fa-co','fa-horns','fa-horn-sync','fa-mass-notif','fa-valve-super','fa-waterflow','fa-monitoring-test','fa-annunciator','fa-elevator','fa-door-release','fa-suppression-rel','fa-tags','fa-logbook']],
+    'sprinkler':  ['💧 SPRINKLER SYSTEM (NFPA 25)', ['sp-main-drain','sp-control-valve','sp-os-y','sp-piv','sp-check-valve','sp-gauges','sp-waterflow','sp-waterflow-cs','sp-heads-visual','sp-heads-clearance','sp-spare-heads','sp-head-type-match','sp-pipe-visual','sp-hanger-spacing','sp-pipe-support','sp-air-pressure','sp-dp-valve','sp-low-air','sp-quick-open','sp-5yr-pipe','sp-5yr-fdc','sp-gauges-5yr']],
+    'fire-pump':  ['🔄 FIRE PUMP (NFPA 25 Ch. 8)', ['fp-controller-cond','fp-controller-auto','fp-jockey-type','fp-jockey-cycles','fp-churn-test','fp-flow-test','fp-diesel-start','fp-diesel-fuel','fp-diesel-battery','fp-diesel-coolant','fp-diesel-run','fp-power-fail-alarm','fp-phase-alarm','fp-room-temp','fp-suction-valve']],
+    'standpipe':  ['🚿 STANDPIPE SYSTEM (NFPA 25)', ['std-fdc','std-fdc-sign','std-hose-valves','std-prv','std-check-valve','std-flow-test','std-hose-cond','std-nozzle','std-cabinet']],
+    'hood':       ['🍳 KITCHEN HOOD SUPPRESSION (NFPA 17A)', ['hood-cylinder-wt','hood-pull-station','hood-auto-detect','hood-micro-switch','hood-nozzle-cond','hood-nozzle-coverage','hood-duct-protected','hood-gas-shutoff','hood-power-shutoff','hood-fa-integration','hood-ansul-reset','hood-grease-buildup','hood-filter-cond','hood-service-tag']],
+    'hydrant':    ['🔴 PRIVATE HYDRANTS (NFPA 25)', ['hy-caps','hy-drainage','hy-painted','hy-clearance','hy-operation','hy-gate-valve','hy-outlet-threads','hy-flow-test']],
+    'bda':        ['📡 BDA / EMERGENCY RADIO (NFPA 72 Ch. 24)', ['bda-uplink','bda-downlink','bda-coverage','bda-power','bda-backup-power','bda-donor-antenna','bda-internal-antenna','bda-alarms','bda-fa-interface','bda-permit','bda-coverage-map']],
+    'smoke-control': ['💨 SMOKE CONTROL (NFPA 92)', ['sc-fans-op','sc-cfm','sc-pressure','sc-dampers-op','sc-fire-dampers','sc-damper-access','sc-control-panel','sc-fa-integration','sc-override','sc-detector-input']],
+    'gas-detection': ['⚗️ GAS DETECTION', ['gd-sensor-test','gd-alarm-test','gd-gas-shutoff','gd-ventilation','gd-power','gd-backup','gd-control-panel','gd-fa-integration','gd-calibration-cert']],
+    'special-suppression': ['🧪 SPECIAL SUPPRESSION (NFPA 2001)', ['ss-agent-wt','ss-detection','ss-pull','ss-abort','ss-discharge-time','ss-nozzles','ss-coverage','ss-room-integrity','ss-hvac-shutoff','ss-power-shutoff','ss-fa-integration','ss-recharge-cert']],
+    'backflow':   ['🔁 BACKFLOW PREVENTION', ['bf-test','bf-passed','bf-casing','bf-shutoffs','bf-clearance','bf-freeze']],
+  };
+
+  data.systems.forEach(sys => {
+    const sysInfo = systemLabels[sys];
+    if (!sysInfo) return;
+    const [title, items] = sysInfo;
+    sectionHdr(title);
+    items.forEach(id => {
+      const row = document.getElementById('row-' + id);
+      if (!row) return;
+      const labelEl = row.querySelector('.inspect-label');
+      const label = labelEl?.childNodes[0]?.textContent?.trim() || id;
+      const result = row.dataset.val || '';
+      const deficDesc = document.getElementById('defic-txt-' + id)?.value?.trim() || '';
+      if (result) inspRow(label, result, deficDesc);
+    });
+    // Key data fields for each system
+    const notesId = sys.replace('-','') + '-notes' in document.getElementById ? sys.replace('-','') + '-notes' : null;
+    const notesEl = document.getElementById(sys.replace(/-([a-z])/g, (_,c) => c.toUpperCase()).replace(/([A-Z])/g, '-$1').toLowerCase().replace('--','-') + 'notes') || document.getElementById(sys.replace('-','') + '-notes');
+    if (notesEl?.value?.trim()) {
+      checkPage(10);
+      doc.setFontSize(fonts.small); doc.setFont('helvetica','italic'); doc.setTextColor(80,80,80);
+      const nlines = doc.splitTextToSize('Notes: ' + notesEl.value.trim(), usableW - 4);
+      doc.text(nlines, M + 2, y);
+      y += nlines.length * 3.5 + 3;
+      doc.setTextColor(0,0,0);
+    }
+    y += 3;
+  });
+
+  // Extinguisher table
+  if (activeSystems.has('extinguisher')) {
+    sectionHdr('🧯 PORTABLE FIRE EXTINGUISHERS (NFPA 10)');
+    const extCols = ['#','Location','Type','Size','Mfr Date','Pressure','Seal/Pin','Label','Result'];
+    const extColW = [8, 40, 32, 22, 20, 18, 16, 16, 18];
+    let tx = M;
+    extCols.forEach((col, i) => {
+      doc.setFillColor(30,48,74); doc.rect(tx, y, extColW[i], 6, 'F');
+      doc.setTextColor(255,255,255); doc.setFontSize(fonts.label); doc.setFont('helvetica','bold');
+      doc.text(col, tx + 1.5, y + 4);
+      tx += extColW[i];
+    });
+    y += 7;
+    data.extinguishers.forEach((ext, idx) => {
+      checkPage(8);
+      tx = M;
+      const rowData = [String(idx+1), ext.location, ext.type, ext.size, ext.mfrDate, ext.pressure, ext.seal||'—', ext.label||'—', ext.overall||'—'];
+      const bgColor = ext.overall === 'FAIL' ? [254,242,242] : ext.overall === 'PASS' ? [240,253,244] : [248,250,252];
+      doc.setFillColor(...bgColor);
+      doc.rect(M, y, usableW, 6, 'F');
+      rowData.forEach((cell, i) => {
+        doc.setTextColor(30,30,30); doc.setFontSize(fonts.label); doc.setFont('helvetica','normal');
+        const truncated = String(cell||'').slice(0, extColW[i] > 20 ? 22 : 12);
+        doc.text(truncated, tx + 1.5, y + 4);
+        tx += extColW[i];
+      });
+      doc.setDrawColor(226,232,240);
+      doc.line(M, y + 6, M + usableW, y + 6);
+      y += 7;
+    });
+    y += 3;
+  }
+
+  // General Notes
+  if (data.generalNotes) {
+    sectionHdr('GENERAL NOTES & RECOMMENDATIONS');
+    checkPage(12);
+    doc.setFontSize(fonts.normal); doc.setFont('helvetica','normal'); doc.setTextColor(30,30,30);
+    const lines = doc.splitTextToSize(data.generalNotes, usableW);
+    doc.text(lines, M, y);
+    y += lines.length * 4 + 4;
+  }
+
+  // Overall Status Block
+  checkPage(25);
+  const statusBg = data.overallStatus === 'COMPLIANT' ? [240,253,244] : data.overallStatus === 'IMPAIRED' ? [254,242,242] : [255,251,235];
+  const statusBorder = data.overallStatus === 'COMPLIANT' ? [22,163,74] : data.overallStatus === 'IMPAIRED' ? [220,38,38] : [217,119,6];
+  doc.setFillColor(...statusBg);
+  doc.setDrawColor(...statusBorder);
+  doc.roundedRect(M, y, usableW, 16, 2, 2, 'FD');
+  doc.setFontSize(11); doc.setFont('helvetica','bold'); doc.setTextColor(...statusBorder);
+  doc.text('OVERALL SYSTEM STATUS: ' + (data.overallStatus || 'NOT SET'), M + 5, y + 10);
+  y += 20;
+
+  // Certification / Signature block
+  checkPage(30);
+  doc.setFillColor(248,250,252); doc.setDrawColor(226,232,240);
+  doc.rect(M, y, usableW, 30, 'FD');
+  doc.setFontSize(fonts.label); doc.setFont('helvetica','bold'); doc.setTextColor(100,116,139);
+  doc.text('INSPECTOR CERTIFICATION', M + 3, y + 5);
+  doc.setFontSize(fonts.small); doc.setFont('helvetica','normal'); doc.setTextColor(50,50,50);
+  const certText = 'I certify that this fire protection system has been inspected, tested, and maintained in accordance with applicable NFPA standards and local codes. All test results are accurately documented herein.';
+  const certLines = doc.splitTextToSize(certText, usableW - 6);
+  doc.text(certLines, M + 3, y + 9);
+
+  if (sigHasData) {
+    const canvas = document.getElementById('sig-canvas');
+    const sigData = canvas.toDataURL('image/png');
+    doc.addImage(sigData, 'PNG', M + 3, y + 16, 60, 12);
+  }
+  const sigRight = W - M - 80;
+  doc.setFontSize(fonts.label); doc.setFont('helvetica','bold'); doc.setTextColor(100,116,139);
+  doc.text('INSPECTOR NAME', sigRight, y + 8);
+  doc.setFontSize(fonts.normal); doc.setFont('helvetica','normal'); doc.setTextColor(30,30,30);
+  doc.text(data.signature.name || '________________', sigRight, y + 13);
+  doc.setFontSize(fonts.label); doc.setFont('helvetica','bold'); doc.setTextColor(100,116,139);
+  doc.text('LICENSE / CERT #', sigRight, y + 19);
+  doc.setFontSize(fonts.normal); doc.setFont('helvetica','normal'); doc.setTextColor(30,30,30);
+  doc.text(data.inspection.inspectorCert || '________________', sigRight, y + 24);
+  doc.setFontSize(fonts.label); doc.setFont('helvetica','bold'); doc.setTextColor(100,116,139);
+  doc.text('DATE SIGNED', sigRight + 40, y + 19);
+  doc.setFontSize(fonts.normal); doc.setFont('helvetica','normal'); doc.setTextColor(30,30,30);
+  doc.text(data.signature.date || '________________', sigRight + 40, y + 24);
+  y += 34;
+
+  // Footer
+  doc.setFontSize(fonts.label); doc.setFont('helvetica','normal'); doc.setTextColor(150,150,150);
+  doc.text('Upload this report to The Compliance Engine (Brycer) at thecomplianceengine.com', M, 274, { maxWidth: usableW / 2 });
+  doc.text('Generated by FLIPS · ' + new Date().toLocaleString(), W - M, 274, { align: 'right' });
+
+  // Page numbers
+  const pageCount = doc.internal.getNumberOfPages();
+  for (let i = 1; i <= pageCount; i++) {
+    doc.setPage(i);
+    doc.setFontSize(fonts.label); doc.setTextColor(150,150,150);
+    doc.text(`Page ${i} of ${pageCount}`, W / 2, 279, { align: 'center' });
+  }
+
+  const propSlug = (data.property.name || 'inspection').replace(/[^a-zA-Z0-9]/g, '_').slice(0, 40);
+  const dateSlug = data.inspection.date || new Date().toISOString().split('T')[0];
+  const filename = `FLIPS_Inspection_${propSlug}_${dateSlug}.pdf`;
+  doc.save(filename);
+  document.getElementById('pdf-status').textContent = '✓ PDF downloaded: ' + filename + ' — Upload to thecomplianceengine.com';
+  toast('✓ PDF downloaded!');
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// HELPERS
+// ─────────────────────────────────────────────────────────────────────────────
+function setStatus(msg, cls) {
+  const el = document.getElementById('conn-status');
+  el.textContent = cls === 'ok' ? '✓ Google connected' : msg;
+  el.className = 'conn-status-pill ' + (cls === 'ok' ? 'ok' : cls === 'err' ? 'err' : 'warn');
+  if (cls === 'ok') document.getElementById('conn-drawer').classList.remove('open');
+}
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 3200);
+}
+function escHtml(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ON LOAD
+// ─────────────────────────────────────────────────────────────────────────────
+window.addEventListener('load', () => {
+  const k = localStorage.getItem('flips_api_key');
+  const c = localStorage.getItem('flips_client_id');
+  if (k) document.getElementById('api-key').value = k;
+  if (c) document.getElementById('client-id').value = c;
+
+  document.getElementById('insp-date').value = new Date().toISOString().split('T')[0];
+
+  if (k && c) {
+    const cachedToken  = localStorage.getItem('flips_access_token');
+    const tokenExpiry  = Number(localStorage.getItem('flips_token_expiry')) || 0;
+    if (cachedToken && Date.now() < tokenExpiry) {
+      accessToken = cachedToken;
+      setStatus('✓ Connected', 'ok');
+      loadSheet();
+    } else {
+      setStatus('⚠ Session expired', 'err');
+      document.getElementById('conn-drawer').classList.add('open');
+    }
+  }
+
+  // Load cached client data for dropdown even if token expired
+  try {
+    const cached = JSON.parse(sessionStorage.getItem('flips_client_cache') || 'null');
+    if (cached?.data) { clientData = cached.data; buildDropdown(); }
+  } catch(_) {}
+
+  // Init sig pad when step 4 is visited
+  const observer = new MutationObserver(() => {
+    if (document.getElementById('step-4').style.display !== 'none') initSig();
+  });
+  observer.observe(document.getElementById('step-4'), { attributes: true, attributeFilter: ['style'] });
+});
+</script>
+</body>
+</html>
