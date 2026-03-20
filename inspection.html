@@ -287,11 +287,23 @@ body { font-family: 'DM Sans', sans-serif; background: var(--light); color: var(
 #toast.show { transform: translateX(-50%) translateY(0); }
 
 /* ── PROGRESS BAR ── */
-.defic-summary { background: var(--fail-bg); border: 1px solid #fecaca; border-radius: 8px; padding: 10px 14px; margin-bottom: 12px; display: none; }
+.defic-summary { background: var(--fail-bg); border: 1.5px solid #fca5a5; border-radius: 8px; margin-bottom: 12px; display: none; overflow: hidden; }
 .defic-summary.show { display: block; }
-.defic-summary h4 { font-size: 0.8rem; color: var(--red); font-weight: 700; margin-bottom: 6px; }
-.defic-item { font-size: 0.78rem; color: #7f1d1d; margin: 2px 0; display: flex; align-items: flex-start; gap: 6px; }
-.defic-item::before { content: '⚠'; flex-shrink: 0; }
+.defic-summary-hdr { background: var(--red); color: white; padding: 8px 14px; display: flex; align-items: center; gap: 8px; font-size: 0.82rem; font-weight: 700; }
+.defic-count-pill { background: white; color: var(--red); border-radius: 10px; padding: 1px 8px; font-size: 0.7rem; font-weight: 800; }
+.defic-list-inner { padding: 8px 10px; display: flex; flex-direction: column; gap: 6px; }
+.defic-item { background: white; border: 1px solid #fecaca; border-left: 3px solid var(--red); border-radius: 6px; padding: 8px 10px; display: flex; gap: 8px; align-items: flex-start; }
+.defic-item-body { flex: 1; min-width: 0; }
+.defic-item-section { font-size: 0.67rem; font-weight: 700; color: var(--slate); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 2px; }
+.defic-item-label { font-size: 0.82rem; font-weight: 600; color: #7f1d1d; line-height: 1.3; }
+.defic-item-note { font-size: 0.77rem; color: #991b1b; margin-top: 3px; font-style: italic; padding-left: 8px; border-left: 2px solid #fecaca; }
+.defic-item-note.missing { color: #fca5a5; }
+.defic-jump-btn { flex-shrink: 0; font-size: 0.68rem; color: var(--red); background: #fef2f2; border: 1px solid #fecaca; border-radius: 4px; padding: 3px 8px; cursor: pointer; font-family: inherit; font-weight: 600; white-space: nowrap; }
+.defic-jump-btn:hover { background: #fee2e2; }
+/* Panel header deficiency highlight */
+.sys-panel-header.has-defic { background: #7f1d1d !important; }
+.defic-badge { display: none; background: var(--red); color: white; font-size: 0.65rem; font-weight: 800; padding: 1px 7px; border-radius: 8px; margin-left: 6px; }
+.has-defic .defic-badge { display: inline-block; }
 
 /* ── COLLAPSIBLE SECTION ── */
 .section-toggle { display: flex; align-items: center; justify-content: space-between; cursor: pointer; padding: 6px 0; margin: 8px 0 4px; border-bottom: 1.5px solid var(--border); }
@@ -516,8 +528,11 @@ body { font-family: 'DM Sans', sans-serif; background: var(--light); color: var(
   <!-- ══ STEP 3: INSPECTION FORMS ══ -->
   <div id="step-3" style="display:none;">
     <div id="defic-summary" class="defic-summary">
-      <h4>⚠ Active Deficiencies</h4>
-      <div id="defic-list"></div>
+      <div class="defic-summary-hdr">
+        ⚠ Active Deficiencies — <span class="defic-count-pill" id="defic-count-pill">0</span>
+        <span style="font-size:0.72rem;font-weight:400;opacity:0.85;margin-left:4px;">Click PASS on an item to clear it</span>
+      </div>
+      <div class="defic-list-inner" id="defic-list"></div>
     </div>
     <div id="sys-forms"></div>
     <div class="btn-row">
@@ -902,6 +917,9 @@ function buildInspectionForms() {
     toast('✓ Previous inspection data pre-filled — check PASS/FAIL for each item');
   }
 
+  // Build the item→panel map for the deficiency summary
+  buildItemPanelMap();
+
   goStep(3);
 }
 
@@ -913,8 +931,9 @@ function makePanel(id, icon, title, bodyHtml) {
   div.className = 'sys-panel';
   div.id = 'panel-' + id;
   div.innerHTML = `
-    <div class="sys-panel-header" onclick="togglePanel('${id}')">
+    <div class="sys-panel-header" id="panel-hdr-${id}" onclick="togglePanel('${id}')">
       <span>${icon}</span><span>${title}</span>
+      <span class="defic-badge" id="panel-badge-${id}">0 defic.</span>
       <span class="collapse-arrow">▼</span>
     </div>
     <div class="sys-panel-body" id="panel-body-${id}">${bodyHtml}</div>`;
@@ -1637,6 +1656,24 @@ function buildBackflowPanel() {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// ITEM → PANEL MAP  (used by deficiency summary to show section name)
+// Built once when forms are created, maps every inspect-row id to its panel.
+// ─────────────────────────────────────────────────────────────────────────────
+const ITEM_PANEL_MAP = {};   // itemId  → { panelId, panelTitle }
+
+function buildItemPanelMap() {
+  Object.keys(ITEM_PANEL_MAP).forEach(k => delete ITEM_PANEL_MAP[k]);
+  document.querySelectorAll('.sys-panel').forEach(panel => {
+    const panelId    = panel.id.replace('panel-', '');
+    const panelTitle = panel.querySelector('.sys-panel-header span:nth-child(2)')?.textContent?.trim() || panelId;
+    panel.querySelectorAll('.inspect-row').forEach(row => {
+      const itemId = row.id.replace('row-', '');
+      ITEM_PANEL_MAP[itemId] = { panelId, panelTitle };
+    });
+  });
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // PASS/FAIL LOGIC
 // ─────────────────────────────────────────────────────────────────────────────
 function setPF(btn, itemId, val) {
@@ -1648,41 +1685,100 @@ function setPF(btn, itemId, val) {
 
   const deficRow = document.getElementById('defic-' + itemId);
   if (deficRow) {
-    if (val === 'FAIL') deficRow.classList.add('show');
-    else { deficRow.classList.remove('show'); const inp = document.getElementById('defic-txt-' + itemId); if (inp) inp.value = ''; }
+    if (val === 'FAIL') {
+      deficRow.classList.add('show');
+    } else {
+      // PASS or N/A — clear deficiency note and hide row
+      deficRow.classList.remove('show');
+      const inp = document.getElementById('defic-txt-' + itemId);
+      if (inp) inp.value = '';
+    }
   }
   updateDeficiencySummary();
 }
 
 function updateDeficiencySummary() {
+  const sumDiv   = document.getElementById('defic-summary');
+  const listDiv  = document.getElementById('defic-list');
+  const countPill= document.getElementById('defic-count-pill');
+  if (!sumDiv || !listDiv) return;
+
+  // Collect all FAIL rows with full context
   const defics = [];
-  document.querySelectorAll('[id^="defic-txt-"]').forEach(inp => {
-    if (inp.value.trim()) defics.push(inp.value.trim());
-  });
-  // Also collect from row FAIL states without text
   document.querySelectorAll('.inspect-row').forEach(row => {
-    if (row.dataset.val === 'FAIL') {
-      const id = row.id.replace('row-','');
-      const inp = document.getElementById('defic-txt-' + id);
-      if (!inp || !inp.value.trim()) {
-        const label = row.querySelector('.inspect-label')?.textContent?.trim()?.split('\n')[0] || id;
-        defics.push(label + ' — (no description entered)');
-      }
-    }
+    if (row.dataset.val !== 'FAIL') return;
+    const itemId   = row.id.replace('row-', '');
+    const labelEl  = row.querySelector('.inspect-label');
+    // Get just the main label text (first text node, excluding the <small> sublabel)
+    const label    = labelEl?.childNodes[0]?.textContent?.trim() || itemId;
+    const note     = document.getElementById('defic-txt-' + itemId)?.value?.trim() || '';
+    const panelInfo= ITEM_PANEL_MAP[itemId] || { panelId: '', panelTitle: '' };
+    defics.push({ itemId, label, note, panelId: panelInfo.panelId, panelTitle: panelInfo.panelTitle });
   });
 
-  const sumDiv = document.getElementById('defic-summary');
-  const listDiv = document.getElementById('defic-list');
-  if (!sumDiv || !listDiv) return;
+  // Update count pill
+  if (countPill) countPill.textContent = defics.length + (defics.length === 1 ? ' deficiency' : ' deficiencies');
+
   if (defics.length > 0) {
     sumDiv.classList.add('show');
-    listDiv.innerHTML = defics.map(d => `<div class="defic-item">${escHtml(d)}</div>`).join('');
-    // Also auto-suggest DEFICIENT status on step 4
+    listDiv.innerHTML = defics.map(d => `
+      <div class="defic-item" id="defic-card-${d.itemId}">
+        <div class="defic-item-body">
+          <div class="defic-item-section">${escHtml(d.panelTitle)}</div>
+          <div class="defic-item-label">⚠ ${escHtml(d.label)}</div>
+          ${d.note
+            ? `<div class="defic-item-note">${escHtml(d.note)}</div>`
+            : `<div class="defic-item-note missing">No description entered — tap the item to add details</div>`
+          }
+        </div>
+        ${d.panelId ? `<button class="defic-jump-btn" onclick="jumpToItem('${d.itemId}','${d.panelId}')">Go to item ↓</button>` : ''}
+      </div>`).join('');
+
+    // Auto-suggest DEFICIENT overall status if not yet set
     if (overallStatus === '') setOverallStatus('DEFICIENT');
   } else {
     sumDiv.classList.remove('show');
     listDiv.innerHTML = '';
   }
+
+  // Update panel header highlights and badges
+  // First reset all panels
+  document.querySelectorAll('.sys-panel-header').forEach(hdr => {
+    hdr.classList.remove('has-defic');
+  });
+  document.querySelectorAll('.defic-badge').forEach(badge => {
+    badge.textContent = ''; badge.style.display = 'none';
+  });
+
+  // Count deficiencies per panel and highlight
+  const panelCounts = {};
+  defics.forEach(d => {
+    if (d.panelId) panelCounts[d.panelId] = (panelCounts[d.panelId] || 0) + 1;
+  });
+  Object.entries(panelCounts).forEach(([panelId, count]) => {
+    const hdr   = document.getElementById('panel-hdr-' + panelId);
+    const badge = document.getElementById('panel-badge-' + panelId);
+    if (hdr)   hdr.classList.add('has-defic');
+    if (badge) { badge.textContent = count + (count === 1 ? ' defic.' : ' defic.'); badge.style.display = 'inline-block'; }
+  });
+}
+
+// Scroll to an inspection item and open its panel if collapsed
+function jumpToItem(itemId, panelId) {
+  // Open panel if collapsed
+  const panelBody = document.getElementById('panel-body-' + panelId);
+  const panelHdr  = document.getElementById('panel-hdr-' + panelId);
+  if (panelBody && panelBody.classList.contains('hidden')) {
+    panelBody.classList.remove('hidden');
+    if (panelHdr) panelHdr.classList.remove('collapsed');
+  }
+  // Scroll to item with a brief highlight flash
+  const row = document.getElementById('row-' + itemId);
+  if (!row) return;
+  row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  row.style.outline = '3px solid var(--red)';
+  row.style.borderRadius = '4px';
+  setTimeout(() => { row.style.outline = ''; row.style.borderRadius = ''; }, 2000);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1729,21 +1825,46 @@ function clearSig() { if (sigCtx) sigCtx.clearRect(0,0,500,100); sigHasData = fa
 
 // ─────────────────────────────────────────────────────────────────────────────
 // DRIVE FOLDER MANAGEMENT
-// Finds or creates a named folder, with caching to avoid repeated API calls.
+// Searches ALL drives (My Drive + Shared Drives) for the folder.
+// Creates in the first available Shared Drive if found; falls back to My Drive.
 // ─────────────────────────────────────────────────────────────────────────────
 const FOLDER_CACHE = {};
 
+async function getSharedDriveId() {
+  // Cache the first available Shared Drive ID
+  if (FOLDER_CACHE['__sharedDriveId__'] !== undefined) return FOLDER_CACHE['__sharedDriveId__'];
+  try {
+    const res = await googleFetch(
+      'https://www.googleapis.com/drive/v3/drives?pageSize=10&fields=drives(id,name)'
+    );
+    if (!res.ok) { FOLDER_CACHE['__sharedDriveId__'] = null; return null; }
+    const json = await res.json();
+    const drives = json.drives || [];
+    const id = drives.length > 0 ? drives[0].id : null;
+    FOLDER_CACHE['__sharedDriveId__'] = id;
+    if (id) console.log('[Drive] Using Shared Drive:', drives[0].name, id);
+    else     console.log('[Drive] No Shared Drives found — using My Drive');
+    return id;
+  } catch(e) {
+    console.warn('[Drive] Could not list Shared Drives:', e.message);
+    FOLDER_CACHE['__sharedDriveId__'] = null;
+    return null;
+  }
+}
+
 async function findOrCreateFolder(name, parentId) {
-  const cacheKey = name + (parentId || '');
+  const sharedDriveId = await getSharedDriveId();
+  const cacheKey = name + (parentId || '') + (sharedDriveId || '');
   if (FOLDER_CACHE[cacheKey]) return FOLDER_CACHE[cacheKey];
 
-  // Search for existing folder
-  let q = `mimeType="application/vnd.google-apps.folder" and name="${name}" and trashed=false`;
+  // Search for existing folder — include all drives
+  let q = `mimeType="application/vnd.google-apps.folder" and name="${name.replace(/"/g,'\\"')}" and trashed=false`;
   if (parentId) q += ` and "${parentId}" in parents`;
-  const searchRes = await googleFetch(
-    `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q)}` +
-    `&fields=files(id,name)&includeItemsFromAllDrives=true&supportsAllDrives=true&corpora=allDrives`
-  );
+  else if (sharedDriveId) q += ` and "${sharedDriveId}" in parents`;
+
+  const searchUrl = `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q)}` +
+    `&fields=files(id,name,parents,driveId)&includeItemsFromAllDrives=true&supportsAllDrives=true&corpora=allDrives`;
+  const searchRes = await googleFetch(searchUrl);
   if (!searchRes.ok) throw new Error('Folder search failed: ' + searchRes.status);
   const searchJson = await searchRes.json();
   if (searchJson.files && searchJson.files.length > 0) {
@@ -1751,41 +1872,59 @@ async function findOrCreateFolder(name, parentId) {
     return searchJson.files[0].id;
   }
 
-  // Create the folder
-  const createBody = { name, mimeType: 'application/vnd.google-apps.folder' };
-  if (parentId) createBody.parents = [parentId];
-  const createRes = await fetch('https://www.googleapis.com/drive/v3/files?supportsAllDrives=true', {
+  // Create the folder — in Shared Drive if available, otherwise My Drive
+  const createBody = {
+    name,
+    mimeType: 'application/vnd.google-apps.folder',
+  };
+  if (parentId) {
+    createBody.parents = [parentId];
+  } else if (sharedDriveId) {
+    createBody.parents = [sharedDriveId];
+  }
+
+  const createRes = await fetch(
+    'https://www.googleapis.com/drive/v3/files?supportsAllDrives=true&fields=id,name,parents,driveId', {
     method: 'POST',
     headers: { 'Authorization': 'Bearer ' + accessToken, 'Content-Type': 'application/json' },
     body: JSON.stringify(createBody)
   });
-  if (!createRes.ok) throw new Error('Folder create failed: ' + createRes.status);
+  if (!createRes.ok) {
+    const errText = await createRes.text();
+    throw new Error('Folder create failed: ' + createRes.status + ' ' + errText);
+  }
   const created = await createRes.json();
   FOLDER_CACHE[cacheKey] = created.id;
+  const loc = created.driveId ? 'Shared Drive' : 'My Drive';
+  console.log(`[Drive] Created folder "${name}" in ${loc} — id: ${created.id}`);
   return created.id;
 }
 
 async function driveUploadFile(fileName, mimeType, content, folderId, existingFileId) {
-  // content = string for JSON, base64 for binary
   const isBase64 = mimeType === 'application/pdf';
   const boundary = '-------flipsUpload314159';
-  const meta = JSON.stringify({ name: fileName, mimeType, ...(folderId && !existingFileId ? { parents: [folderId] } : {}) });
+  const meta = JSON.stringify({
+    name: fileName,
+    mimeType,
+    ...(folderId && !existingFileId ? { parents: [folderId] } : {})
+  });
 
-  let bodyParts, contentType;
+  let bodyParts;
   if (isBase64) {
     bodyParts = `--${boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${meta}\r\n--${boundary}\r\nContent-Type: ${mimeType}\r\nContent-Transfer-Encoding: base64\r\n\r\n${content}\r\n--${boundary}--`;
   } else {
     bodyParts = `--${boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${meta}\r\n--${boundary}\r\nContent-Type: ${mimeType}\r\n\r\n${content}\r\n--${boundary}--`;
   }
-  contentType = `multipart/related; boundary="${boundary}"`;
+  const contentType = `multipart/related; boundary="${boundary}"`;
 
-  const url = existingFileId
+  const baseUploadUrl = existingFileId
     ? `https://www.googleapis.com/upload/drive/v3/files/${existingFileId}?uploadType=multipart&supportsAllDrives=true`
     : `https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&supportsAllDrives=true`;
   const method = existingFileId ? 'PATCH' : 'POST';
 
-  const res = await fetch(url, {
-    method, headers: { 'Authorization': 'Bearer ' + accessToken, 'Content-Type': contentType },
+  const res = await fetch(baseUploadUrl, {
+    method,
+    headers: { 'Authorization': 'Bearer ' + accessToken, 'Content-Type': contentType },
     body: bodyParts
   });
   if (!res.ok) throw new Error('Upload failed: ' + res.status + ' ' + await res.text());
@@ -1800,17 +1939,17 @@ async function driveUploadFile(fileName, mimeType, content, folderId, existingFi
 async function findLatestInspectionFile(propName) {
   try {
     const folderId = await findOrCreateFolder('FLPS Software Inspection Data');
-    const safeSearch = propName.replace(/'/g, "\\'");
+    const safeSearch = propName.replace(/'/g, "\\'").replace(/"/g, '\\"');
     const q = `"${folderId}" in parents and trashed=false and appProperties has { key='flips_insp_property' and value='${safeSearch}' }`;
     const res = await googleFetch(
       `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q)}` +
-      `&fields=files(id,name,appProperties,modifiedTime)&orderBy=modifiedTime+desc&pageSize=10`
+      `&fields=files(id,name,appProperties,modifiedTime)&orderBy=modifiedTime+desc&pageSize=20` +
+      `&includeItemsFromAllDrives=true&supportsAllDrives=true&corpora=allDrives`
     );
     if (!res.ok) return null;
     const json = await res.json();
     const files = json.files || [];
     if (files.length === 0) return null;
-    // Return the most recent
     return files[0];
   } catch(e) {
     console.warn('[findLatestInspection] error:', e.message);
