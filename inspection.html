@@ -469,7 +469,6 @@ body { font-family: 'DM Sans', sans-serif; background: var(--light); color: var(
         <div id="prev-insp-searching" style="display:none;margin-top:10px;font-size:0.75rem;color:var(--slate);font-style:italic;">
           ⏳ Searching Drive for previous inspection…
         </div>
-        </div>
       </div>
     </div>
 
@@ -643,7 +642,7 @@ body { font-family: 'DM Sans', sans-serif; background: var(--light); color: var(
         <p style="font-size:0.82rem;color:#92400e;margin-bottom:12px;">
           Saves inspection data to <strong>FLPS Software Inspection Data</strong>, saves the PDF to <strong>FLPS Previous Inspections</strong>, and downloads the PDF to this device for upload to <strong>The Compliance Engine (Brycer)</strong>.
         </p>
-        <div id="sig-warning" class="sig-warning">⚠ Please sign the report above before saving. Draw your signature in the signature box and enter your printed name.</div>
+        <div id="sig-warning" class="sig-warning"></div>
         <div class="btn-row">
           <button class="btn-primary fire" id="save-download-btn" onclick="saveAndDownload()">📄 Save &amp; Download PDF</button>
           <button class="btn-secondary" onclick="goStep(3)">← Back to Inspection</button>
@@ -3003,25 +3002,31 @@ function removePhoto(idx) {
 // SAVE & DOWNLOAD  (combined: save JSON to Drive + save PDF to Drive + download)
 // ─────────────────────────────────────────────────────────────────────────────
 async function saveAndDownload() {
-  // ── 1. Signature check ──────────────────────────────────────────────────────
-  const sigNameVal = (document.getElementById('sig-name')?.value || '').trim();
-  const warnEl     = document.getElementById('sig-warning');
+  // ── 1. Signature check — BOTH drawn signature AND printed name required ───────
+  const warnEl = document.getElementById('sig-warning');
 
-  // Auto-fill inspector name from signature name if blank
-  const inspNameEl = document.getElementById('inspector-name');
-  if (inspNameEl && !inspNameEl.value.trim() && sigNameVal) {
-    inspNameEl.value = sigNameVal;
-  }
-  // Auto-fill sig-name from inspector name if sig-name blank
-  const sigNameEl = document.getElementById('sig-name');
-  const inspNameVal = (document.getElementById('inspector-name')?.value || '').trim();
-  if (sigNameEl && !sigNameEl.value.trim() && inspNameVal) {
-    sigNameEl.value = inspNameVal;
-  }
+  // Auto-fill inspector name ↔ sig-name if either is blank
+  const inspNameEl  = document.getElementById('inspector-name');
+  const sigNameEl   = document.getElementById('sig-name');
+  const inspNameVal = (inspNameEl?.value || '').trim();
+  const sigNameVal  = (sigNameEl?.value  || '').trim();
+  if (inspNameEl && !inspNameVal && sigNameVal)  inspNameEl.value = sigNameVal;
+  if (sigNameEl  && !sigNameVal  && inspNameVal) sigNameEl.value  = inspNameVal;
 
+  // Re-read after potential auto-fill
   const finalSigName = (document.getElementById('sig-name')?.value || '').trim();
-  if (!sigHasData && !finalSigName) {
-    if (warnEl) warnEl.style.display = 'block';
+  const hasName      = finalSigName.length > 0;
+  const hasSig       = sigHasData;
+
+  if (!hasSig || !hasName) {
+    // Show specific message based on what's missing
+    if (!hasSig && !hasName) {
+      if (warnEl) { warnEl.textContent = '⚠ Signature required: please draw your signature AND enter your printed name before saving.'; warnEl.style.display = 'block'; }
+    } else if (!hasSig) {
+      if (warnEl) { warnEl.textContent = '⚠ Please draw your signature in the signature box — a printed name alone is not sufficient to certify this report.'; warnEl.style.display = 'block'; }
+    } else {
+      if (warnEl) { warnEl.textContent = '⚠ Please enter your printed name below the signature before saving.'; warnEl.style.display = 'block'; }
+    }
     document.getElementById('sig-canvas')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
     return;
   }
