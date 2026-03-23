@@ -244,7 +244,7 @@ tbody td { padding: 9px 12px; vertical-align: middle; }
           <th>Property Name (GS)</th>
           <th>Service Address</th>
           <th>QB Display Name</th>
-          <th>QB FLPS Acct (Other)</th>
+          <th>QB Other (Acct #)</th>
           <th>Match</th>
           <th>Action</th>
         </tr>
@@ -525,7 +525,7 @@ async function loadQBCustomers() {
 }
 
 // ── Reconcile ────────────────────────────────────────────────────────────────
-// Match by: OtherContactInfo (FLPS Acct #) first, then DisplayName
+// Match by: AlternatePhone.FreeFormNumber (FLPS Acct #) first, then DisplayName
 async function reconcile(force = false) {
   showLoading(true);
   try {
@@ -533,10 +533,10 @@ async function reconcile(force = false) {
     await loadQBCustomers();
 
     // Build QB lookup maps
-    const qbByOther  = new Map(); // OtherContactInfo → QB customer
+    const qbByOther  = new Map(); // AlternatePhone.FreeFormNumber → QB customer
     const qbByName   = new Map(); // DisplayName.lower → QB customer
     for (const c of qbCustomers) {
-      const other = String(c.OtherContactInfo?.TelephoneNumber?.FreeFormNumber || '').trim();
+      const other = String(c.AlternatePhone?.FreeFormNumber || '').trim();
       if (other) qbByOther.set(other, c);
       qbByName.set(c.DisplayName.toLowerCase().trim(), c);
     }
@@ -714,11 +714,11 @@ const FIELD_MAP = [
 
   { section: 'Contact & Identification' },
   {
-    label: 'FLPS Account # (OtherContactInfo)',
+    label: 'FLPS Account # (Alternate Phone / Other)',
     gsLabel: 'GS: FLPS Account Number',
-    qbLabel: 'QB: OtherContactInfo / FreeFormNumber',
+    qbLabel: 'QB: AlternatePhone (Other field in UI)',
     sheet: r => String(r.acct || '').replace(/\.0$/, ''),
-    qb:    r => r.qb?.OtherContactInfo?.TelephoneNumber?.FreeFormNumber || '',
+    qb:    r => r.qb?.AlternatePhone?.FreeFormNumber || '',
   },
   {
     label: 'Property Manager (Notes)',
@@ -814,7 +814,7 @@ async function createQBCustomer(idx) {
       PrimaryEmailAddr: row.billEmail  ? { Address: row.billEmail }           : undefined,
       CCEmailAddr:      extractFirstEmail(row.contact) ? { Address: extractFirstEmail(row.contact) } : undefined,
       Notes:            row.manager    || '',
-      OtherContactInfo: acctStr ? { Type: 'Other', TelephoneNumber: { FreeFormNumber: acctStr } } : undefined,
+      AlternatePhone: acctStr ? { FreeFormNumber: acctStr } : undefined,
       BillAddr:         billAddr,
     };
     // Remove undefined keys
@@ -942,7 +942,7 @@ async function pushToQB() {
       Notes:       row.manager || '',
       ...(row.billEmail ? { PrimaryEmailAddr: { Address: row.billEmail } } : {}),
       ...(ccEmail       ? { CCEmailAddr:      { Address: ccEmail } }       : {}),
-      ...(acctStr ? { OtherContactInfo: { Type: 'Other', TelephoneNumber: { FreeFormNumber: acctStr } } } : {}),
+      ...(acctStr ? { AlternatePhone: { FreeFormNumber: acctStr } } : {}),
       BillAddr: billAddr,
     };
 
@@ -1002,8 +1002,8 @@ function renderTable() {
                 : isMatched ? `<span class="badge badge-matched">${r.matchType === 'acct' ? '✓ Acct Match' : '✓ Name Match'}</span>`
                             : '<span class="badge badge-unmatched">Not in QB</span>';
 
-    // QB's OtherContactInfo field — what's currently stored
-    const qbOther = r.qb?.OtherContactInfo?.TelephoneNumber?.FreeFormNumber || '—';
+    // QB's AlternatePhone field (maps to 'Other' in QB UI) — what's currently stored
+    const qbOther = r.qb?.AlternatePhone?.FreeFormNumber || '—';
 
     const actionCell = isQbOnly
       ? `<button class="act-btn act-edit" onclick="openEditModal(${origIdx})" title="View/edit field mapping">✏ Edit Mapping</button>`
