@@ -711,6 +711,30 @@ const FIELD_MAP = [
     sheet: r => r.mgmt,
     qb:    r => r.qb?.CompanyName,
   },
+  {
+    label: 'First Name',
+    gsLabel: '(not stored in GS — will be cleared)',
+    qbLabel: 'QB: GivenName',
+    sheet: r => '',
+    qb:    r => r.qb?.GivenName || '',
+    clearNote: true,
+  },
+  {
+    label: 'Middle Name',
+    gsLabel: '(not stored in GS — will be cleared)',
+    qbLabel: 'QB: MiddleName',
+    sheet: r => '',
+    qb:    r => r.qb?.MiddleName || '',
+    clearNote: true,
+  },
+  {
+    label: 'Last Name',
+    gsLabel: '(not stored in GS — will be cleared)',
+    qbLabel: 'QB: FamilyName',
+    sheet: r => '',
+    qb:    r => r.qb?.FamilyName || '',
+    clearNote: true,
+  },
 
   { section: 'Contact & Identification' },
   {
@@ -865,6 +889,24 @@ function openEditModal(idx) {
     }
     const sv = (def.sheet(row) || '').trim();
     const qv = (def.qb(row)   || '').trim();
+
+    // clearNote fields: GS is always blank, QB may have a value that will be erased
+    if (def.clearNote) {
+      const willClear = !!qv;
+      const rowCls = willClear ? 'mismatch' : 'empty-both';
+      if (willClear) mismatches++;
+      const svHtml = `<span style="font-size:0.72rem;color:#888;font-style:italic;">${escHtml(def.gsLabel)}</span>`;
+      const qvHtml = willClear
+        ? `<div style="width:100%"><span style="font-size:0.68rem;color:#888;display:block;margin-bottom:1px;">${escHtml(def.qbLabel||'')}</span><span class="val-mismatch">${escHtml(qv)}</span><span style="font-size:0.68rem;color:#e07b00;display:block;margin-top:2px;">⚠ will be cleared on push</span></div>`
+        : `<span class="val-empty">already empty</span>`;
+      html += `<div class="cmp-row ${rowCls}">
+        <div class="cmp-cell field-name">${def.label}</div>
+        <div class="cmp-cell sheet-val">${svHtml}</div>
+        <div class="cmp-cell qb-val">${qvHtml}</div>
+      </div>`;
+      continue;
+    }
+
     const both = sv || qv;
     const match = sv.toLowerCase() === qv.toLowerCase();
     if (!match && both) mismatches++;
@@ -909,10 +951,34 @@ function closeDrawerCompare() {
 }
 
 // ── Push Sheet → QB ──────────────────────────────────────────────────────────
+// Overwrites QB fields with Google Sheet values.
+// Also explicitly clears GivenName / MiddleName / FamilyName — these belong
+// in Notes (Property Manager) not in the name fields for commercial clients.
 async function pushToQB() {
   if (drawerIdx === null) return;
   const row = reconciled[drawerIdx];
   if (!row?.qb) return;
+
+  // Build preview of what will change so user knows exactly what's happening
+  const acctStr = String(row.acct || '').replace(/\.0$/,'').trim();
+  const ba      = parseBillTo(row.billTo);
+  const ccEmail = extractFirstEmail(row.contact);
+  const hasName = row.qb.GivenName || row.qb.MiddleName || row.qb.FamilyName;
+  const nameWarning = hasName
+    ? `\n\nFirst/Middle/Last name will be CLEARED:\n  "${[row.qb.GivenName, row.qb.MiddleName, row.qb.FamilyName].filter(Boolean).join(' ')}" → (blank)\n(Property manager name stays in Notes)`
+    : '';
+
+  const confirmed = confirm(
+    `Push Google Sheet → QuickBooks for:\n"${row.qb.DisplayName}"\n\n` +
+    `This will OVERWRITE the following QB fields with sheet values:\n` +
+    `  • Display Name\n  • Company Name\n  • Notes (Property Manager)\n` +
+    `  • Billing Email\n  • CC Email\n  • Alternate Phone (FLPS Acct #)\n` +
+    `  • Billing Address (Line1/2, City, State, ZIP, Country/Service Addr)` +
+    nameWarning +
+    `\n\nProceed?`
+  );
+  if (!confirmed) return;
+
   const env = document.getElementById('qb-env').value;
   const btn = document.getElementById('btn-push-qb');
   const status = document.getElementById('drawer-status');
@@ -920,10 +986,6 @@ async function pushToQB() {
   status.textContent = ''; status.className = '';
 
   try {
-    const acctStr  = String(row.acct || '').replace(/\.0$/,'').trim();
-    const ba       = parseBillTo(row.billTo);
-    const ccEmail  = extractFirstEmail(row.contact);
-
     const billAddr = (ba.addr1 || ba.addr2 || ba.city) ? {
       Line1:                  ba.addr1 || '',
       Line2:                  ba.addr2 || '',
@@ -937,12 +999,19 @@ async function pushToQB() {
       Id:          row.qb.Id,
       SyncToken:   row.qb.SyncToken,
       sparse:      true,
+      // Identity
       DisplayName: row.name.replace(/\n/g,' ').trim() || row.qb.DisplayName,
-      CompanyName: row.mgmt || row.qb.CompanyName || '',
+      CompanyName: row.mgmt || '',
+      // Explicitly clear first/middle/last — commercial clients use Notes for contact name
+      GivenName:   '',
+      MiddleName:  '',
+      FamilyName:  '',
+      // Contact
       Notes:       row.manager || '',
       ...(row.billEmail ? { PrimaryEmailAddr: { Address: row.billEmail } } : {}),
       ...(ccEmail       ? { CCEmailAddr:      { Address: ccEmail } }       : {}),
-      ...(acctStr ? { AlternatePhone: { FreeFormNumber: acctStr } } : {}),
+      ...(acctStr       ? { AlternatePhone:   { FreeFormNumber: acctStr } } : {}),
+      // Address
       BillAddr: billAddr,
     };
 
@@ -960,7 +1029,7 @@ async function pushToQB() {
     toast(`✓ QB updated: ${updated.DisplayName}`);
     updateSummary();
     renderTable();
-    openEditModal(drawerIdx); // refresh comparison view
+    openEditModal(drawerIdx); // refresh comparison view with new QB data
   } catch(e) {
     status.textContent = '✗ ' + e.message;
     status.className = 'err';
