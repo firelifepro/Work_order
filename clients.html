@@ -285,6 +285,7 @@ tbody td { padding: 9px 12px; vertical-align: middle; }
     <button class="drawer-btn push-qb" id="btn-push-qb" onclick="pushToQB()">
       ⬆ Push Sheet → QB
     </button>
+    <button class="drawer-btn secondary" onclick="dumpRawQB()" title="Show raw QB API response for this customer in the browser console + a popup">🔍 Raw QB data</button>
     <span id="drawer-status"></span>
   </div>
 </div>
@@ -761,9 +762,14 @@ const FIELD_MAP = [
   {
     label: 'CC Email (first email from Contact Info)',
     gsLabel: 'GS: Property Manager Contact info → first email',
-    qbLabel: 'QB: CCEmailAddr',
+    qbLabel: 'QB: CCEmailAddr / BillEmailCc',
     sheet: r => extractFirstEmail(r.contact),
-    qb:    r => r.qb?.CCEmailAddr?.Address || '',
+    // QB stores CC email under different fields depending on context/version.
+    // Try all known paths in priority order.
+    qb: r => r.qb?.CCEmailAddr?.Address
+           || r.qb?.BillEmailCc?.Address
+           || r.qb?.BillEmail?.Address
+           || '',
   },
 
   { section: 'Service Address (QB Country field)' },
@@ -948,6 +954,42 @@ function closeDrawerCompare() {
   document.getElementById('compare-overlay').classList.remove('open');
   document.getElementById('compare-drawer').classList.remove('open');
   drawerIdx = null;
+}
+
+// ── Raw QB dump — debug helper ────────────────────────────────────────────────
+// Prints the full QB Customer object to the browser console AND shows a popup
+// summary of all email-related fields so we can confirm the correct CC field path.
+function dumpRawQB() {
+  if (drawerIdx === null) return;
+  const qb = reconciled[drawerIdx]?.qb;
+  if (!qb) { toast('No QB data for this row'); return; }
+
+  console.group('🔍 Raw QB Customer object — ' + qb.DisplayName);
+  console.log(JSON.stringify(qb, null, 2));
+  console.groupEnd();
+
+  // Extract every email-related field we can find
+  const emailFields = [
+    ['PrimaryEmailAddr.Address',      qb?.PrimaryEmailAddr?.Address],
+    ['CCEmailAddr.Address',           qb?.CCEmailAddr?.Address],
+    ['BillEmail.Address',             qb?.BillEmail?.Address],
+    ['BillEmailCc.Address',           qb?.BillEmailCc?.Address],
+    ['BillEmailBcc.Address',          qb?.BillEmailBcc?.Address],
+    ['PrimaryEmailAddr (full obj)',    JSON.stringify(qb?.PrimaryEmailAddr)],
+    ['CCEmailAddr (full obj)',         JSON.stringify(qb?.CCEmailAddr)],
+    ['BillEmail (full obj)',           JSON.stringify(qb?.BillEmail)],
+    ['BillEmailCc (full obj)',         JSON.stringify(qb?.BillEmailCc)],
+  ];
+
+  const lines = emailFields
+    .filter(([, v]) => v && v !== 'undefined' && v !== 'null')
+    .map(([k, v]) => `  ${k}:\n    ${v}`);
+
+  alert(
+    `QB Email fields for "${qb.DisplayName}":\n\n` +
+    (lines.length ? lines.join('\n\n') : '(no email fields found)') +
+    '\n\nFull object also logged to browser console (F12 → Console).'
+  );
 }
 
 // ── Push Sheet → QB ──────────────────────────────────────────────────────────
