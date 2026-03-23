@@ -825,6 +825,7 @@ async function createQBCustomer(idx) {
   try {
     const acctStr = String(row.acct || '').replace(/\.0$/,'').trim();
     const ba      = parseBillTo(row.billTo);
+    const ccEmail = extractFirstEmail(row.contact);
     const billAddr = (ba.addr1 || ba.addr2 || ba.city) ? {
       Line1:                  ba.addr1 || '',
       Line2:                  ba.addr2 || '',
@@ -838,6 +839,7 @@ async function createQBCustomer(idx) {
       DisplayName:      row.name.replace(/\n/g,' ').trim(),
       CompanyName:      row.mgmt || '',
       PrimaryEmailAddr: row.billEmail  ? { Address: row.billEmail }           : undefined,
+      BillEmailCc:      ccEmail ? { Address: ccEmail } : undefined,
       Notes:            row.manager    || '',
       AlternatePhone: acctStr ? { FreeFormNumber: acctStr } : undefined,
       BillAddr:         billAddr,
@@ -1013,6 +1015,7 @@ async function pushToQB() {
   // Build preview of what will change so user knows exactly what's happening
   const acctStr = String(row.acct || '').replace(/\.0$/,'').trim();
   const ba      = parseBillTo(row.billTo);
+  const ccEmail = extractFirstEmail(row.contact);
   const hasName = row.qb.GivenName || row.qb.MiddleName || row.qb.FamilyName;
   const nameWarning = hasName
     ? `\n\nFirst/Middle/Last name will be CLEARED:\n  "${[row.qb.GivenName, row.qb.MiddleName, row.qb.FamilyName].filter(Boolean).join(' ')}" → (blank)\n(Property manager name stays in Notes)`
@@ -1022,7 +1025,7 @@ async function pushToQB() {
     `Push Google Sheet → QuickBooks for:\n"${row.qb.DisplayName}"\n\n` +
     `This will OVERWRITE the following QB fields with sheet values:\n` +
     `  • Display Name\n  • Company Name\n  • Notes (Property Manager)\n` +
-    `  • Billing Email\n  • Alternate Phone (FLPS Acct #)\n` +
+    `  • Billing Email\n  • CC Email / BillEmailCc (attempt)\n  • Alternate Phone (FLPS Acct #)\n` +
     `  • Billing Address (Line1/2, City, State, ZIP, Country/Service Addr)` +
     nameWarning +
     `\n\nProceed?`
@@ -1059,6 +1062,7 @@ async function pushToQB() {
       // Contact
       Notes:       row.manager || '',
       ...(row.billEmail ? { PrimaryEmailAddr: { Address: row.billEmail } } : {}),
+      ...(ccEmail ? { BillEmailCc: { Address: ccEmail } } : {}),
       ...(acctStr       ? { AlternatePhone:   { FreeFormNumber: acctStr } } : {}),
       // Address
       BillAddr: billAddr,
