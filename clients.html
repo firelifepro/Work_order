@@ -96,6 +96,8 @@ tbody td { padding: 9px 12px; vertical-align: middle; }
 .badge-matched   { background: #e8f5e9; color: #2e7d32; }
 .badge-unmatched { background: #fde8e8; color: #c62828; }
 .badge-qbonly    { background: #e3f2fd; color: #1565c0; }
+.badge-synced    { background: #f1f8e9; color: #558b2f; font-weight: 500; }
+.badge-drift     { background: #fff3e0; color: #e65100; font-weight: 500; }
 
 /* ── Action buttons ── */
 .act-btn { border: none; border-radius: 4px; padding: 4px 10px; cursor: pointer; font-size: 0.75rem; font-weight: 600; font-family: inherit; }
@@ -1123,6 +1125,22 @@ async function pushToQB() {
   }
 }
 
+// ── Field mismatch count (mirrors openEditModal comparison logic) ─────────────
+function countFieldMismatches(row) {
+  let mismatches = 0;
+  for (const def of FIELD_MAP) {
+    if (def.section || def.infoOnly || def.qbOnly) continue;
+    if (def.clearNote) {
+      if ((def.qb(row) || '').trim()) mismatches++;
+      continue;
+    }
+    const sv = (def.sheet(row) || '').trim();
+    const qv = (def.qb(row)   || '').trim();
+    if ((sv || qv) && sv.toLowerCase() !== qv.toLowerCase()) mismatches++;
+  }
+  return mismatches;
+}
+
 // ── Render table ─────────────────────────────────────────────────────────────
 function renderTable() {
   const q      = document.getElementById('search-box').value.toLowerCase();
@@ -1151,9 +1169,19 @@ function renderTable() {
     const isMatched = r.matchType === 'acct' || r.matchType === 'name';
     const acctStr   = String(r.acct||'').replace(/\.0$/,'');
 
-    const badge = isQbOnly  ? '<span class="badge badge-qbonly">QB Only</span>'
-                : isMatched ? `<span class="badge badge-matched">${r.matchType === 'acct' ? '✓ Acct Match' : '✓ Name Match'}</span>`
-                            : '<span class="badge badge-unmatched">Not in QB</span>';
+    let badge;
+    if (isQbOnly) {
+      badge = '<span class="badge badge-qbonly">QB Only</span>';
+    } else if (isMatched) {
+      const mismatches = countFieldMismatches(r);
+      const matchLabel = r.matchType === 'acct' ? '✓ Acct Match' : '✓ Name Match';
+      const syncBadge  = mismatches === 0
+        ? '<span class="badge badge-synced">✓ fields match</span>'
+        : `<span class="badge badge-drift">⚠ ${mismatches} field${mismatches > 1 ? 's' : ''} differ</span>`;
+      badge = `<div style="display:flex;flex-direction:column;gap:3px;align-items:flex-start"><span class="badge badge-matched">${matchLabel}</span>${syncBadge}</div>`;
+    } else {
+      badge = '<span class="badge badge-unmatched">Not in QB</span>';
+    }
 
     // QB's AlternatePhone field (maps to 'Other' in QB UI) — what's currently stored
     const qbOther = r.qb?.AlternatePhone?.FreeFormNumber || '—';
