@@ -690,10 +690,12 @@ function extractFirstEmail(str) {
 // Build QB Notes field encoding both property manager name and CC email.
 // Format: "Manager Name | cc: email@example.com"
 // create-invoices.html parses this to set BillEmailCc on invoices.
-function buildNotesField(manager, ccEmail) {
-  const mgr = (manager || '').trim();
-  const cc  = (ccEmail  || '').trim();
-  if (mgr && cc) return `${mgr} | cc: ${cc}`;
+function buildNotesField(manager, ccEmail, billEmail) {
+  const mgr  = (manager   || '').trim();
+  const cc   = (ccEmail   || '').trim();
+  const bill = (billEmail || '').trim();
+  const includeCc = cc && (!bill || cc.toLowerCase() !== bill.toLowerCase());
+  if (mgr && includeCc) return `${mgr} | cc: ${cc}`;
   return mgr || '';
 }
 
@@ -864,7 +866,7 @@ async function createQBCustomer(idx) {
       DisplayName:      row.name.replace(/\n/g,' ').trim(),
       CompanyName:      row.mgmt || '',
       PrimaryEmailAddr: row.billEmail  ? { Address: row.billEmail }           : undefined,
-      Notes:            buildNotesField(row.manager, extractFirstEmail(row.contact)),
+      Notes:            buildNotesField(row.manager, extractFirstEmail(row.contact), row.billEmail),
       AlternatePhone: acctStr ? { FreeFormNumber: acctStr } : undefined,
       BillAddr:         billAddr,
     };
@@ -1093,7 +1095,7 @@ async function pushToQB() {
       GivenName:   '',
       MiddleName:  '',
       FamilyName:  '',
-      Notes:            buildNotesField(row.manager, ccEmail),
+      Notes:            buildNotesField(row.manager, ccEmail, row.billEmail),
       PrimaryEmailAddr: row.billEmail ? { Address: row.billEmail } : (row.qb.PrimaryEmailAddr || undefined),
       AlternatePhone:   acctStr ? { FreeFormNumber: acctStr } : (row.qb.AlternatePhone || undefined),
       BillAddr:         billAddr,
