@@ -1197,11 +1197,19 @@ function renderTable() {
     const displayName = isQbOnly ? (r.qb?.DisplayName||'') : r.name.replace(/\n/g,' ');
     const svcAddr     = (r.address||'').replace(/\n/g,' ');
 
+    const env = document.getElementById('qb-env').value;
+    const qbAppBase = env === 'production'
+      ? 'https://app.qbo.intuit.com'
+      : 'https://app.sandbox.qbo.intuit.com';
+    const qbDisplayName = r.qb
+      ? `<a href="${qbAppBase}/app/customerdetail?nameId=${encodeURIComponent(r.qb.Id)}" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline dotted;cursor:pointer;">${escHtml(r.qb.DisplayName)}</a>`
+      : '—';
+
     return `<tr>
       <td class="col-acct">${escHtml(acctStr || '—')}</td>
       <td class="col-name">${escHtml(displayName)}</td>
       <td class="col-addr">${escHtml(svcAddr)}</td>
-      <td class="col-qb">${escHtml(r.qb?.DisplayName || '—')}</td>
+      <td class="col-qb">${qbDisplayName}</td>
       <td style="color:#666;font-size:0.78rem;">${escHtml(qbOther)}</td>
       <td class="col-match">${badge}</td>
       <td class="col-action">${actionCell}</td>
