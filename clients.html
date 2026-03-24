@@ -1048,25 +1048,21 @@ async function pushToQB() {
       Country:                buildServiceAddressField(row),
     } : { Country: buildServiceAddressField(row) };
 
-    const payload = {
-      Id:          row.qb.Id,
-      SyncToken:   row.qb.SyncToken,
-      sparse:      true,
-      // Identity
+    const payload = Object.assign({}, row.qb, {
+      sparse:      false,
       DisplayName: row.name.replace(/\n/g,' ').trim() || row.qb.DisplayName,
       CompanyName: row.mgmt || '',
-      // Explicitly clear first/middle/last — commercial clients use Notes for contact name
       GivenName:   '',
       MiddleName:  '',
       FamilyName:  '',
-      // Contact
-      Notes:       row.manager || '',
-      ...(row.billEmail ? { PrimaryEmailAddr: { Address: row.billEmail } } : {}),
-      ...(ccEmail ? { BillEmailCc: { Address: ccEmail } } : {}),
-      ...(acctStr       ? { AlternatePhone:   { FreeFormNumber: acctStr } } : {}),
-      // Address
-      BillAddr: billAddr,
-    };
+      Notes:            row.manager || '',
+      PrimaryEmailAddr: row.billEmail ? { Address: row.billEmail } : (row.qb.PrimaryEmailAddr || undefined),
+      BillEmailCc:      ccEmail ? { Address: ccEmail } : undefined,
+      AlternatePhone:   acctStr ? { FreeFormNumber: acctStr } : (row.qb.AlternatePhone || undefined),
+      BillAddr:         billAddr,
+    });
+    Object.keys(payload).forEach(k => payload[k] === undefined && delete payload[k]);
+
 
     const result  = await qbProxy('POST', '/customer?minorversion=70', env, payload);
     const updated = result?.Customer;
