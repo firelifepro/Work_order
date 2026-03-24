@@ -1180,7 +1180,15 @@ function renderTable() {
       const syncBadge  = mismatches === 0
         ? '<span class="badge badge-synced">✓ fields match</span>'
         : `<span class="badge badge-drift">⚠ ${mismatches} field${mismatches > 1 ? 's' : ''} differ</span>`;
-      badge = `<div style="display:flex;flex-direction:column;gap:3px;align-items:flex-start"><span class="badge badge-matched">${matchLabel}</span>${syncBadge}</div>`;
+      const ccEmail   = extractFirstEmail(r.contact);
+      const hasCc     = ccEmail && (!r.billEmail || ccEmail.toLowerCase() !== r.billEmail.toLowerCase());
+      const ccInNotes = hasCc && parseCCEmailFromNotes(r.qb?.Notes);
+      const ccBadge   = hasCc
+        ? (ccInNotes
+            ? '<span class="badge badge-synced" title="CC email stored in QB Notes">CC ✓</span>'
+            : '<span class="badge badge-drift" title="Has CC email but not yet in QB Notes — push sheet to set it">CC missing</span>')
+        : '';
+      badge = `<div style="display:flex;flex-direction:column;gap:3px;align-items:flex-start"><span class="badge badge-matched">${matchLabel}</span>${syncBadge}${ccBadge}</div>`;
     } else {
       badge = '<span class="badge badge-unmatched">Not in QB</span>';
     }
