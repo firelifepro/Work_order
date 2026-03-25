@@ -467,8 +467,9 @@ code { background: #ffe082; padding: 1px 5px; border-radius: 3px; font-size: 0.7
 // ─────────────────────────────────────────────────────────
 // CONSTANTS & STATE
 // ─────────────────────────────────────────────────────────
-const FOLDER_NAME = '2 - Ready to Invoice';
-const GOOGLE_SCOPES = 'https://www.googleapis.com/auth/drive.readonly https://www.googleapis.com/auth/documents.readonly';
+const FOLDER_NAME        = '2 - Ready to Invoice';
+const FOLDER_NAME_SENT   = '3 - Invoice Sent';
+const GOOGLE_SCOPES = 'https://www.googleapis.com/auth/drive https://www.googleapis.com/auth/documents.readonly';
 
 
 // ── Hamburger nav ──────────────────────────────────────────
@@ -497,6 +498,7 @@ const APPS_SCRIPT_SECRET = 'flips-2026-secret'; // must match setSecret() in App
 let flipsLogLevel = 'NORMAL';
 
 let allDocs = [];        // { id, name, modifiedTime, amount, client }
+let sourceFolderId = null; // Drive folder ID for '2 - Ready to Invoice'
 let qbAccessToken = null;
 let qbRealmId = null;
 
@@ -582,6 +584,7 @@ async function loadDocs() {
     // 1. Find the target folder
     const folderId = await findFolder(FOLDER_NAME);
     if (!folderId) { showPlaceholder(`<div class="big-icon">📂</div><div>Folder "<strong>${FOLDER_NAME}</strong>" not found in your Drive</div>`); return; }
+    sourceFolderId = folderId;
 
     // 2. List docs in folder
     const q = encodeURIComponent(`'${folderId}' in parents and trashed=false`);
@@ -722,6 +725,40 @@ function extractText(docData) {
     console.warn('[extractText] "Total to Invoice" not found in doc text');
   }
   return fullText;
+}
+
+// Convert a raw date string (MM-DD-YYYY, MM/DD/YYYY, or natural language) to YYYY-MM-DD for QB.
+function toQBDate(str) {
+  if (!str) return null;
+  str = str.trim();
+  if (/^\d{4}-\d{2}-\d{2}$/.test(str)) return str;
+  const mdy = str.match(/^(\d{1,2})[-\/](\d{1,2})[-\/](\d{4})$/);
+  if (mdy) return `${mdy[3]}-${mdy[1].padStart(2,'0')}-${mdy[2].padStart(2,'0')}`;
+  const d = new Date(str);
+  return isNaN(d) ? null : d.toISOString().split('T')[0];
+}
+
+// Query QB for the highest numeric DocNumber across recent invoices, return next.
+async function getNextDocNumber(env) {
+  try {
+    const data = await qbProxy('GET',
+      `/query?query=${encodeURIComponent('SELECT DocNumber FROM Invoice MAXRESULTS 200 ORDERBY MetaData.CreateTime DESC')}&minorversion=70`, env);
+    const nums = (data?.QueryResponse?.Invoice || [])
+      .map(i => parseInt((i.DocNumber || '').replace(/\D/g, ''), 10))
+      .filter(n => !isNaN(n) && n > 0);
+    return nums.length ? String(Math.max(...nums) + 1) : null;
+  } catch(_) { return null; }
+}
+
+// Move a Drive file from sourceFolderId to the named target folder.
+async function moveDocToInvoiceSent(docId) {
+  const targetId = await findFolder(FOLDER_NAME_SENT);
+  if (!targetId) throw new Error(`Drive folder "${FOLDER_NAME_SENT}" not found`);
+  const params = `addParents=${targetId}${sourceFolderId ? `&removeParents=${sourceFolderId}` : ''}&supportsAllDrives=true&fields=id`;
+  const res = await apiFetch(
+    `https://www.googleapis.com/drive/v3/files/${docId}?${params}`, 'PATCH'
+  );
+  if (!res.ok) throw new Error('Drive move failed: ' + await res.text());
 }
 
 // Parse CC email from QB Notes field encoded by clients.html as "Manager | cc: email"
@@ -1007,6 +1044,14 @@ async function createInvoices() {
       results.push({ doc, status: 'ok', invoiceId: invoiceResult.Id, invoiceNum: invoiceResult.DocNumber, link: qbLinks.invoice, linkHome: qbLinks.home });
       logToSheet('INVOICE_CREATED', `Invoice #${invoiceResult.DocNumber} created for ${doc.client || doc.name} — $${doc.amount}`, 'OK');
       toast(`✅ Invoice created: ${doc.name}`);
+      try {
+        await moveDocToInvoiceSent(doc.id);
+        allDocs = allDocs.filter(d => d.id !== doc.id);
+        logToSheet('DRIVE_MOVE', `Moved "${doc.name}" to ${FOLDER_NAME_SENT}`, 'OK');
+      } catch(moveErr) {
+        logToSheet('DRIVE_MOVE', `Failed to move "${doc.name}": ${moveErr.message}`, 'WARN');
+        toast(`⚠ Invoice created but file not moved: ${moveErr.message}`);
+      }
     } catch(e) {
       results.push({ doc, status: 'error', message: e.message });
     }
@@ -1016,6 +1061,7 @@ async function createInvoices() {
   const ok = results.filter(r => r.status === 'ok').length;
   setActionStatus(`Done — ${ok} of ${results.length} invoice${results.length > 1 ? 's' : ''} created`, ok === results.length ? 'ok' : 'err');
   showResults(results);
+  renderDocList(allDocs);
   updateSelectedCount();
 }
 
@@ -1025,9 +1071,11 @@ async function createQBInvoice(doc) {
   const env     = document.getElementById('qb-env').value;
   const dueDays = parseInt(document.getElementById('qb-due-days').value) || 30;
 
-  const custRef  = await findOrCreateCustomer(doc.client || doc.name, env, doc.acctNum);
-  const ccRaw    = parseCCEmailFromNotes(custRef.notes);
-  const ccEmail  = (ccRaw && ccRaw.toLowerCase() !== (doc.billEmail || '').toLowerCase()) ? ccRaw : '';
+  const custRef   = await findOrCreateCustomer(doc.client || doc.name, env, doc.acctNum);
+  const ccRaw     = parseCCEmailFromNotes(custRef.notes);
+  const ccEmail   = (ccRaw && ccRaw.toLowerCase() !== (doc.billEmail || '').toLowerCase()) ? ccRaw : '';
+  const docNumber = await getNextDocNumber(env);
+  const shipDate  = toQBDate(doc.dateCompleted);
 
   const today = new Date();
   const due   = new Date(today); due.setDate(due.getDate() + dueDays);
@@ -1071,9 +1119,11 @@ async function createQBInvoice(doc) {
       Description: lineDesc
     }],
     CustomerRef: { value: custRef.value, name: custRef.name },
-    TxnDate: fmt(today),
-    DueDate: fmt(due),
+    TxnDate:  fmt(today),
+    DueDate:  fmt(due),
     PrivateNote: `Created from Work Order: ${doc.name} (Google Drive ID: ${doc.id})`,
+    ...(docNumber ? { DocNumber: docNumber }               : {}),
+    ...(shipDate  ? { ShipDate:  shipDate }                : {}),
     ...(doc.billEmail ? { BillEmail:    { Address: doc.billEmail } } : {}),
     ...(ccEmail       ? { BillEmailCc: { Address: ccEmail }       } : {}),
     ...(billAddr      ? { BillAddr:    billAddr }                  : {}),
