@@ -1070,7 +1070,7 @@ async function createQBInvoice(doc) {
       },
       Description: lineDesc
     }],
-    CustomerRef: custRef,
+    CustomerRef: { value: custRef.value, name: custRef.name },
     TxnDate: fmt(today),
     DueDate: fmt(due),
     PrivateNote: `Created from Work Order: ${doc.name} (Google Drive ID: ${doc.id})`,
