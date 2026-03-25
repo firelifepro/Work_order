@@ -738,18 +738,6 @@ function toQBDate(str) {
   return isNaN(d) ? null : d.toISOString().split('T')[0];
 }
 
-// Query QB for the highest numeric DocNumber across recent invoices, return next.
-async function getNextDocNumber(env) {
-  try {
-    const data = await qbProxy('GET',
-      `/query?query=${encodeURIComponent('SELECT DocNumber FROM Invoice MAXRESULTS 200 ORDERBY MetaData.CreateTime DESC')}&minorversion=70`, env);
-    const nums = (data?.QueryResponse?.Invoice || [])
-      .map(i => parseInt((i.DocNumber || '').replace(/\D/g, ''), 10))
-      .filter(n => !isNaN(n) && n > 0);
-    return nums.length ? String(Math.max(...nums) + 1) : null;
-  } catch(_) { return null; }
-}
-
 // Move a Drive file from sourceFolderId to the named target folder.
 async function moveDocToInvoiceSent(docId) {
   const targetId = await findFolder(FOLDER_NAME_SENT);
@@ -1113,7 +1101,8 @@ async function createQBInvoice(doc) {
       SalesItemLineDetail: {
         ItemRef: itemRef,
         Qty: 1,
-        UnitPrice: amount
+        UnitPrice: amount,
+        ...(shipDate ? { ServiceDate: shipDate } : {}),
       },
       Description: lineDesc
     }],
@@ -1121,7 +1110,6 @@ async function createQBInvoice(doc) {
     TxnDate:  fmt(today),
     DueDate:  fmt(due),
     PrivateNote: `Created from Work Order: ${doc.name} (Google Drive ID: ${doc.id})`,
-    ...(shipDate  ? { ShipDate:  shipDate }                : {}),
     ...(doc.billEmail ? { BillEmail:    { Address: doc.billEmail } } : {}),
     ...(ccEmail       ? { BillEmailCc: { Address: ccEmail }       } : {}),
     ...(billAddr      ? { BillAddr:    billAddr }                  : {}),
