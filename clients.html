@@ -481,7 +481,22 @@ async function qbProxy(method, path, env, payload) {
   });
   let res = await makeReq();
   if (res.status === 401) { await refreshQBToken(); res = await makeReq(); }
-  if (!res.ok) throw new Error('QB ' + res.status + ': ' + await res.text());
+  if (!res.ok) {
+    const body = await res.text();
+    let msg = 'QB ' + res.status + ': ' + body;
+    try {
+      const fault = JSON.parse(body)?.Fault?.Error?.[0];
+      if (fault) {
+        const detail = fault.Detail || fault.Message || '';
+        if (detail.includes('-11622') || (fault.code === '6000' && detail.toLowerCase().includes('validation'))) {
+          msg = 'QB rejected the update: DisplayName may already exist as another QB customer. Check for a duplicate in QuickBooks and rename or merge it first.';
+        } else {
+          msg = `QB ${res.status}: ${fault.Message || fault.Detail || body}`;
+        }
+      }
+    } catch(_) {}
+    throw new Error(msg);
+  }
   return res.json();
 }
 
