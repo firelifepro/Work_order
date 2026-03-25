@@ -1074,7 +1074,6 @@ async function createQBInvoice(doc) {
   const custRef   = await findOrCreateCustomer(doc.client || doc.name, env, doc.acctNum);
   const ccRaw     = parseCCEmailFromNotes(custRef.notes);
   const ccEmail   = (ccRaw && ccRaw.toLowerCase() !== (doc.billEmail || '').toLowerCase()) ? ccRaw : '';
-  const docNumber = await getNextDocNumber(env);
   const shipDate  = toQBDate(doc.dateCompleted);
 
   const today = new Date();
@@ -1122,7 +1121,6 @@ async function createQBInvoice(doc) {
     TxnDate:  fmt(today),
     DueDate:  fmt(due),
     PrivateNote: `Created from Work Order: ${doc.name} (Google Drive ID: ${doc.id})`,
-    ...(docNumber ? { DocNumber: docNumber }               : {}),
     ...(shipDate  ? { ShipDate:  shipDate }                : {}),
     ...(doc.billEmail ? { BillEmail:    { Address: doc.billEmail } } : {}),
     ...(ccEmail       ? { BillEmailCc: { Address: ccEmail }       } : {}),
