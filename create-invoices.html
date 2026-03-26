@@ -1131,7 +1131,17 @@ async function createQBInvoice(doc) {
     Line3: billToLines[2] || '',
     Line4: billToLines[3] || '',
     Line5: billToLines[4] || '',
-  } : undefined;
+  } : (custRef.shipAddr ? {
+    Line1: custRef.shipAddr.Line1 || '',
+    Line2: custRef.shipAddr.Line2 || '',
+    Line3: custRef.shipAddr.Line3 || '',
+    Line4: custRef.shipAddr.Line4 || '',
+    Line5: custRef.shipAddr.Line5 || '',
+    City:  custRef.shipAddr.City  || '',
+    CountrySubDivisionCode: custRef.shipAddr.CountrySubDivisionCode || '',
+    PostalCode: custRef.shipAddr.PostalCode || '',
+  } : undefined);
+  const emptyShipAddr = { Line1: '', Line2: '', Line3: '', Line4: '', Line5: '', City: '', CountrySubDivisionCode: '', PostalCode: '' };
 
   const itemRef = await getServicesItemRef(env);
 
@@ -1149,8 +1159,8 @@ async function createQBInvoice(doc) {
     }],
     CustomerRef: { value: custRef.value, name: custRef.name },
     TxnDate:  fmt(today),
-    DueDate:  fmt(due),
     PrivateNote: `Created from Work Order: ${doc.name} (Google Drive ID: ${doc.id})`,
+    ShipAddr: emptyShipAddr,
     ...(docNumber     ? { DocNumber:    docNumber }                 : {}),
     ...(doc.billEmail ? { BillEmail:    { Address: doc.billEmail } } : {}),
     ...(ccEmail       ? { BillEmailCc: { Address: ccEmail }       } : {}),
@@ -1215,7 +1225,7 @@ async function findOrCreateCustomer(customerName, env, acctNum) {
     if (match) {
       logToSheet('QB_CUSTOMER_FOUND',
         `Found by AcctNum "${acctNum}": "${match.DisplayName}" (ID: ${match.Id})`, 'OK');
-      return { value: match.Id, name: match.DisplayName, notes: match.Notes || '' };
+      return { value: match.Id, name: match.DisplayName, notes: match.Notes || '', shipAddr: match.ShipAddr || null };
     }
   }
 
@@ -1223,7 +1233,7 @@ async function findOrCreateCustomer(customerName, env, acctNum) {
   if (exact) {
     logToSheet('QB_CUSTOMER_FOUND',
       `Found by exact name: "${exact.DisplayName}" (ID: ${exact.Id})`, 'OK');
-    return { value: exact.Id, name: exact.DisplayName, notes: exact.Notes || '' };
+    return { value: exact.Id, name: exact.DisplayName, notes: exact.Notes || '', shipAddr: exact.ShipAddr || null };
   }
 
   const hint = acctNum
