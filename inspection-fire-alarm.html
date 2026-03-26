@@ -1,0 +1,1263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>FLIPS – Fire Alarm Inspection</title>
+<link rel="icon" type="image/png" href="data:image/png;base64,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">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+:root {
+  --navy:#0d1b2a; --navy2:#162235; --navy3:#1e304a;
+  --blue:#2563eb; --blue2:#3b82f6;
+  --fire:#f97316; --fire2:#fb923c;
+  --red:#dc2626; --green:#16a34a; --amber:#d97706;
+  --slate:#64748b; --light:#f1f5f9; --white:#ffffff; --border:#e2e8f0;
+  --pass-bg:#f0fdf4; --fail-bg:#fef2f2; --na-bg:#f8fafc;
+  --pass-ring:#16a34a; --fail-ring:#dc2626; --na-ring:#94a3b8;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+html{font-size:16px;}
+body{font-family:'DM Sans',sans-serif;background:var(--light);color:var(--navy);min-height:100vh;}
+#top-bar{background:var(--navy);color:white;padding:11px 16px;display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:200;box-shadow:0 2px 12px rgba(0,0,0,.25);}
+#top-bar h1{font-size:.92rem;font-weight:700;flex:1;letter-spacing:.02em;}
+.nav-hamburger{position:relative;}
+.hamburger-btn{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:white;padding:5px 9px;border-radius:6px;cursor:pointer;font-size:1rem;line-height:1;}
+.nav-menu{display:none;position:absolute;top:calc(100% + 6px);left:0;background:var(--navy2);border:1px solid rgba(255,255,255,.15);border-radius:8px;min-width:220px;box-shadow:0 8px 24px rgba(0,0,0,.4);z-index:300;overflow:hidden;}
+.nav-menu.open{display:block;}
+.nav-menu a{display:block;padding:10px 16px;color:rgba(255,255,255,.85);text-decoration:none;font-size:.82rem;border-bottom:1px solid rgba(255,255,255,.07);}
+.nav-menu a:hover{background:rgba(255,255,255,.08);color:white;}
+.nav-menu a.active{color:var(--fire2);font-weight:600;}
+#app{max-width:960px;margin:0 auto;padding:16px;}
+/* STEP NAV */
+#step-nav{display:flex;margin-bottom:20px;background:white;border-radius:10px;overflow:hidden;box-shadow:0 1px 6px rgba(0,0,0,.08);border:1px solid var(--border);}
+.step-tab{flex:1;padding:9px 6px;text-align:center;cursor:pointer;font-size:.68rem;font-weight:600;color:var(--slate);border-right:1px solid var(--border);transition:all .15s;line-height:1.3;}
+.step-tab:last-child{border-right:none;}
+.step-tab.active{background:var(--navy);color:white;}
+.step-tab.done{background:var(--pass-bg);color:var(--green);}
+.step-num{display:block;font-size:.6rem;opacity:.7;margin-bottom:2px;}
+.step-check{display:none;}
+.step-tab.done .step-check{display:inline;}
+.step-tab.done .step-num{display:none;}
+/* CARDS */
+.card{background:white;border-radius:10px;border:1px solid var(--border);box-shadow:0 1px 6px rgba(0,0,0,.06);margin-bottom:14px;overflow:hidden;}
+.card-header{background:var(--navy);color:white;padding:10px 16px;display:flex;align-items:center;gap:10px;font-size:.88rem;font-weight:700;}
+.card-header .icon{font-size:1.1rem;}
+.card-header span{flex:1;}
+.card-body{padding:16px;}
+/* FIELDS */
+.field-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.field-grid.cols-3{grid-template-columns:1fr 1fr 1fr;}
+.field-grid.cols-4{grid-template-columns:1fr 1fr 1fr 1fr;}
+.field-grid.cols-1{grid-template-columns:1fr;}
+.field-group{display:flex;flex-direction:column;gap:4px;}
+.field-group.span-2{grid-column:span 2;}
+.field-group.span-3{grid-column:span 3;}
+.field-group label{font-size:.72rem;font-weight:600;color:var(--slate);text-transform:uppercase;letter-spacing:.05em;}
+.field-group input,.field-group select,.field-group textarea{border:1.5px solid var(--border);border-radius:7px;padding:9px 11px;font-size:.88rem;font-family:inherit;color:var(--navy);outline:none;width:100%;background:white;transition:border-color .15s;}
+.field-group input:focus,.field-group select:focus,.field-group textarea:focus{border-color:var(--blue);background:#eff6ff;}
+.field-group textarea{resize:vertical;min-height:56px;}
+/* INTERVAL */
+.interval-group{display:flex;gap:8px;flex-wrap:wrap;}
+.interval-btn{padding:8px 18px;border-radius:7px;border:2px solid var(--border);font-size:.82rem;font-weight:700;cursor:pointer;font-family:inherit;background:white;color:var(--slate);transition:all .12s;}
+.interval-btn.selected{border-color:var(--navy);background:var(--navy);color:white;}
+/* CONTACTS */
+.contact-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.contact-block{border:1.5px solid var(--border);border-radius:8px;padding:12px;}
+.contact-block h4{font-size:.75rem;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px;padding-bottom:6px;border-bottom:1.5px solid var(--border);}
+/* SECTION DIV */
+.sys-section{font-size:.7rem;font-weight:700;color:var(--blue);text-transform:uppercase;letter-spacing:.08em;margin:14px 0 8px;padding-bottom:4px;border-bottom:1.5px solid #bfdbfe;}
+/* DATA ROW */
+.data-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;}
+.data-row.cols-3{grid-template-columns:1fr 1fr 1fr;}
+.data-row.cols-4{grid-template-columns:1fr 1fr 1fr 1fr;}
+.data-row.cols-1{grid-template-columns:1fr;}
+.data-field{display:flex;flex-direction:column;gap:3px;}
+.data-field label{font-size:.66rem;font-weight:700;color:var(--slate);text-transform:uppercase;letter-spacing:.05em;}
+.data-field input,.data-field select,.data-field textarea{border:1.5px solid var(--border);border-radius:6px;padding:7px 9px;font-size:.82rem;font-family:inherit;color:var(--navy);outline:none;width:100%;background:#fafafa;}
+.data-field input:focus,.data-field select:focus,.data-field textarea:focus{border-color:var(--blue);background:#eff6ff;}
+.data-field textarea{resize:vertical;min-height:52px;}
+/* Y/N/NA */
+.inspect-row{display:flex;flex-direction:column;gap:4px;padding:8px 0;border-bottom:1px solid var(--border);}
+.inspect-row:last-child{border-bottom:none;}
+.inspect-row-top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;}
+.inspect-label{font-size:.82rem;font-weight:500;color:var(--navy);padding-top:3px;flex:1;min-width:0;}
+.inspect-label small{display:block;font-size:.7rem;color:var(--slate);margin-top:1px;}
+.yna-group{display:flex;gap:4px;flex-shrink:0;}
+.yna-btn{padding:5px 9px;border-radius:6px;border:1.5px solid var(--border);font-size:.72rem;font-weight:700;cursor:pointer;transition:all .12s;font-family:inherit;background:white;min-width:38px;text-align:center;}
+.yna-btn.y{border-color:var(--pass-ring);color:var(--pass-ring);}
+.yna-btn.n{border-color:var(--fail-ring);color:var(--fail-ring);}
+.yna-btn.na{border-color:var(--na-ring);color:var(--na-ring);}
+.yna-btn.y.selected{background:var(--pass-bg);box-shadow:0 0 0 2px var(--pass-ring);}
+.yna-btn.n.selected{background:var(--fail-bg);box-shadow:0 0 0 2px var(--fail-ring);}
+.yna-btn.na.selected{background:var(--na-bg);box-shadow:0 0 0 2px var(--na-ring);}
+.note-row{display:none;gap:6px;margin-top:3px;align-items:center;}
+.note-row.show{display:flex;}
+.note-badge{background:var(--amber);color:white;font-size:.65rem;font-weight:800;padding:2px 7px;border-radius:8px;white-space:nowrap;flex-shrink:0;}
+.note-input{flex:1;border:1.5px solid #fcd34d;border-radius:6px;padding:5px 9px;font-size:.78rem;font-family:inherit;color:var(--navy);background:#fffbeb;outline:none;}
+.note-input.fail{border-color:var(--fail-ring)!important;background:var(--fail-bg)!important;}
+/* DEVICE TABLE */
+.dev-table{width:100%;border-collapse:collapse;font-size:.76rem;}
+.dev-table th{background:var(--navy3);color:white;padding:6px 5px;font-size:.64rem;font-weight:700;text-transform:uppercase;letter-spacing:.03em;text-align:center;}
+.dev-table th.left{text-align:left;}
+.dev-table td{padding:5px 5px;border-bottom:1px solid var(--border);vertical-align:middle;text-align:center;}
+.dev-table td.label-cell{text-align:left;font-weight:600;font-size:.78rem;white-space:nowrap;}
+.dev-table td.key-cell{font-size:.68rem;color:var(--slate);font-family:'DM Mono',monospace;font-weight:600;}
+.dev-table input{border:1px solid var(--border);border-radius:4px;padding:4px 5px;font-size:.78rem;font-family:inherit;width:100%;background:white;outline:none;text-align:center;}
+.dev-table input:focus{border-color:var(--blue);background:#eff6ff;}
+.dev-table .pct{font-size:.72rem;font-weight:700;}
+.dev-table .pct.pass{color:var(--green);}
+.dev-table .pct.fail{color:var(--red);}
+.dev-table tr:nth-child(even) td{background:#f8fafc;}
+/* DYNAMINC TABLE */
+.dyn-table{width:100%;border-collapse:collapse;font-size:.78rem;margin-top:6px;}
+.dyn-table th{background:var(--navy3);color:white;padding:6px 7px;font-size:.65rem;font-weight:700;text-transform:uppercase;text-align:left;}
+.dyn-table td{padding:5px 5px;border-bottom:1px solid var(--border);vertical-align:top;}
+.dyn-table input,.dyn-table select{border:1px solid var(--border);border-radius:4px;padding:4px 6px;font-size:.78rem;font-family:inherit;width:100%;background:white;outline:none;}
+.dyn-table input:focus,.dyn-table select:focus{border-color:var(--blue);background:#eff6ff;}
+.del-btn{background:none;border:none;color:var(--red);cursor:pointer;font-size:.95rem;padding:2px 4px;}
+.add-row-btn{background:#eff6ff;color:var(--blue);border:1.5px dashed var(--blue2);border-radius:6px;padding:7px 14px;font-size:.78rem;font-weight:600;cursor:pointer;font-family:inherit;margin-top:8px;width:100%;}
+/* RECURRING GRID */
+.recur-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:6px;}
+.recur-item{border:1.5px solid var(--border);border-radius:7px;padding:7px 10px;display:flex;flex-direction:column;gap:4px;}
+.recur-item label{font-size:.68rem;font-weight:700;color:var(--slate);text-transform:uppercase;letter-spacing:.04em;}
+.recur-item input{border:1px solid var(--border);border-radius:5px;padding:5px 8px;font-size:.8rem;font-family:inherit;color:var(--navy);outline:none;background:#fafafa;}
+.recur-item input:focus{border-color:var(--blue);background:#eff6ff;}
+/* PASS/FAIL SIMPLE */
+.pf-group{display:flex;gap:4px;}
+.pf-btn{padding:4px 9px;border-radius:6px;border:1.5px solid var(--border);font-size:.7rem;font-weight:700;cursor:pointer;font-family:inherit;background:white;min-width:40px;text-align:center;transition:all .12s;}
+.pf-btn.pass{border-color:var(--pass-ring);color:var(--pass-ring);}
+.pf-btn.fail{border-color:var(--fail-ring);color:var(--fail-ring);}
+.pf-btn.na{border-color:var(--na-ring);color:var(--na-ring);}
+.pf-btn.pass.selected{background:var(--pass-bg);box-shadow:0 0 0 2px var(--pass-ring);}
+.pf-btn.fail.selected{background:var(--fail-bg);box-shadow:0 0 0 2px var(--fail-ring);}
+.pf-btn.na.selected{background:var(--na-bg);box-shadow:0 0 0 2px var(--na-ring);}
+/* SIG */
+.sig-canvas{border:2px solid var(--border);border-radius:8px;background:white;cursor:crosshair;display:block;width:100%;max-width:480px;height:90px;touch-action:none;}
+.sig-clear{background:none;border:1px solid var(--border);border-radius:5px;padding:4px 12px;font-size:.75rem;cursor:pointer;color:var(--slate);font-family:inherit;margin-top:6px;}
+.sig-pair{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
+/* BUTTONS */
+.btn-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:8px;}
+.btn-primary{background:var(--navy);color:white;border:none;padding:12px 24px;border-radius:8px;font-size:.9rem;font-weight:700;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:8px;transition:background .15s;}
+.btn-primary:hover{background:var(--navy3);}
+.btn-primary.fire{background:var(--fire);}
+.btn-primary.fire:hover{background:var(--fire2);}
+.btn-primary.green{background:var(--green);}
+.btn-secondary{background:white;color:var(--navy);border:1.5px solid var(--border);padding:11px 20px;border-radius:8px;font-size:.88rem;font-weight:600;cursor:pointer;font-family:inherit;transition:all .15s;}
+.btn-secondary:hover{border-color:var(--blue);color:var(--blue);}
+/* TOAST */
+#toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--navy);color:white;padding:10px 20px;border-radius:8px;font-size:.85rem;box-shadow:0 4px 20px rgba(0,0,0,.35);transition:transform .3s cubic-bezier(.34,1.56,.64,1);z-index:9999;white-space:nowrap;}
+#toast.show{transform:translateX(-50%) translateY(0);}
+/* OPERATIONAL ROW */
+.operational-row{display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);}
+.operational-row:last-child{border-bottom:none;}
+.operational-label{flex:1;font-size:.82rem;font-weight:500;}
+.operational-label small{display:block;font-size:.7rem;color:var(--slate);margin-top:1px;}
+@media(max-width:640px){
+  .field-grid{grid-template-columns:1fr;}
+  .field-grid.cols-3,.field-grid.cols-4{grid-template-columns:1fr 1fr;}
+  .field-group.span-2,.field-group.span-3{grid-column:span 1;}
+  .contact-grid{grid-template-columns:1fr;}
+  .sig-pair{grid-template-columns:1fr;}
+  .recur-grid{grid-template-columns:1fr 1fr;}
+  .data-row.cols-3,.data-row.cols-4{grid-template-columns:1fr 1fr;}
+}
+</style>
+</head>
+<body>
+
+<div id="top-bar">
+  <div class="nav-hamburger">
+    <button class="hamburger-btn" onclick="toggleNav()">☰</button>
+    <div class="nav-menu" id="nav-menu">
+      <a href="index.html">📋 Work Order</a>
+      <a href="schedule.html">📅 Inspection Schedule</a>
+      <a href="create-invoices.html">🧾 Create QB Invoices</a>
+      <a href="clients.html">👥 Client Management</a>
+      <a href="inspection.html">🔥 Fire Inspection (Multi-System)</a>
+      <a href="inspection-hood.html">🍳 Kitchen Hood Inspection</a>
+      <a href="inspection-fire-alarm.html" class="active">🔔 Fire Alarm Inspection</a>
+    </div>
+  </div>
+  <h1>🔔 Fire Alarm Inspection Report</h1>
+  <button class="btn-secondary" style="font-size:.72rem;padding:4px 10px;" onclick="autoSave()">💾 Save</button>
+</div>
+
+<div id="app">
+
+  <div id="step-nav">
+    <div class="step-tab active" data-step="1" onclick="goStep(1)"><span class="step-num">1</span><span class="step-check">✓</span>Job Info</div>
+    <div class="step-tab" data-step="2" onclick="goStep(2)"><span class="step-num">2</span><span class="step-check">✓</span>Panel &amp; Monitoring</div>
+    <div class="step-tab" data-step="3" onclick="goStep(3)"><span class="step-num">3</span><span class="step-check">✓</span>Device Testing</div>
+    <div class="step-tab" data-step="4" onclick="goStep(4)"><span class="step-num">4</span><span class="step-check">✓</span>Auxiliary &amp; Locations</div>
+    <div class="step-tab" data-step="5" onclick="goStep(5)"><span class="step-num">5</span><span class="step-check">✓</span>Deficiencies</div>
+    <div class="step-tab" data-step="6" onclick="goStep(6)"><span class="step-num">6</span><span class="step-check">✓</span>Sign &amp; Export</div>
+  </div>
+
+  <!-- ══ STEP 1: JOB INFO ══ -->
+  <div id="step-1">
+    <div class="card">
+      <div class="card-header"><span class="icon">📋</span><span>Job Header</span></div>
+      <div class="card-body">
+        <div class="field-grid cols-3">
+          <div class="field-group span-2"><label>Building / Property Name</label><input type="text" id="building-name"></div>
+          <div class="field-group"><label>Job Number</label><input type="text" id="job-number"></div>
+          <div class="field-group span-2"><label>Street, City, State, ZIP</label><input type="text" id="site-address"></div>
+          <div class="field-group"><label>PO Number (if any)</label><input type="text" id="po-number"></div>
+          <div class="field-group"><label>Date Performed</label><input type="date" id="insp-date"></div>
+          <div class="field-group"><label>Inspector(s) Initials</label><input type="text" id="inspector-initials"></div>
+          <div class="field-group"><label>Jurisdiction</label><input type="text" id="jurisdiction"></div>
+        </div>
+        <div class="sys-section">Inspection Interval</div>
+        <div class="interval-group" id="interval-group">
+          <button class="interval-btn" onclick="setIntervalVal('Annual')">Annual</button>
+          <button class="interval-btn" onclick="setIntervalVal('Semi-Annual')">Semi-Annual</button>
+          <button class="interval-btn" onclick="setIntervalVal('Quarterly')">Quarterly</button>
+        </div>
+        <input type="hidden" id="insp-interval">
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header"><span class="icon">📞</span><span>Site Contact Information</span></div>
+      <div class="card-body">
+        <div class="contact-grid">
+          <div class="contact-block">
+            <h4>Primary Contact</h4>
+            <div class="field-grid cols-1" style="gap:8px;">
+              <div class="field-group"><label>Name</label><input type="text" id="primary-name"></div>
+              <div class="field-group"><label>Title</label><input type="text" id="primary-title"></div>
+              <div class="field-group"><label>Phone</label><input type="tel" id="primary-phone"></div>
+              <div class="field-group"><label>Email</label><input type="email" id="primary-email"></div>
+            </div>
+          </div>
+          <div class="contact-block">
+            <h4>Secondary Contact</h4>
+            <div class="field-grid cols-1" style="gap:8px;">
+              <div class="field-group"><label>Name</label><input type="text" id="secondary-name"></div>
+              <div class="field-group"><label>Title</label><input type="text" id="secondary-title"></div>
+              <div class="field-group"><label>Phone</label><input type="tel" id="secondary-phone"></div>
+              <div class="field-group"><label>Email</label><input type="email" id="secondary-email"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="btn-row"><button class="btn-primary" onclick="goStep(2)">Next: Panel &amp; Monitoring →</button></div>
+  </div>
+
+  <!-- ══ STEP 2: PANEL & MONITORING ══ -->
+  <div id="step-2" style="display:none;">
+
+    <div class="card">
+      <div class="card-header"><span class="icon">🖥️</span><span>Main Fire Alarm Control Panel &amp; Monitoring Information</span></div>
+      <div class="card-body">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+          <div>
+            <div class="sys-section">Control Panel Specification</div>
+            <div class="data-row cols-1">
+              <div class="data-field"><label>Make</label><input type="text" id="cp-make"></div>
+            </div>
+            <div class="data-row cols-1">
+              <div class="data-field"><label>Model</label><input type="text" id="cp-model"></div>
+            </div>
+            <div class="data-row cols-1">
+              <div class="data-field"><label>Location</label><input type="text" id="cp-location"></div>
+            </div>
+            <div class="data-row cols-1">
+              <div class="data-field"><label>Type</label><input type="text" id="cp-type" placeholder="e.g. Addressable, Conventional"></div>
+            </div>
+          </div>
+          <div>
+            <div class="sys-section">Dialer / Radio Specifications</div>
+            <div class="data-row cols-1">
+              <div class="data-field"><label>Make</label><input type="text" id="dr-make"></div>
+            </div>
+            <div class="data-row cols-1">
+              <div class="data-field"><label>Model</label><input type="text" id="dr-model"></div>
+            </div>
+            <div class="data-row cols-1">
+              <div class="data-field"><label>Location</label><input type="text" id="dr-location"></div>
+            </div>
+            <div class="data-row cols-1">
+              <div class="data-field"><label>Type</label><input type="text" id="dr-type" placeholder="e.g. GSM, DACT"></div>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:10px;">
+          <div>
+            <div class="sys-section">Panel Testing / Disable Instructions</div>
+            <div class="data-field">
+              <textarea id="panel-disable-instructions" rows="5" placeholder="Describe panel disable/enable procedure, access codes, key locations…"></textarea>
+            </div>
+          </div>
+          <div>
+            <div class="sys-section">Monitoring Specifications</div>
+            <div class="data-row cols-1" style="margin-bottom:6px;">
+              <div class="data-field">
+                <label>Is the system currently monitored?</label>
+                <select id="monitored">
+                  <option value="">— Select —</option>
+                  <option>Yes</option>
+                  <option>No</option>
+                </select>
+              </div>
+            </div>
+            <div class="data-row cols-1"><div class="data-field"><label>Monitoring Company</label><input type="text" id="monitor-company"></div></div>
+            <div class="data-row cols-1"><div class="data-field"><label>Phone</label><input type="tel" id="monitor-phone"></div></div>
+            <div class="data-row cols-1"><div class="data-field"><label>Account #</label><input type="text" id="monitor-account"></div></div>
+            <div class="data-row">
+              <div class="data-field"><label>Time Offline</label><input type="time" id="monitor-time-offline"></div>
+              <div class="data-field"><label>Time Online</label><input type="time" id="monitor-time-online"></div>
+            </div>
+            <div class="data-row cols-1"><div class="data-field"><label>Monitoring Notes</label><input type="text" id="monitor-notes"></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><span class="icon">✅</span><span>Pre &amp; Post Inspection Checklist</span></div>
+      <div class="card-body">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+          <div>
+            <div class="sys-section">Pre-Inspection</div>
+            <div id="pre-checklist"></div>
+          </div>
+          <div>
+            <div class="sys-section">Post-Inspection</div>
+            <div id="post-checklist"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><span class="icon">📅</span><span>Recurring Inspection Type &amp; Month</span></div>
+      <div class="card-body">
+        <p style="font-size:.78rem;color:var(--slate);margin-bottom:10px;">Enter the scheduled month for each recurring inspection type at this building.</p>
+        <div class="recur-grid" id="recur-grid"></div>
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn-secondary" onclick="goStep(1)">← Back</button>
+      <button class="btn-primary" onclick="goStep(3)">Next: Device Testing →</button>
+    </div>
+  </div>
+
+  <!-- ══ STEP 3: DEVICE TESTING ══ -->
+  <div id="step-3" style="display:none;">
+
+    <div class="card">
+      <div class="card-header"><span class="icon">🔍</span><span>Device Testing Summary <span style="font-size:.72rem;font-weight:400;opacity:.8;">(PASS = Functional/Visual  |  FAIL = Failed Test  |  NT = Not Tested  |  NF = Not Found)</span></span></div>
+      <div class="card-body" style="overflow-x:auto;">
+        <table class="dev-table" id="device-table">
+          <thead>
+            <tr>
+              <th class="left" style="min-width:160px;">Device / System</th>
+              <th style="width:40px;">Key</th>
+              <th style="width:70px;">Total Count</th>
+              <th style="width:60px;">Pass #</th>
+              <th style="width:60px;">Fail #</th>
+              <th style="width:65px;">% Pass</th>
+              <th style="width:65px;">% Fail</th>
+              <th style="width:70px;">Not Tested</th>
+              <th style="width:70px;">Not Found</th>
+              <th>Notes</th>
+            </tr>
+          </thead>
+          <tbody id="device-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><span class="icon">📝</span><span>On-Site System Notes <span style="font-size:.72rem;font-weight:400;opacity:.8;">— Conditions, Integrity, Outdated/Obsolete Equipment</span></span></div>
+      <div class="card-body">
+        <table class="dyn-table">
+          <thead><tr><th style="width:200px;">Equipment</th><th style="width:130px;">Condition</th><th>Notes &amp; Observations</th></tr></thead>
+          <tbody>
+            <tr><td><div class="data-field"><input type="text" value="Fire Alarm Control Panel" id="onsite-eq-1"></div></td><td><input type="text" id="onsite-cond-1"></td><td><input type="text" id="onsite-notes-1"></td></tr>
+            <tr><td><div class="data-field"><input type="text" value="Initiating Devices" id="onsite-eq-2"></div></td><td><input type="text" id="onsite-cond-2"></td><td><input type="text" id="onsite-notes-2"></td></tr>
+            <tr><td><div class="data-field"><input type="text" value="Power Supplies" id="onsite-eq-3"></div></td><td><input type="text" id="onsite-cond-3"></td><td><input type="text" id="onsite-notes-3"></td></tr>
+            <tr><td><div class="data-field"><input type="text" value="Graphic Maps" id="onsite-eq-4"></div></td><td><input type="text" id="onsite-cond-4"></td><td><input type="text" id="onsite-notes-4"></td></tr>
+            <tr><td><div class="data-field"><input type="text" value="Others" id="onsite-eq-5"></div></td><td><input type="text" id="onsite-cond-5"></td><td><input type="text" id="onsite-notes-5"></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn-secondary" onclick="goStep(2)">← Back</button>
+      <button class="btn-primary" onclick="goStep(4)">Next: Auxiliary &amp; Locations →</button>
+    </div>
+  </div>
+
+  <!-- ══ STEP 4: AUXILIARY + SUB PANELS + DEVICE LOCATIONS ══ -->
+  <div id="step-4" style="display:none;">
+
+    <div class="card">
+      <div class="card-header"><span class="icon">📢</span><span>Audio / Visual Functionality <span style="font-size:.72rem;font-weight:400;opacity:.8;">— Annual Only</span></span></div>
+      <div class="card-body">
+        <div class="inspect-row">
+          <div class="inspect-row-top">
+            <div class="inspect-label">Visual notification present? (strobes &amp; combos)</div>
+            <div style="display:flex;gap:6px;align-items:center;">
+              <span style="font-size:.7rem;color:var(--slate);">Present:</span>
+              <div class="pf-group">
+                <button class="pf-btn na" onclick="setPF(this)">N/A</button>
+                <button class="pf-btn pass" onclick="setPF(this)">YES</button>
+                <button class="pf-btn fail" onclick="setPF(this)">NO</button>
+              </div>
+              <span style="font-size:.7rem;color:var(--slate);">Operational:</span>
+              <div class="pf-group">
+                <button class="pf-btn pass" id="av-visual-op-pass" onclick="setPF(this)">PASS</button>
+                <button class="pf-btn fail" id="av-visual-op-fail" onclick="setPF(this)">FAIL</button>
+                <button class="pf-btn na"   onclick="setPF(this)">N/A</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="inspect-row">
+          <div class="inspect-row-top">
+            <div class="inspect-label">If present – when in alarm, lighting is synchronized?</div>
+            <div class="pf-group">
+              <button class="pf-btn pass" onclick="setPF(this)">PASS</button>
+              <button class="pf-btn fail" onclick="setPF(this)">FAIL</button>
+              <button class="pf-btn na"   onclick="setPF(this)">N/A</button>
+            </div>
+          </div>
+        </div>
+        <div class="inspect-row">
+          <div class="inspect-row-top">
+            <div class="inspect-label">If present – all lighting appliances are unobstructed and clearly visible?</div>
+            <div class="pf-group">
+              <button class="pf-btn pass" onclick="setPF(this)">PASS</button>
+              <button class="pf-btn fail" onclick="setPF(this)">FAIL</button>
+              <button class="pf-btn na"   onclick="setPF(this)">N/A</button>
+            </div>
+          </div>
+        </div>
+        <div class="inspect-row">
+          <div class="inspect-row-top">
+            <div class="inspect-label">Audible notification present? (bells, chimes, horns &amp; combos)</div>
+            <div class="pf-group">
+              <button class="pf-btn na"   onclick="setPF(this)">N/A</button>
+              <button class="pf-btn pass" onclick="setPF(this)">PASS</button>
+              <button class="pf-btn fail" onclick="setPF(this)">FAIL</button>
+            </div>
+          </div>
+        </div>
+        <div class="data-row cols-1" style="margin-top:8px;">
+          <div class="data-field"><label>A/V Notes</label><input type="text" id="av-notes"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><span class="icon">🚪</span><span>Door Holder Functionality <span style="font-size:.72rem;font-weight:400;opacity:.8;">— Annual Only</span></span></div>
+      <div class="card-body">
+        <div class="inspect-row">
+          <div class="inspect-row-top">
+            <div class="inspect-label">Door holder hardware present? (magnetic locks, card access)</div>
+            <div style="display:flex;gap:6px;align-items:center;">
+              <span style="font-size:.7rem;color:var(--slate);">Present:</span>
+              <div class="pf-group">
+                <button class="pf-btn na" onclick="setPF(this)">N/A</button>
+                <button class="pf-btn pass" onclick="setPF(this)">YES</button>
+              </div>
+              <span style="font-size:.7rem;color:var(--slate);">Operational:</span>
+              <div class="pf-group">
+                <button class="pf-btn pass" onclick="setPF(this)">PASS</button>
+                <button class="pf-btn fail" onclick="setPF(this)">FAIL</button>
+                <button class="pf-btn na"   onclick="setPF(this)">N/A</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="inspect-row">
+          <div class="inspect-row-top">
+            <div class="inspect-label">If present – all door hardware free from damage?</div>
+            <div class="pf-group">
+              <button class="pf-btn pass" onclick="setPF(this)">PASS</button>
+              <button class="pf-btn fail" onclick="setPF(this)">FAIL</button>
+              <button class="pf-btn na"   onclick="setPF(this)">N/A</button>
+            </div>
+          </div>
+        </div>
+        <div class="inspect-row">
+          <div class="inspect-row-top">
+            <div class="inspect-label">If present – all door release and close as intended upon alarm activation?</div>
+            <div class="pf-group">
+              <button class="pf-btn pass" onclick="setPF(this)">PASS</button>
+              <button class="pf-btn fail" onclick="setPF(this)">FAIL</button>
+              <button class="pf-btn na"   onclick="setPF(this)">N/A</button>
+            </div>
+          </div>
+        </div>
+        <div class="data-row cols-1" style="margin-top:8px;">
+          <div class="data-field"><label>Door Holder Notes</label><input type="text" id="door-notes"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><span class="icon">🌡️</span><span>HVAC Control <span style="font-size:.72rem;font-weight:400;opacity:.8;">— Annual Only</span></span></div>
+      <div class="card-body">
+        <div class="inspect-row">
+          <div class="inspect-row-top">
+            <div class="inspect-label">HVAC shut down present?</div>
+            <div style="display:flex;gap:6px;align-items:center;">
+              <span style="font-size:.7rem;color:var(--slate);">Present:</span>
+              <div class="pf-group">
+                <button class="pf-btn na"   onclick="setPF(this)">N/A</button>
+                <button class="pf-btn pass" onclick="setPF(this)">YES</button>
+              </div>
+              <span style="font-size:.7rem;color:var(--slate);">Operational:</span>
+              <div class="pf-group">
+                <button class="pf-btn pass" onclick="setPF(this)">PASS</button>
+                <button class="pf-btn fail" onclick="setPF(this)">FAIL</button>
+                <button class="pf-btn na"   onclick="setPF(this)">N/A</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="data-row" style="margin-top:8px;">
+          <div class="data-field"><label>Method</label><input type="text" id="hvac-method" placeholder="e.g. Relay, BACnet, Direct wired"></div>
+          <div class="data-field"><label>HVAC Notes</label><input type="text" id="hvac-notes"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><span class="icon">⚡</span><span>Sub Panel / Power Supply Information</span></div>
+      <div class="card-body" style="overflow-x:auto;">
+        <table class="dyn-table" id="subpanel-table">
+          <thead>
+            <tr>
+              <th>Location</th><th>Make</th><th>Model</th><th>Address</th>
+              <th>Panel/Circuit</th><th>Amps/Style</th><th>Avail. NACs</th>
+              <th>Install Date</th><th>(L) Batt Load Test</th><th>(R) Batt Load Test</th>
+              <th>SPVSD?</th><th style="width:80px;">Pass/Fail</th><th style="width:30px;"></th>
+            </tr>
+          </thead>
+          <tbody id="subpanel-tbody"></tbody>
+        </table>
+        <button class="add-row-btn" onclick="addSubpanelRow()">＋ Add Sub Panel / Power Supply</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><span class="icon">🔍</span><span>Devices — Fire Detection (by Level / Floor / Location)</span></div>
+      <div class="card-body" style="overflow-x:auto;">
+        <table class="dyn-table" id="detection-table">
+          <thead>
+            <tr><th style="width:80px;">Type</th><th>Location</th><th style="width:90px;">Address</th><th style="width:90px;">Alarm</th><th style="width:100px;">Supervisory</th><th style="width:70px;">Note #</th><th style="width:30px;"></th></tr>
+          </thead>
+          <tbody id="detection-tbody"></tbody>
+        </table>
+        <button class="add-row-btn" onclick="addDetectionRow()">＋ Add Device</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><span class="icon">💧</span><span>Flow Switches — Sprinkler Systems</span></div>
+      <div class="card-body" style="overflow-x:auto;">
+        <table class="dyn-table" id="flow-table">
+          <thead>
+            <tr><th style="width:80px;">Type</th><th>Location</th><th style="width:90px;">Scan ID</th><th style="width:90px;">Address</th><th style="width:110px;">Supervisory</th><th style="width:80px;">Seconds</th><th style="width:30px;"></th></tr>
+          </thead>
+          <tbody id="flow-tbody"></tbody>
+        </table>
+        <button class="add-row-btn" onclick="addFlowRow()">＋ Add Flow Switch</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><span class="icon">🔒</span><span>Tamper Switches — Sprinkler Systems</span></div>
+      <div class="card-body" style="overflow-x:auto;">
+        <table class="dyn-table" id="tamper-table">
+          <thead>
+            <tr><th style="width:80px;">Type</th><th>Location</th><th style="width:90px;">Scan ID</th><th style="width:90px;">Address</th><th style="width:110px;">Supervisory</th><th>Notes</th><th style="width:30px;"></th></tr>
+          </thead>
+          <tbody id="tamper-tbody"></tbody>
+        </table>
+        <button class="add-row-btn" onclick="addTamperRow()">＋ Add Tamper Switch</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><span class="icon">📋</span><span>Additional Notes / Observations / Site Specific Notes</span></div>
+      <div class="card-body">
+        <div class="field-group"><textarea id="additional-notes" rows="5" placeholder="Site-specific conditions, observations, or notes not captured elsewhere…"></textarea></div>
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn-secondary" onclick="goStep(3)">← Back</button>
+      <button class="btn-primary" onclick="goStep(5)">Next: Deficiencies →</button>
+    </div>
+  </div>
+
+  <!-- ══ STEP 5: DEFICIENCIES ══ -->
+  <div id="step-5" style="display:none;">
+
+    <div class="card">
+      <div class="card-header"><span class="icon">⚠️</span><span>Deficiency List &amp; Proposed Solutions</span></div>
+      <div class="card-body">
+        <table class="dyn-table">
+          <thead><tr><th style="width:32px;">#</th><th>Deficiency &amp; Proposed Solution</th><th style="width:160px;">Make / Model</th><th style="width:120px;">Severity</th><th style="width:32px;"></th></tr></thead>
+          <tbody id="defic-tbody"></tbody>
+        </table>
+        <button class="add-row-btn" onclick="addDeficRow()">＋ Add Deficiency</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><span class="icon">🔋</span><span>Failed Batteries (if applicable)</span></div>
+      <div class="card-body" style="overflow-x:auto;">
+        <table class="dyn-table" id="battery-table">
+          <thead>
+            <tr><th style="width:80px;">Size (AH)</th><th style="width:100px;">Type</th><th style="width:60px;">Count</th><th>Locations</th><th style="width:30px;"></th></tr>
+          </thead>
+          <tbody id="battery-tbody"></tbody>
+        </table>
+        <button class="add-row-btn" onclick="addBatteryRow()">＋ Add Failed Battery</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><span class="icon">📝</span><span>General Notes &amp; Site Observations</span></div>
+      <div class="card-body">
+        <table class="dyn-table">
+          <thead><tr><th style="width:32px;">#</th><th>Note / Observation</th><th style="width:120px;">Severity</th><th style="width:32px;"></th></tr></thead>
+          <tbody id="notes-tbody"></tbody>
+        </table>
+        <button class="add-row-btn" onclick="addNoteRow()">＋ Add Note</button>
+        <div style="margin-top:12px;background:#f8fafc;border:1px solid var(--border);border-radius:7px;padding:10px 14px;font-size:.75rem;color:var(--slate);line-height:1.5;">
+          Listed above are any General Notes to report. This section also contains any issues found during inspections that either require a substantial investment to correct (permits, engineering, etc.) or may have been previously approved in their as-is condition by the Authority Having Jurisdiction. Please contact our office for information, consultation, or services for any items contained herein.
+        </div>
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn-secondary" onclick="goStep(4)">← Back</button>
+      <button class="btn-primary" onclick="goStep(6)">Next: Sign &amp; Export →</button>
+    </div>
+  </div>
+
+  <!-- ══ STEP 6: SIGN & EXPORT ══ -->
+  <div id="step-6" style="display:none;">
+    <div class="card">
+      <div class="card-header"><span class="icon">✍️</span><span>Signatures</span></div>
+      <div class="card-body">
+        <div class="sig-pair">
+          <div>
+            <div class="sys-section">Technician Signature</div>
+            <canvas class="sig-canvas" id="sig-tech" width="480" height="90"></canvas>
+            <button class="sig-clear" onclick="clearSig('tech')">Clear</button>
+            <div class="field-group" style="margin-top:10px;"><label>Date</label><input type="date" id="sig-tech-date"></div>
+          </div>
+          <div>
+            <div class="sys-section">Client Signature</div>
+            <canvas class="sig-canvas" id="sig-client" width="480" height="90"></canvas>
+            <button class="sig-clear" onclick="clearSig('client')">Clear</button>
+            <div class="field-group" style="margin-top:10px;"><label>Date</label><input type="date" id="sig-client-date"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header"><span class="icon">📄</span><span>Export</span></div>
+      <div class="card-body">
+        <div class="btn-row">
+          <button class="btn-primary fire" onclick="exportPDF()">📄 Export PDF Report</button>
+          <button class="btn-primary green" onclick="autoSave()">💾 Save Draft</button>
+          <button class="btn-secondary" onclick="newReport()">🔄 New Report</button>
+        </div>
+      </div>
+    </div>
+    <div class="btn-row"><button class="btn-secondary" onclick="goStep(5)">← Back</button></div>
+  </div>
+
+</div>
+<div id="toast"></div>
+
+<script>
+// ─── DEVICE LIST ───
+const DEVICES = [
+  {label:'Smoke Detector',         key:'SD'},
+  {label:'Combo Smoke/CO2/Other',  key:'CBO'},
+  {label:'Heat Detector',          key:'HD'},
+  {label:'Manual Pull Station',    key:'PS'},
+  {label:'Duct Detector',          key:'DD'},
+  {label:'Beam Detector',          key:'BD'},
+  {label:'CO2 Detector',           key:'CO'},
+  {label:'Wet Flow Switch',        key:'FS'},
+  {label:'Dry Pressure Switch',    key:'PRS'},
+  {label:'Tamper Switch',          key:'TS'},
+  {label:'Low Air Switch',         key:'LA'},
+  {label:'High Air Switch',        key:'HA'},
+  {label:'Power Supply',           key:'PWR'},
+  {label:'Batteries',              key:'BAT'},
+  {label:'Annunciator',            key:'ANN'},
+  {label:'Elevator Recall Bank',   key:'ELV'},
+  {label:'Phone Jack',             key:'PJ'},
+  {label:'Fire Phone',             key:'FP'},
+  {label:'Other (specify)',        key:'OTH'},
+];
+
+const PRE_CHECKS = [
+  'Check in with the engineer?',
+  'Were keys provided?',
+  'All fire equipment in working order?',
+  'Panel showing "Normal" upon arrival?',
+  'Panel taken offline / disabled?',
+  'All lamps / LEDs / LCDs functioning?',
+  'All fuses in good condition / functional',
+];
+const POST_CHECKS = [
+  'Signals received at central station?',
+  'Panel "Normal" state upon departure?',
+  'Panel reenabled & placed online?',
+  'Applicable device tags updated?',
+  'Checkout with eng / keys returned',
+  'Customer notified of deficiencies?',
+  'FCC left clean & organized?',
+];
+
+const RECUR_TYPES = [
+  'Fire Alarm Annual','Fire Alarm Semi-Annual','Fire Alarm Quarterly',
+  'Wet Sprinkler Annual','Dry Valve Annual','Fire Pump Annual',
+  'Emergency Light Annual','Kitchen Hood Annual','Kitchen Hood Semi-Annual',
+  'Area of Refuge / RATH','Antifreeze Annual','Backflow Preventor Annual',
+  'Pre-Action','Clean Agent','Portable Extinguisher Annual',
+  'Other','Other','Other',
+];
+
+const SEV_OPTS = ['','Critical','High','Moderate','Low','Advisory'];
+let currentStep = 1;
+let noteCounters = { pre: 0, post: 0 };
+let subpanelCount = 0, detectionCount = 0, flowCount = 0, tamperCount = 0;
+let deficCount = 0, noteCount = 0, batteryCount = 0;
+let sigDraw = {};
+
+// ─── NAV ───
+function toggleNav(){ document.getElementById('nav-menu').classList.toggle('open'); }
+document.addEventListener('click', e => { if (!e.target.closest('.nav-hamburger')) document.getElementById('nav-menu').classList.remove('open'); });
+
+function goStep(n) {
+  document.getElementById('step-'+currentStep).style.display='none';
+  document.querySelectorAll('.step-tab').forEach(t => {
+    const s=+t.dataset.step; t.classList.remove('active','done');
+    if(s<n) t.classList.add('done'); else if(s===n) t.classList.add('active');
+  });
+  currentStep=n;
+  document.getElementById('step-'+n).style.display='';
+  window.scrollTo(0,0);
+}
+
+function setIntervalVal(v) {
+  document.getElementById('insp-interval').value=v;
+  document.querySelectorAll('#interval-group .interval-btn').forEach(b=>b.classList.toggle('selected',b.textContent===v));
+}
+
+// ─── Y/N/NA ───
+function setYNA(btn, noteId, type) {
+  const group=btn.closest('.yna-group');
+  group.querySelectorAll('.yna-btn').forEach(b=>b.classList.remove('selected'));
+  btn.classList.add('selected');
+  const noteRow=document.getElementById(noteId);
+  if(!noteRow) return;
+  if(type==='N') {
+    noteCounters.global=(noteCounters.global||0)+1;
+    noteRow.querySelector('.note-badge').textContent='Note #'+noteCounters.global;
+    const inp=noteRow.querySelector('input');
+    inp.classList.add('fail'); inp.placeholder='Describe issue…';
+    noteRow.classList.add('show');
+  } else {
+    noteRow.classList.remove('show');
+  }
+}
+
+// ─── PASS/FAIL SIMPLE ───
+function setPF(btn) {
+  const group=btn.closest('.pf-group');
+  group.querySelectorAll('.pf-btn').forEach(b=>b.classList.remove('selected'));
+  btn.classList.add('selected');
+}
+
+// ─── DEVICE TABLE ───
+function buildDeviceTable() {
+  const tbody=document.getElementById('device-tbody');
+  DEVICES.forEach((d,i) => {
+    const id=`dev-${i}`;
+    tbody.insertAdjacentHTML('beforeend',`
+      <tr>
+        <td class="label-cell">${d.label}</td>
+        <td class="key-cell">${d.key}</td>
+        <td><input type="number" id="${id}-total" min="0" placeholder="0" oninput="calcPct(${i})"></td>
+        <td><input type="number" id="${id}-pass"  min="0" placeholder="0" oninput="calcPct(${i})"></td>
+        <td><input type="number" id="${id}-fail"  min="0" placeholder="0" oninput="calcPct(${i})"></td>
+        <td><span class="pct pass" id="${id}-pct-pass">—</span></td>
+        <td><span class="pct fail" id="${id}-pct-fail">—</span></td>
+        <td><input type="number" id="${id}-nt" min="0" placeholder="0"></td>
+        <td><input type="number" id="${id}-nf" min="0" placeholder="0"></td>
+        <td><input type="text"   id="${id}-notes" style="min-width:120px;"></td>
+      </tr>`);
+  });
+}
+
+function calcPct(i) {
+  const id=`dev-${i}`;
+  const total=+document.getElementById(`${id}-total`).value||0;
+  const pass =+document.getElementById(`${id}-pass`).value||0;
+  const fail =+document.getElementById(`${id}-fail`).value||0;
+  document.getElementById(`${id}-pct-pass`).textContent = total>0 ? Math.round(pass/total*100)+'%' : '—';
+  document.getElementById(`${id}-pct-fail`).textContent = total>0 ? Math.round(fail/total*100)+'%' : '—';
+}
+
+// ─── PRE/POST CHECKLISTS ───
+function buildChecklists() {
+  buildCL('pre-checklist', PRE_CHECKS, 'pre');
+  buildCL('post-checklist', POST_CHECKS, 'post');
+}
+function buildCL(containerId, items, prefix) {
+  const c=document.getElementById(containerId);
+  items.forEach((label,i) => {
+    const rowId=`${prefix}-note-row-${i}`;
+    c.insertAdjacentHTML('beforeend',`
+      <div class="inspect-row">
+        <div class="inspect-row-top">
+          <div class="inspect-label">${label}</div>
+          <div class="yna-group">
+            <button class="yna-btn y"  onclick="setYNA(this,'${rowId}','Y')">Y</button>
+            <button class="yna-btn n"  onclick="setYNA(this,'${rowId}','N')">N</button>
+            <button class="yna-btn na" onclick="setYNA(this,'${rowId}','N/A')">N/A</button>
+          </div>
+        </div>
+        <div class="note-row" id="${rowId}">
+          <span class="note-badge">Note #—</span>
+          <input class="note-input" type="text" id="${rowId}-text" placeholder="Note…">
+        </div>
+      </div>`);
+  });
+}
+
+// ─── RECURRING TYPES ───
+function buildRecurGrid() {
+  const g=document.getElementById('recur-grid');
+  RECUR_TYPES.forEach((label,i) => {
+    g.insertAdjacentHTML('beforeend',`
+      <div class="recur-item">
+        <label>${label}</label>
+        <input type="text" id="recur-${i}" placeholder="Month / schedule">
+      </div>`);
+  });
+}
+
+// ─── DYNAMIC TABLE ROWS ───
+function addSubpanelRow() {
+  subpanelCount++;
+  const n=subpanelCount;
+  const pfOpts=['','PASS','FAIL','N/A'].map(o=>`<option>${o}</option>`).join('');
+  document.getElementById('subpanel-tbody').insertAdjacentHTML('beforeend',`
+    <tr id="sp-row-${n}">
+      <td><input type="text" id="sp-loc-${n}"></td>
+      <td><input type="text" id="sp-make-${n}"></td>
+      <td><input type="text" id="sp-model-${n}"></td>
+      <td><input type="text" id="sp-addr-${n}"></td>
+      <td><input type="text" id="sp-circuit-${n}"></td>
+      <td><input type="text" id="sp-amps-${n}"></td>
+      <td><input type="text" id="sp-nacs-${n}"></td>
+      <td><input type="date" id="sp-install-${n}"></td>
+      <td><input type="text" id="sp-lbatt-${n}" placeholder="Pass/Fail/V"></td>
+      <td><input type="text" id="sp-rbatt-${n}" placeholder="Pass/Fail/V"></td>
+      <td><select id="sp-spvsd-${n}"><option></option><option>Yes</option><option>No</option></select></td>
+      <td><select id="sp-pf-${n}">${pfOpts}</select></td>
+      <td><button class="del-btn" onclick="document.getElementById('sp-row-${n}').remove()">✕</button></td>
+    </tr>`);
+}
+
+function addDetectionRow() {
+  detectionCount++;
+  const n=detectionCount;
+  const alOpts=['','Alarm','Supervisory','Trouble','Monitor'].map(o=>`<option>${o}</option>`).join('');
+  const supOpts=['','Pass','Fail','N/A','NT'].map(o=>`<option>${o}</option>`).join('');
+  document.getElementById('detection-tbody').insertAdjacentHTML('beforeend',`
+    <tr id="det-row-${n}">
+      <td><input type="text" id="det-type-${n}" placeholder="SD, HD…"></td>
+      <td><input type="text" id="det-loc-${n}"></td>
+      <td><input type="text" id="det-addr-${n}"></td>
+      <td><select id="det-alarm-${n}">${alOpts}</select></td>
+      <td><select id="det-sup-${n}">${supOpts}</select></td>
+      <td><input type="text" id="det-note-${n}"></td>
+      <td><button class="del-btn" onclick="document.getElementById('det-row-${n}').remove()">✕</button></td>
+    </tr>`);
+}
+
+function addFlowRow() {
+  flowCount++;
+  const n=flowCount;
+  const supOpts=['','Pass','Fail','N/A','NT'].map(o=>`<option>${o}</option>`).join('');
+  document.getElementById('flow-tbody').insertAdjacentHTML('beforeend',`
+    <tr id="flow-row-${n}">
+      <td><input type="text" id="flow-type-${n}" placeholder="FS, WFS…"></td>
+      <td><input type="text" id="flow-loc-${n}"></td>
+      <td><input type="text" id="flow-scan-${n}"></td>
+      <td><input type="text" id="flow-addr-${n}"></td>
+      <td><select id="flow-sup-${n}">${supOpts}</select></td>
+      <td><input type="number" id="flow-secs-${n}" placeholder="sec"></td>
+      <td><button class="del-btn" onclick="document.getElementById('flow-row-${n}').remove()">✕</button></td>
+    </tr>`);
+}
+
+function addTamperRow() {
+  tamperCount++;
+  const n=tamperCount;
+  const supOpts=['','Pass','Fail','N/A','NT'].map(o=>`<option>${o}</option>`).join('');
+  document.getElementById('tamper-tbody').insertAdjacentHTML('beforeend',`
+    <tr id="tamper-row-${n}">
+      <td><input type="text" id="tamper-type-${n}" placeholder="TS…"></td>
+      <td><input type="text" id="tamper-loc-${n}"></td>
+      <td><input type="text" id="tamper-scan-${n}"></td>
+      <td><input type="text" id="tamper-addr-${n}"></td>
+      <td><select id="tamper-sup-${n}">${supOpts}</select></td>
+      <td><input type="text" id="tamper-notes-${n}"></td>
+      <td><button class="del-btn" onclick="document.getElementById('tamper-row-${n}').remove()">✕</button></td>
+    </tr>`);
+}
+
+function addDeficRow() {
+  deficCount++;
+  const n=deficCount;
+  const sevOpts=SEV_OPTS.map(s=>`<option>${s||'— Select —'}</option>`).join('');
+  document.getElementById('defic-tbody').insertAdjacentHTML('beforeend',`
+    <tr id="defic-row-${n}">
+      <td style="text-align:center;font-weight:700;color:var(--slate);">${n}</td>
+      <td><input type="text" id="defic-desc-${n}" placeholder="Describe deficiency and proposed solution…"></td>
+      <td><input type="text" id="defic-model-${n}"></td>
+      <td><select id="defic-sev-${n}">${sevOpts}</select></td>
+      <td><button class="del-btn" onclick="document.getElementById('defic-row-${n}').remove()">✕</button></td>
+    </tr>`);
+}
+
+function addBatteryRow() {
+  batteryCount++;
+  const n=batteryCount;
+  document.getElementById('battery-tbody').insertAdjacentHTML('beforeend',`
+    <tr id="bat-row-${n}">
+      <td><input type="text" id="bat-size-${n}" placeholder="e.g. 7AH"></td>
+      <td><input type="text" id="bat-type-${n}" placeholder="e.g. SLA, Li"></td>
+      <td><input type="number" id="bat-count-${n}" min="1" placeholder="1"></td>
+      <td><input type="text" id="bat-loc-${n}" placeholder="Panel location…"></td>
+      <td><button class="del-btn" onclick="document.getElementById('bat-row-${n}').remove()">✕</button></td>
+    </tr>`);
+}
+
+function addNoteRow() {
+  noteCount++;
+  const n=noteCount;
+  const sevOpts=SEV_OPTS.map(s=>`<option>${s||'— Select —'}</option>`).join('');
+  document.getElementById('notes-tbody').insertAdjacentHTML('beforeend',`
+    <tr id="note-row-${n}">
+      <td style="text-align:center;font-weight:700;color:var(--slate);">${n}</td>
+      <td><input type="text" id="note-desc-${n}" placeholder="Note or observation…"></td>
+      <td><select id="note-sev-${n}">${sevOpts}</select></td>
+      <td><button class="del-btn" onclick="document.getElementById('note-row-${n}').remove()">✕</button></td>
+    </tr>`);
+}
+
+// ─── SIGNATURES ───
+function initSig(canvasId, key) {
+  const canvas=document.getElementById(canvasId); if(!canvas) return;
+  const ctx=canvas.getContext('2d');
+  sigDraw[key]={ctx, drawing:false};
+  function pos(e){ const r=canvas.getBoundingClientRect(); const s=e.touches?e.touches[0]:e; return{x:(s.clientX-r.left)*(canvas.width/r.width),y:(s.clientY-r.top)*(canvas.height/r.height)}; }
+  canvas.addEventListener('mousedown',  e=>{sigDraw[key].drawing=true;const p=pos(e);ctx.beginPath();ctx.moveTo(p.x,p.y);});
+  canvas.addEventListener('mousemove',  e=>{if(!sigDraw[key].drawing)return;const p=pos(e);ctx.lineTo(p.x,p.y);ctx.strokeStyle='#0d1b2a';ctx.lineWidth=2;ctx.lineCap='round';ctx.stroke();});
+  canvas.addEventListener('mouseup',    ()=>sigDraw[key].drawing=false);
+  canvas.addEventListener('mouseleave', ()=>sigDraw[key].drawing=false);
+  canvas.addEventListener('touchstart', e=>{e.preventDefault();sigDraw[key].drawing=true;const p=pos(e);ctx.beginPath();ctx.moveTo(p.x,p.y);},{passive:false});
+  canvas.addEventListener('touchmove',  e=>{e.preventDefault();if(!sigDraw[key].drawing)return;const p=pos(e);ctx.lineTo(p.x,p.y);ctx.strokeStyle='#0d1b2a';ctx.lineWidth=2;ctx.lineCap='round';ctx.stroke();},{passive:false});
+  canvas.addEventListener('touchend',   ()=>sigDraw[key].drawing=false);
+}
+function clearSig(key){ const c=document.getElementById(key==='tech'?'sig-tech':'sig-client'); c.getContext('2d').clearRect(0,0,c.width,c.height); }
+
+// ─── HELPERS ───
+function v(id){ const e=document.getElementById(id); return e?e.value:''; }
+function showToast(msg,dur=2500){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),dur); }
+function newReport(){ if(!confirm('Start a new report? Unsaved data will be lost.')) return; localStorage.removeItem('fa-inspection-draft'); location.reload(); }
+
+// ─── SAVE ───
+function autoSave() {
+  try {
+    const data = collectData();
+    localStorage.setItem('fa-inspection-draft', JSON.stringify(data));
+    showToast('Saved ✓');
+  } catch(e) { showToast('Save failed'); }
+}
+
+function collectData() {
+  const data = {
+    v: 1,
+    buildingName: v('building-name'), jobNumber: v('job-number'),
+    siteAddress: v('site-address'), poNumber: v('po-number'),
+    inspDate: v('insp-date'), initials: v('inspector-initials'),
+    jurisdiction: v('jurisdiction'), interval: v('insp-interval'),
+    primary:   {name:v('primary-name'),title:v('primary-title'),phone:v('primary-phone'),email:v('primary-email')},
+    secondary: {name:v('secondary-name'),title:v('secondary-title'),phone:v('secondary-phone'),email:v('secondary-email')},
+    cp: {make:v('cp-make'),model:v('cp-model'),location:v('cp-location'),type:v('cp-type')},
+    dr: {make:v('dr-make'),model:v('dr-model'),location:v('dr-location'),type:v('dr-type')},
+    panelInstructions: v('panel-disable-instructions'),
+    monitored: v('monitored'), monitorCompany: v('monitor-company'),
+    monitorPhone: v('monitor-phone'), monitorAccount: v('monitor-account'),
+    monitorOffline: v('monitor-time-offline'), monitorOnline: v('monitor-time-online'),
+    monitorNotes: v('monitor-notes'),
+    avNotes: v('av-notes'), doorNotes: v('door-notes'),
+    hvacMethod: v('hvac-method'), hvacNotes: v('hvac-notes'),
+    additionalNotes: v('additional-notes'),
+    sigTechDate: v('sig-tech-date'), sigClientDate: v('sig-client-date'),
+  };
+  return data;
+}
+
+// ─── PDF ───
+function exportPDF() {
+  const data = collectData();
+  const {jsPDF} = window.jspdf;
+  const doc = new jsPDF({unit:'pt',format:'letter'});
+  const PW=612, ML=40, MR=40, MT=40;
+  let y=MT;
+  function newPage(){ doc.addPage(); y=MT; }
+  function checkY(need=20){ if(y+need>752) newPage(); }
+
+  function hdr(title, color=[13,27,42]) {
+    doc.setFillColor(...color);
+    doc.rect(ML,y,PW-ML-MR,20,'F');
+    doc.setFont('helvetica','bold'); doc.setFontSize(9.5); doc.setTextColor(255,255,255);
+    doc.text(title, ML+6, y+14); y+=26; doc.setTextColor(13,27,42);
+  }
+
+  function row2(l1,v1,l2,v2) {
+    checkY(26);
+    const w=(PW-ML-MR-10)/2;
+    fld(l1,v1,ML,w); fld(l2,v2,ML+w+10,w); y+=24;
+  }
+  function fld(label,val,x,w) {
+    doc.setFont('helvetica','bold'); doc.setFontSize(6.5); doc.setTextColor(100,116,139);
+    doc.text(label.toUpperCase(), x, y);
+    doc.setFont('helvetica','normal'); doc.setFontSize(8.5); doc.setTextColor(13,27,42);
+    doc.text(doc.splitTextToSize(val||'—',w-4)[0], x, y+9);
+  }
+
+  // Cover
+  doc.setFont('helvetica','bold'); doc.setFontSize(18); doc.setTextColor(249,115,22);
+  doc.text('FIRE · LIFE · SAFETY', ML, y); y+=10;
+  doc.setFillColor(249,115,22); doc.rect(ML,y,PW-ML-MR,3,'F'); y+=12;
+  doc.setFont('helvetica','bold'); doc.setFontSize(15); doc.setTextColor(13,27,42);
+  doc.text('FIRE ALARM INSPECTION REPORT', ML, y); y+=20;
+
+  hdr('BUILDING INFORMATION');
+  row2('Building / Property Name',data.buildingName,'Jurisdiction',data.jurisdiction);
+  row2('Address',data.siteAddress,'','');
+  row2('Job #',data.jobNumber,'PO #',data.poNumber);
+  row2('Date',data.inspDate,'Inspector Initials',data.initials);
+  row2('Inspection Interval',data.interval,'','');
+
+  hdr('SITE CONTACTS');
+  const pc=data.primary,sc=data.secondary;
+  row2('Primary: Name',pc.name,'Secondary: Name',sc.name);
+  row2('Primary: Phone',pc.phone,'Secondary: Phone',sc.phone);
+  row2('Primary: Email',pc.email,'Secondary: Email',sc.email);
+
+  // Page 2
+  newPage();
+  hdr('FIRE ALARM CONTROL PANEL & MONITORING');
+  row2('CP Make',data.cp.make,'CP Model',data.cp.model);
+  row2('CP Location',data.cp.location,'CP Type',data.cp.type);
+  row2('Dialer Make',data.dr.make,'Dialer Model',data.dr.model);
+  row2('Dialer Location',data.dr.location,'Dialer Type',data.dr.type);
+  row2('Monitored?',data.monitored,'Monitoring Company',data.monitorCompany);
+  row2('Monitor Phone',data.monitorPhone,'Account #',data.monitorAccount);
+  row2('Time Offline',data.monitorOffline,'Time Online',data.monitorOnline);
+
+  if(data.panelInstructions) {
+    checkY(30);
+    hdr('PANEL TESTING / DISABLE INSTRUCTIONS',[30,48,74]);
+    doc.setFont('helvetica','normal'); doc.setFontSize(8.5); doc.setTextColor(13,27,42);
+    const lines=doc.splitTextToSize(data.panelInstructions, PW-ML-MR);
+    checkY(lines.length*10+6);
+    doc.text(lines, ML, y); y+=lines.length*10+10;
+  }
+
+  // Device testing summary
+  newPage();
+  hdr('DEVICE TESTING SUMMARY (PASS = Functional/Visual  |  FAIL = Failed  |  NT = Not Tested  |  NF = Not Found)');
+  const cols=[80,28,60,52,52,52,52,60,60,140];
+  const hdrs=['Device/System','Key','Total','Pass #','Fail #','% Pass','% Fail','Not Tested','Not Found','Notes'];
+  let x=ML;
+  doc.setFillColor(30,48,74);
+  doc.rect(ML,y,PW-ML-MR,16,'F');
+  doc.setFont('helvetica','bold'); doc.setFontSize(6.5); doc.setTextColor(255,255,255);
+  hdrs.forEach((h,i)=>{ doc.text(h,x+2,y+11); x+=cols[i]; }); y+=18;
+
+  DEVICES.forEach((d,i)=>{
+    checkY(13);
+    const id=`dev-${i}`;
+    const total=v(`${id}-total`)||''; const pass=v(`${id}-pass`)||'';
+    const fail=v(`${id}-fail`)||''; const nt=v(`${id}-nt`)||''; const nf=v(`${id}-nf`)||'';
+    const pp=document.getElementById(`${id}-pct-pass`)?.textContent||'';
+    const pf=document.getElementById(`${id}-pct-fail`)?.textContent||'';
+    const notes=v(`${id}-notes`)||'';
+    const vals=[d.label,d.key,total,pass,fail,pp,pf,nt,nf,notes];
+    doc.setFont('helvetica',i%2===0?'normal':'normal');
+    doc.setFontSize(7.5); doc.setTextColor(13,27,42);
+    if(i%2===0){ doc.setFillColor(248,250,252); doc.rect(ML,y-1,PW-ML-MR,13,'F'); }
+    let xi=ML;
+    vals.forEach((val,ci)=>{ doc.text(String(val).substring(0,ci===9?25:12),xi+2,y+9); xi+=cols[ci]; });
+    y+=13;
+  });
+  y+=8;
+
+  // On-site notes
+  checkY(40);
+  hdr('ON-SITE SYSTEM NOTES',[30,48,74]);
+  const onsiteHdrs=['Equipment','Condition','Notes & Observations'];
+  const onsiteCols=[160,100,PW-ML-MR-260];
+  let ox=ML;
+  doc.setFillColor(30,48,74); doc.rect(ML,y,PW-ML-MR,14,'F');
+  doc.setFont('helvetica','bold'); doc.setFontSize(6.5); doc.setTextColor(255,255,255);
+  onsiteHdrs.forEach((h,i)=>{ doc.text(h,ox+2,y+10); ox+=onsiteCols[i]; }); y+=16;
+  for(let i=1;i<=5;i++){
+    checkY(13);
+    doc.setFont('helvetica','normal'); doc.setFontSize(7.5); doc.setTextColor(13,27,42);
+    if(i%2===0){ doc.setFillColor(248,250,252); doc.rect(ML,y-1,PW-ML-MR,13,'F'); }
+    let oxi=ML;
+    [v(`onsite-eq-${i}`),v(`onsite-cond-${i}`),v(`onsite-notes-${i}`)].forEach((val,ci)=>{
+      doc.text(String(val||'').substring(0,40),oxi+2,y+9); oxi+=onsiteCols[ci];
+    }); y+=13;
+  }
+  y+=10;
+
+  // Auxiliary page
+  newPage();
+  hdr('AUXILIARY SYSTEM INFORMATION & INSPECTION RESULTS');
+  const auxSections=[
+    {label:'Audio/Visual Functionality', note:data.avNotes},
+    {label:'Door Holder Functionality', note:data.doorNotes},
+    {label:'HVAC Control', note:data.hvacNotes+' | Method: '+data.hvacMethod},
+  ];
+  auxSections.forEach(s=>{
+    checkY(24);
+    doc.setFont('helvetica','bold'); doc.setFontSize(8.5); doc.setTextColor(13,27,42);
+    doc.text(s.label+' — Annual Only', ML, y); y+=11;
+    if(s.note){ doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(100,116,139);
+      doc.text('Notes: '+(s.note||'—'), ML+8, y); y+=12; }
+    y+=4;
+  });
+
+  if(data.additionalNotes){
+    checkY(30);
+    hdr('ADDITIONAL NOTES / OBSERVATIONS',[30,48,74]);
+    doc.setFont('helvetica','normal'); doc.setFontSize(8.5); doc.setTextColor(13,27,42);
+    const lines=doc.splitTextToSize(data.additionalNotes, PW-ML-MR);
+    doc.text(lines, ML, y); y+=lines.length*11+10;
+  }
+
+  // Deficiency page
+  newPage();
+  hdr('DEFICIENCY LIST & PROPOSED SOLUTIONS');
+  doc.setFillColor(30,48,74); doc.rect(ML,y,PW-ML-MR,14,'F');
+  doc.setFont('helvetica','bold'); doc.setFontSize(6.5); doc.setTextColor(255,255,255);
+  doc.text('#',ML+3,y+10); doc.text('Deficiency & Proposed Solution',ML+20,y+10);
+  doc.text('Make/Model',ML+350,y+10); doc.text('Severity',ML+470,y+10); y+=16;
+
+  let hasDefic=false;
+  for(let n=1;n<=deficCount;n++){
+    const row=document.getElementById('defic-row-'+n); if(!row) continue; hasDefic=true;
+    const desc=v(`defic-desc-${n}`); const mod=v(`defic-model-${n}`); const sev=v(`defic-sev-${n}`);
+    const lines=doc.splitTextToSize(desc,310); checkY(lines.length*11+8);
+    doc.setFont('helvetica','bold'); doc.setFontSize(8); doc.setTextColor(13,27,42);
+    doc.text(String(n),ML+3,y+9);
+    doc.setFont('helvetica','normal'); doc.text(lines,ML+20,y+9);
+    doc.text(mod,ML+350,y+9);
+    const sc={Critical:[220,38,38],High:[234,88,12],Moderate:[217,119,6],Low:[22,163,74],Advisory:[100,116,139]}[sev]||[13,27,42];
+    doc.setFont('helvetica','bold'); doc.setTextColor(...sc); doc.text(sev,ML+470,y+9);
+    doc.setTextColor(13,27,42); y+=lines.length*11+6;
+    doc.setDrawColor(226,232,240); doc.line(ML,y-2,PW-MR,y-2);
+  }
+  if(!hasDefic){ doc.setFont('helvetica','italic'); doc.setFontSize(8.5); doc.setTextColor(100,116,139); doc.text('No deficiencies recorded.',ML+4,y+10); y+=20; }
+
+  // Batteries
+  y+=8;
+  hdr('FAILED BATTERIES (IF APPLICABLE)',[30,48,74]);
+  doc.setFillColor(30,48,74); doc.rect(ML,y,PW-ML-MR,14,'F');
+  doc.setFont('helvetica','bold'); doc.setFontSize(6.5); doc.setTextColor(255,255,255);
+  ['Size (AH)','Type','Count','Locations'].forEach((h,i)=>{ doc.text(h,ML+i*130+3,y+10); }); y+=16;
+  let hasBat=false;
+  for(let n=1;n<=batteryCount;n++){
+    const row=document.getElementById('bat-row-'+n); if(!row) continue; hasBat=true;
+    checkY(13);
+    doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(13,27,42);
+    [v(`bat-size-${n}`),v(`bat-type-${n}`),v(`bat-count-${n}`),v(`bat-loc-${n}`)].forEach((val,i)=>{ doc.text(String(val||''),ML+i*130+3,y+9); });
+    y+=13;
+  }
+  if(!hasBat){ doc.setFont('helvetica','italic'); doc.setFontSize(8.5); doc.setTextColor(100,116,139); doc.text('No failed batteries recorded.',ML+4,y+10); y+=20; }
+
+  // General notes
+  y+=8;
+  hdr('GENERAL NOTES & SITE OBSERVATIONS',[30,48,74]);
+  for(let n=1;n<=noteCount;n++){
+    const row=document.getElementById('note-row-'+n); if(!row) continue;
+    const desc=v(`note-desc-${n}`); const lines=doc.splitTextToSize(desc,PW-ML-MR-60); checkY(lines.length*11+8);
+    doc.setFont('helvetica','bold'); doc.setFontSize(8); doc.setTextColor(13,27,42); doc.text(String(n),ML+3,y+9);
+    doc.setFont('helvetica','normal'); doc.text(lines,ML+20,y+9); y+=lines.length*11+6;
+  }
+  y+=10;
+  // Disclaimer
+  checkY(40);
+  doc.setFont('helvetica','italic'); doc.setFontSize(6.5); doc.setTextColor(100,116,139);
+  const disc='Listed above are any General Notes to report. This section also contains any issues found during inspections that either require a substantial investment to correct (permits, engineering, etc.) or may have been previously approved in their as-is condition by the Authority Having Jurisdiction. Please contact our offices for information, consultation, or services.';
+  doc.text(doc.splitTextToSize(disc,PW-ML-MR), ML, y); y+=28;
+
+  // Signatures
+  checkY(80);
+  const sw=(PW-ML-MR-20)/2;
+  doc.setFont('helvetica','bold'); doc.setFontSize(7); doc.setTextColor(100,116,139);
+  doc.text('TECHNICIAN SIGNATURE', ML, y);
+  try{ doc.addImage(document.getElementById('sig-tech').toDataURL('image/png'),'PNG',ML,y+4,sw,35); }catch(e){}
+  doc.setDrawColor(200,200,200); doc.line(ML,y+44,ML+sw,y+44);
+  doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(13,27,42);
+  doc.text('Date: '+(v('sig-tech-date')||'___________'), ML, y+56);
+
+  const cx=ML+sw+20;
+  doc.setFont('helvetica','bold'); doc.setFontSize(7); doc.setTextColor(100,116,139);
+  doc.text('CLIENT SIGNATURE', cx, y);
+  try{ doc.addImage(document.getElementById('sig-client').toDataURL('image/png'),'PNG',cx,y+4,sw,35); }catch(e){}
+  doc.setDrawColor(200,200,200); doc.line(cx,y+44,cx+sw,y+44);
+  doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(13,27,42);
+  doc.text('Date: '+(v('sig-client-date')||'___________'), cx, y+56);
+
+  const fname=`FA-Inspection-${data.buildingName||'Report'}-${data.inspDate||'draft'}.pdf`.replace(/[^a-zA-Z0-9\-_.]/g,'_');
+  doc.save(fname);
+  showToast('PDF exported ✓');
+}
+
+// ─── INIT ───
+window.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('insp-date').value = new Date().toISOString().split('T')[0];
+  document.getElementById('sig-tech-date').value = new Date().toISOString().split('T')[0];
+  buildDeviceTable();
+  buildChecklists();
+  buildRecurGrid();
+  initSig('sig-tech','tech');
+  initSig('sig-client','client');
+  // Auto-save every 60s
+  setInterval(()=>autoSave(), 60000);
+});
+</script>
+</body>
+</html>
