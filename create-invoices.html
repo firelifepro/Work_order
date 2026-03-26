@@ -1124,30 +1124,20 @@ async function createQBInvoice(doc) {
     lineDesc += '\n' + doc.workDesc.trim();
   }
 
-  // Build BillAddr from QB customer's ShipAddr (which holds the address info),
-  // formatted as: Company, Street1, Street2 (optional), City/State/ZIP, Country.
-  // Falls back to doc.billTo lines if ShipAddr isn't available.
+  // Build BillAddr from QB customer's CompanyName + BillAddr fields,
+  // formatted as: Company name, Street1, Street2 (optional), City/State/ZIP, Country.
   let billAddr;
-  if (custRef.shipAddr) {
-    const sa = custRef.shipAddr;
+  if (custRef.billAddr) {
+    const ba = custRef.billAddr;
     billAddr = {
-      Line1: custRef.name || '',
-      Line2: sa.Line1 || '',
-      ...(sa.Line2 ? { Line3: sa.Line2 } : {}),
-      City:  sa.City || '',
-      CountrySubDivisionCode: sa.CountrySubDivisionCode || '',
-      PostalCode: sa.PostalCode || '',
-      Country: sa.Country || '',
+      Line1: custRef.companyName || '',
+      Line2: ba.Line1 || '',
+      ...(ba.Line2 ? { Line3: ba.Line2 } : {}),
+      City:  ba.City || '',
+      CountrySubDivisionCode: ba.CountrySubDivisionCode || '',
+      PostalCode: ba.PostalCode || '',
+      Country: ba.Country || '',
     };
-  } else {
-    const billToLines = (doc.billTo || '').split(/[\r\n]+/).map(l => l.trim()).filter(Boolean);
-    billAddr = billToLines.length ? {
-      Line1: billToLines[0] || '',
-      Line2: billToLines[1] || '',
-      Line3: billToLines[2] || '',
-      Line4: billToLines[3] || '',
-      Line5: billToLines[4] || '',
-    } : undefined;
   }
   const emptyShipAddr = { Line1: '', Line2: '', Line3: '', Line4: '', Line5: '', City: '', CountrySubDivisionCode: '', PostalCode: '' };
 
@@ -1233,7 +1223,7 @@ async function findOrCreateCustomer(customerName, env, acctNum) {
     if (match) {
       logToSheet('QB_CUSTOMER_FOUND',
         `Found by AcctNum "${acctNum}": "${match.DisplayName}" (ID: ${match.Id})`, 'OK');
-      return { value: match.Id, name: match.DisplayName, notes: match.Notes || '', shipAddr: match.ShipAddr || null };
+      return { value: match.Id, name: match.DisplayName, notes: match.Notes || '', companyName: match.CompanyName || '', billAddr: match.BillAddr || null };
     }
   }
 
@@ -1241,7 +1231,7 @@ async function findOrCreateCustomer(customerName, env, acctNum) {
   if (exact) {
     logToSheet('QB_CUSTOMER_FOUND',
       `Found by exact name: "${exact.DisplayName}" (ID: ${exact.Id})`, 'OK');
-    return { value: exact.Id, name: exact.DisplayName, notes: exact.Notes || '', shipAddr: exact.ShipAddr || null };
+    return { value: exact.Id, name: exact.DisplayName, notes: exact.Notes || '', companyName: exact.CompanyName || '', billAddr: exact.BillAddr || null };
   }
 
   const hint = acctNum
