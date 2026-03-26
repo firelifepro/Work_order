@@ -1124,23 +1124,31 @@ async function createQBInvoice(doc) {
     lineDesc += '\n' + doc.workDesc.trim();
   }
 
-  const billToLines = (doc.billTo || '').split(/[\r\n]+/).map(l => l.trim()).filter(Boolean);
-  const billAddr = billToLines.length ? {
-    Line1: billToLines[0] || '',
-    Line2: billToLines[1] || '',
-    Line3: billToLines[2] || '',
-    Line4: billToLines[3] || '',
-    Line5: billToLines[4] || '',
-  } : (custRef.shipAddr ? {
-    Line1: custRef.shipAddr.Line1 || '',
-    Line2: custRef.shipAddr.Line2 || '',
-    Line3: custRef.shipAddr.Line3 || '',
-    Line4: custRef.shipAddr.Line4 || '',
-    Line5: custRef.shipAddr.Line5 || '',
-    City:  custRef.shipAddr.City  || '',
-    CountrySubDivisionCode: custRef.shipAddr.CountrySubDivisionCode || '',
-    PostalCode: custRef.shipAddr.PostalCode || '',
-  } : undefined);
+  // Build BillAddr from QB customer's ShipAddr (which holds the address info),
+  // formatted as: Company, Street1, Street2 (optional), City/State/ZIP, Country.
+  // Falls back to doc.billTo lines if ShipAddr isn't available.
+  let billAddr;
+  if (custRef.shipAddr) {
+    const sa = custRef.shipAddr;
+    billAddr = {
+      Line1: custRef.name || '',
+      Line2: sa.Line1 || '',
+      ...(sa.Line2 ? { Line3: sa.Line2 } : {}),
+      City:  sa.City || '',
+      CountrySubDivisionCode: sa.CountrySubDivisionCode || '',
+      PostalCode: sa.PostalCode || '',
+      Country: sa.Country || '',
+    };
+  } else {
+    const billToLines = (doc.billTo || '').split(/[\r\n]+/).map(l => l.trim()).filter(Boolean);
+    billAddr = billToLines.length ? {
+      Line1: billToLines[0] || '',
+      Line2: billToLines[1] || '',
+      Line3: billToLines[2] || '',
+      Line4: billToLines[3] || '',
+      Line5: billToLines[4] || '',
+    } : undefined;
+  }
   const emptyShipAddr = { Line1: '', Line2: '', Line3: '', Line4: '', Line5: '', City: '', CountrySubDivisionCode: '', PostalCode: '' };
 
   const itemRef = await getServicesItemRef(env);
