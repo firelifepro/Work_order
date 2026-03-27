@@ -699,15 +699,23 @@ code { background: #ffe082; padding: 1px 5px; border-radius: 3px; font-size: 0.7
       <td class="exp-col-header" style="width:18%;text-align:center;">Markup&nbsp;(<input type="number" id="markup-pct" value="25" min="0" max="999" step="1" style="width:38px;font-size:0.85em;padding:1px 3px;border:1px solid #aaa;border-radius:2px;font-weight:normal;" oninput="recalcAllMarkups()">%)</td>
       <td class="exp-col-header" style="width:18%;text-align:center;">Total</td>
     </tr>
-    <!-- Sub-Contractor header row — data rows inserted after this -->
+    <!-- Sub-Contractor first/permanent row -->
     <tr id="sub-add-row">
       <td class="exp-label" style="white-space:nowrap;">Sub-Contractor/Vendor&nbsp;<button type="button" onclick="addSubRow()" title="Add Sub-Contractor/Vendor" style="font-size:0.9rem;padding:1px 8px;background:#e8f4ff;border:1px solid #2e6da4;color:#2e6da4;border-radius:3px;cursor:pointer;font-weight:700;">+</button></td>
-      <td colspan="5"></td>
+      <td class="value-cell"><input type="text" id="sub-head-label" placeholder="Sub-contractor name / description" style="width:100%;"></td>
+      <td class="value-cell"></td>
+      <td class="value-cell"><span class="dollar-prefix">$</span><input type="number" id="sub-head-expense" min="0" step="0.01" style="width:calc(100% - 14px);" oninput="onSubHeadExpenseChange()"></td>
+      <td class="value-cell"><span class="dollar-prefix">$</span><input type="number" id="sub-head-markup" min="0" step="0.01" style="width:calc(100% - 14px);background:#f5f5f5;" readonly tabindex="-1"></td>
+      <td class="value-cell"><span class="dollar-prefix">$</span><input type="number" id="sub-head-total" min="0" step="0.01" style="width:calc(100% - 14px);background:#f5f5f5;" readonly tabindex="-1"></td>
     </tr>
-    <!-- Materials header row — data rows inserted after this -->
+    <!-- Materials first/permanent row -->
     <tr id="mat-add-row">
       <td class="exp-label" style="white-space:nowrap;">Materials&nbsp;<button type="button" onclick="addMatRow()" title="Add Materials Line" style="font-size:0.9rem;padding:1px 8px;background:#e8f4ff;border:1px solid #2e6da4;color:#2e6da4;border-radius:3px;cursor:pointer;font-weight:700;">+</button></td>
-      <td colspan="5"></td>
+      <td class="value-cell"><input type="text" id="mat-head-desc" style="width:100%;"></td>
+      <td class="value-cell" style="text-align:center;"><input type="number" id="mat-head-qty" min="0" step="1" style="text-align:center;"></td>
+      <td class="value-cell"><span class="dollar-prefix">$</span><input type="number" id="mat-head-expense" min="0" step="0.01" style="width:calc(100% - 14px);" oninput="onMatHeadExpenseChange()"></td>
+      <td class="value-cell"><span class="dollar-prefix">$</span><input type="number" id="mat-head-markup" min="0" step="0.01" style="width:calc(100% - 14px);background:#f5f5f5;" readonly tabindex="-1"></td>
+      <td class="value-cell"><span class="dollar-prefix">$</span><input type="number" id="mat-head-total" min="0" step="0.01" style="width:calc(100% - 14px);background:#f5f5f5;" readonly tabindex="-1"></td>
     </tr>
     <!-- Labor 1 -->
     <tr>
@@ -1338,16 +1346,28 @@ function onExpenseChange(prefix) {
 }
 
 function recalcAllMarkups() {
+  setMarkupAndTotal('sub-head-expense', 'sub-head-markup', 'sub-head-total');
   document.querySelectorAll('[id^="sub-row-"]').forEach(row => {
     const n = row.id.replace('sub-row-', '');
     setMarkupAndTotal('sub-expense-' + n, 'sub-markup-' + n, 'sub-total-' + n);
   });
+  setMarkupAndTotal('mat-head-expense', 'mat-head-markup', 'mat-head-total');
   document.querySelectorAll('[id^="mat-row-"]').forEach(row => {
     const n = row.id.replace('mat-row-', '');
     setMarkupAndTotal('mat-expense-' + n, 'mat-markup-' + n, 'mat-total-' + n);
   });
   setMarkupAndTotal('misc-expense', 'misc-markup', 'misc-total');
   // Labor, trip, compliance: NOT auto-markup — user enters manually
+  calcTotal();
+}
+
+function onSubHeadExpenseChange() {
+  setMarkupAndTotal('sub-head-expense', 'sub-head-markup', 'sub-head-total');
+  calcTotal();
+}
+
+function onMatHeadExpenseChange() {
+  setMarkupAndTotal('mat-head-expense', 'mat-head-markup', 'mat-head-total');
   calcTotal();
 }
 
@@ -1427,22 +1447,29 @@ function onSubExpenseChange(n) {
 }
 
 function removeSubRow(idx) {
-  if (document.querySelectorAll('[id^="sub-row-"]').length <= 1) return;
   const tr = document.getElementById('sub-row-' + idx);
   if (tr) tr.remove();
-  updateSubRowMinus();
   calcTotal();
 }
 
 function getSubRows() {
   const rows = [];
+  // Permanent first row
+  rows.push({
+    label:   document.getElementById('sub-head-label')?.value?.trim()        || '',
+    expense: parseFloat(document.getElementById('sub-head-expense')?.value)  || 0,
+    markup:  parseFloat(document.getElementById('sub-head-markup')?.value)   || 0,
+    total:   parseFloat(document.getElementById('sub-head-total')?.value)    || 0,
+  });
+  // Additional dynamic rows
   document.querySelectorAll('[id^="sub-row-"]').forEach(tr => {
     const n = tr.id.replace('sub-row-', '');
-    const label   = document.getElementById('sub-label-'   + n)?.value?.trim() || '';
-    const expense = parseFloat(document.getElementById('sub-expense-' + n)?.value) || 0;
-    const markup  = parseFloat(document.getElementById('sub-markup-'  + n)?.value) || 0;
-    const total   = parseFloat(document.getElementById('sub-total-'   + n)?.value) || 0;
-    rows.push({ label, expense, markup, total });
+    rows.push({
+      label:   document.getElementById('sub-label-'   + n)?.value?.trim()       || '',
+      expense: parseFloat(document.getElementById('sub-expense-' + n)?.value)   || 0,
+      markup:  parseFloat(document.getElementById('sub-markup-'  + n)?.value)   || 0,
+      total:   parseFloat(document.getElementById('sub-total-'   + n)?.value)   || 0,
+    });
   });
   return rows;
 }
@@ -1491,23 +1518,31 @@ function onMatExpenseChange(n) {
 }
 
 function removeMatRow(idx) {
-  if (document.querySelectorAll('[id^="mat-row-"]').length <= 1) return;
   const tr = document.getElementById('mat-row-' + idx);
   if (tr) tr.remove();
-  updateMatRowMinus();
   calcTotal();
 }
 
 function getMatRows() {
   const rows = [];
+  // Permanent first row
+  rows.push({
+    desc:    document.getElementById('mat-head-desc')?.value?.trim()         || '',
+    qty:     document.getElementById('mat-head-qty')?.value?.trim()          || '',
+    expense: parseFloat(document.getElementById('mat-head-expense')?.value)  || 0,
+    markup:  parseFloat(document.getElementById('mat-head-markup')?.value)   || 0,
+    total:   parseFloat(document.getElementById('mat-head-total')?.value)    || 0,
+  });
+  // Additional dynamic rows
   document.querySelectorAll('[id^="mat-row-"]').forEach(tr => {
     const n = tr.id.replace('mat-row-', '');
-    const desc    = document.getElementById('mat-desc-'    + n)?.value?.trim() || '';
-    const qty     = document.getElementById('mat-qty-'     + n)?.value?.trim() || '';
-    const expense = parseFloat(document.getElementById('mat-expense-' + n)?.value) || 0;
-    const markup  = parseFloat(document.getElementById('mat-markup-'  + n)?.value) || 0;
-    const total   = parseFloat(document.getElementById('mat-total-'   + n)?.value) || 0;
-    rows.push({ desc, qty, expense, markup, total });
+    rows.push({
+      desc:    document.getElementById('mat-desc-'    + n)?.value?.trim()      || '',
+      qty:     document.getElementById('mat-qty-'     + n)?.value?.trim()      || '',
+      expense: parseFloat(document.getElementById('mat-expense-' + n)?.value)  || 0,
+      markup:  parseFloat(document.getElementById('mat-markup-'  + n)?.value)  || 0,
+      total:   parseFloat(document.getElementById('mat-total-'   + n)?.value)  || 0,
+    });
   });
   return rows;
 }
@@ -2494,8 +2529,6 @@ window.addEventListener('load', () => {
   if (c) document.getElementById('client-id').value = c;
   // date-requested field is now 'Date Completed' — default to today
   // Date Completed intentionally left blank — user must pick it
-  addSubRow(); // Start with one sub-contractor row
-  addMatRow(); // Start with one materials row
   calcTotal();
 
   // Auto-connect: reuse cached token if still valid (no popup needed)
