@@ -615,12 +615,12 @@ code { background: #ffe082; padding: 1px 5px; border-radius: 3px; font-size: 0.7
       <td class="label-cell">System Type:</td>
       <td class="value-cell">
         <div class="check-group">
-          <label><input type="radio" name="sys-type" value="Wet"> Wet</label>
-          <label><input type="radio" name="sys-type" value="Dry"> Dry</label>
-          <label><input type="radio" name="sys-type" value="Pre-Action"> Pre-Action</label>
-          <label><input type="radio" name="sys-type" value="Deluge"> Deluge</label>
-          <label><input type="radio" name="sys-type" value="Glycol"> Glycol</label>
-          <label><input type="radio" name="sys-type" value="Nitrogen"> Nitrogen</label>
+          <label><input type="checkbox" name="sys-type" value="Wet"> Wet</label>
+          <label><input type="checkbox" name="sys-type" value="Dry"> Dry</label>
+          <label><input type="checkbox" name="sys-type" value="Pre-Action"> Pre-Action</label>
+          <label><input type="checkbox" name="sys-type" value="Deluge"> Deluge</label>
+          <label><input type="checkbox" name="sys-type" value="Glycol"> Glycol</label>
+          <label><input type="checkbox" name="sys-type" value="Nitrogen"> Nitrogen</label>
         </div>
       </td>
       <td class="label-cell">Panel Manufacturer:</td>
@@ -1585,7 +1585,7 @@ function collectForm() {
     'ACCESS / ENTRY INFO':  v('access-info'),
     'SERVICES':             svcList.join('\n') || '(none selected)',
     'DESCRIPTION OF WORK':  v('work-description'),
-    'SYSTEM TYPE':          r('sys-type'),
+    'SYSTEM TYPE':          [...document.querySelectorAll('input[name="sys-type"]:checked')].map(e=>e.value).join(', '),
     'PANEL MANUFACTURER':   v('panel-mfr'),
     'PANEL SYSTEM TYPE':    r('panel-type'),
     'MONITORING COMPANY':   v('monitoring-co'),
@@ -2156,7 +2156,7 @@ function buildWorkOrderHTML(d) {
   html += tbl(
     hdr('FIRE SYSTEM INFORMATION') +
     tr(lbl('System Type:'),
-       val(['Wet','Dry','Pre-Action','Deluge','Glycol','Nitrogen'].map(t=>chk(d['SYSTEM TYPE']===t,t)).join('&nbsp;&nbsp;')),
+       val(['Wet','Dry','Pre-Action','Deluge','Glycol','Nitrogen'].map(t=>chk((d['SYSTEM TYPE']||'').split(', ').includes(t),t)).join('&nbsp;&nbsp;')),
        lbl('Panel Manufacturer:'), val(d['PANEL MANUFACTURER'])) +
     tr(lbl('Panel System Type:'),
        val(['Conventional','Addressable'].map(t=>chk(d['PANEL SYSTEM TYPE']===t,t)).join('&nbsp;&nbsp;')),
