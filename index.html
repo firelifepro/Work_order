@@ -703,8 +703,9 @@ code { background: #ffe082; padding: 1px 5px; border-radius: 3px; font-size: 0.7
     <tr id="sub-add-row">
       <td colspan="6" style="padding:2px 4px;">
         <button type="button" onclick="addSubRow()"
-          style="font-size:0.78rem;padding:3px 10px;background:#e8f4ff;border:1px solid #2e6da4;color:#2e6da4;border-radius:3px;cursor:pointer;">
-          + Add Another Sub-Contractor/Vendor
+          title="Add Another Sub-Contractor/Vendor"
+          style="font-size:0.9rem;padding:2px 9px;background:#e8f4ff;border:1px solid #2e6da4;color:#2e6da4;border-radius:3px;cursor:pointer;font-weight:700;">
+          +
         </button>
       </td>
     </tr>
@@ -713,8 +714,9 @@ code { background: #ffe082; padding: 1px 5px; border-radius: 3px; font-size: 0.7
     <tr id="mat-add-row">
       <td colspan="6" style="padding:2px 4px;">
         <button type="button" onclick="addMatRow()"
-          style="font-size:0.78rem;padding:3px 10px;background:#e8f4ff;border:1px solid #2e6da4;color:#2e6da4;border-radius:3px;cursor:pointer;">
-          + Add Materials Line
+          title="Add Materials Line"
+          style="font-size:0.9rem;padding:2px 9px;background:#e8f4ff;border:1px solid #2e6da4;color:#2e6da4;border-radius:3px;cursor:pointer;font-weight:700;">
+          +
         </button>
       </td>
     </tr>
@@ -1403,7 +1405,7 @@ function addSubRow(labelVal, expenseVal) {
   tr.id = 'sub-row-' + n;
   tr.innerHTML =
     '<td class="exp-label" style="white-space:nowrap;">Sub-Contractor/Vendor ' +
-    '<button type="button" onclick="removeSubRow(' + n + ')" ' +
+    '<button type="button" onclick="removeSubRow(' + n + ')" title="Remove this Sub-Contractor/Vendor row" ' +
     'style="margin-left:4px;background:#fde8e8;border:1px solid #e53935;color:#e53935;border-radius:3px;padding:1px 6px;cursor:pointer;font-size:0.75rem;">−</button></td>' +
     '<td class="value-cell"><input type="text" id="sub-label-' + n + '" value="' + (labelVal||'') + '" placeholder="Sub-contractor name / description" style="width:100%;"></td>' +
     '<td class="value-cell"></td>' +
@@ -1454,7 +1456,7 @@ function addMatRow(descVal, qtyVal, expenseVal) {
   tr.id = 'mat-row-' + n;
   tr.innerHTML =
     '<td class="exp-label" style="white-space:nowrap;">Materials ' +
-    '<button type="button" onclick="removeMatRow(' + n + ')" ' +
+    '<button type="button" onclick="removeMatRow(' + n + ')" title="Remove this Materials row" ' +
     'style="margin-left:4px;background:#fde8e8;border:1px solid #e53935;color:#e53935;border-radius:3px;padding:1px 6px;cursor:pointer;font-size:0.75rem;">−</button></td>' +
     '<td class="value-cell"><input type="text" id="mat-desc-' + n + '" value="' + (descVal||'') + '" style="width:100%;"></td>' +
     '<td class="value-cell" style="text-align:center;"><input type="number" id="mat-qty-' + n + '" value="' + (qtyVal||'') + '" min="0" step="1" style="text-align:center;"></td>' +
