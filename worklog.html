@@ -1,0 +1,995 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>FLIPS Work Log</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Inter', Arial, sans-serif; font-size: 10pt; background: #e8e8e8; color: #000; }
+
+    /* ── Top Bar ── */
+    #top-bar {
+      background: #1a1a2e; color: white;
+      display: flex; align-items: center; gap: 12px; padding: 10px 16px;
+      position: sticky; top: 0; z-index: 200; flex-wrap: wrap;
+    }
+    #top-bar h1 { font-size: 1rem; font-weight: 700; white-space: nowrap; }
+    #nav-links { display: flex; gap: 4px; flex: 1; }
+    #nav-links a {
+      color: rgba(255,255,255,0.6); font-size: 0.75rem; text-decoration: none;
+      padding: 4px 9px; border-radius: 3px;
+    }
+    #nav-links a:hover { color: white; background: rgba(255,255,255,0.1); }
+    #nav-links a.active { color: white; font-weight: 600; }
+    .conn-status-pill {
+      font-size: 0.72rem; font-weight: 600; padding: 3px 10px; border-radius: 10px;
+      background: rgba(249,168,37,0.2); color: #ffe082; white-space: nowrap;
+    }
+    .conn-status-pill.ok  { background: rgba(31,178,114,0.2); color: #7fffb8; }
+    .conn-status-pill.err { background: rgba(220,53,69,0.2);  color: #ff8888; }
+    .top-btn {
+      background: #2e6da4; color: white; border: none; padding: 6px 13px;
+      border-radius: 4px; font-size: 0.78rem; cursor: pointer; font-weight: 600; white-space: nowrap;
+    }
+    .top-btn:hover { background: #4a86e8; }
+
+    /* ── Connect Drawer ── */
+    #conn-drawer {
+      background: #0f0f23; border-bottom: 1px solid rgba(255,255,255,0.1);
+      overflow: hidden; max-height: 0; transition: max-height 0.3s ease;
+    }
+    #conn-drawer.open { max-height: 500px; }
+    #conn-inner { padding: 14px 16px; display: flex; flex-wrap: wrap; gap: 14px; align-items: flex-end; }
+    .conn-field { display: flex; flex-direction: column; gap: 4px; }
+    .conn-field label { font-size: 0.7rem; color: #aaa; font-weight: 500; text-transform: uppercase; }
+    .conn-field input {
+      background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);
+      color: white; padding: 6px 10px; border-radius: 4px; font-size: 0.78rem; width: 240px;
+    }
+    .conn-field input::placeholder { color: rgba(255,255,255,0.4); }
+    .conn-section-label {
+      width: 100%; font-size: 0.68rem; color: rgba(255,255,255,0.4);
+      text-transform: uppercase; letter-spacing: .05em; padding-top: 6px;
+      border-top: 1px solid rgba(255,255,255,0.1); margin-top: 2px;
+    }
+    #conn-status { font-size: 0.8rem; align-self: flex-end; padding-bottom: 4px; }
+    #conn-status.ok  { color: #7fffb8; }
+    #conn-status.err { color: #ff8888; }
+
+    /* ── Page ── */
+    #page { max-width: 1600px; margin: 0 auto; padding: 14px; }
+
+    /* ── Controls ── */
+    #controls {
+      background: white; border-radius: 6px; padding: 12px 14px;
+      display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end;
+      margin-bottom: 10px; box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+    }
+    .ctrl-group { display: flex; flex-direction: column; gap: 4px; }
+    .ctrl-group label { font-size: 0.7rem; font-weight: 700; color: #555; text-transform: uppercase; }
+    .ctrl-group input, .ctrl-group select {
+      border: 1px solid #ccc; border-radius: 4px; padding: 6px 8px;
+      font-size: 0.85rem; font-family: inherit; outline: none; background: white;
+    }
+    .ctrl-group input:focus, .ctrl-group select:focus { border-color: #2e6da4; background: #f0f7ff; }
+    #add-btn {
+      background: #2e6da4; color: white; border: none; padding: 8px 18px;
+      border-radius: 4px; font-size: 0.85rem; font-weight: 700; cursor: pointer; align-self: flex-end;
+    }
+    #add-btn:hover { background: #4a86e8; }
+    .icon-btn {
+      background: #f5f5f5; border: 1px solid #ccc; padding: 7px 12px;
+      border-radius: 4px; font-size: 0.82rem; cursor: pointer; align-self: flex-end;
+    }
+    .icon-btn:hover { background: #e8e8e8; }
+    .prop-search-wrap { position: relative; }
+    .prop-search-wrap input { width: 200px; padding-right: 22px; }
+    #prop-clear {
+      display: none; position: absolute; right: 6px; top: 50%;
+      transform: translateY(-50%); cursor: pointer; color: #999; font-size: 0.8rem;
+    }
+
+    /* ── Stats ── */
+    #stats-bar { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+    .stat-chip {
+      background: white; border-radius: 6px; padding: 8px 16px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+      display: flex; flex-direction: column; align-items: center; min-width: 80px;
+    }
+    .stat-num { font-size: 1.4rem; font-weight: 700; line-height: 1.1; }
+    .stat-lbl { font-size: 0.62rem; color: #999; text-transform: uppercase; font-weight: 600; margin-top: 1px; }
+    .stat-chip.s-open  .stat-num { color: #2563eb; }
+    .stat-chip.s-done  .stat-num { color: #d97706; }
+    .stat-chip.s-inv   .stat-num { color: #7c3aed; }
+    .stat-chip.s-paid  .stat-num { color: #16a34a; }
+
+    /* ── Table ── */
+    #table-wrap {
+      background: white; border-radius: 6px; overflow: auto;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+    }
+    table { width: 100%; border-collapse: collapse; font-size: 8.5pt; }
+    thead th {
+      background: #2e6da4; color: white; font-weight: 600; padding: 8px 10px;
+      text-align: left; white-space: nowrap; position: sticky; top: 0; z-index: 10;
+    }
+    thead th.th-c { text-align: center; }
+    tbody tr { border-bottom: 1px solid #eee; transition: background 0.1s; }
+    tbody tr:hover { background: #f5f9ff; }
+    tbody td { padding: 6px 10px; vertical-align: top; }
+    .td-wl   { text-align: center; font-weight: 700; color: #2e6da4; white-space: nowrap; width: 52px; }
+    .td-date { white-space: nowrap; width: 88px; }
+    .td-by   { min-width: 100px; }
+    .td-prop { min-width: 150px; font-weight: 600; }
+    .td-work { min-width: 180px; max-width: 280px; }
+    .td-comp { text-align: center; width: 80px; }
+    .td-note { min-width: 160px; max-width: 240px; font-size: 8pt; color: #555; }
+    .td-inv  { min-width: 120px; }
+    .td-acts { white-space: nowrap; text-align: right; width: 70px; }
+
+    /* Status badges */
+    .badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 0.66rem; font-weight: 700; white-space: nowrap; }
+    .b-open { background: #dbeafe; color: #1d4ed8; }
+    .b-done { background: #fef3c7; color: #92400e; }
+    .b-inv  { background: #ede9fe; color: #5b21b6; }
+    .b-paid { background: #dcfce7; color: #15803d; }
+
+    .comp-yes { color: #16a34a; font-weight: 700; }
+    .comp-no  { color: #dc2626; font-weight: 700; }
+    .comp-na  { color: #999; }
+    .comp-pend{ color: #d97706; font-weight: 600; }
+
+    .act-btn {
+      background: none; border: 1px solid #ddd; padding: 3px 7px;
+      border-radius: 3px; cursor: pointer; font-size: 0.72rem; margin-left: 2px;
+    }
+    .act-btn:hover { background: #f0f0f0; }
+    .act-btn.del:hover { background: #fff0f0; border-color: #e53e3e; color: #c53030; }
+
+    #empty-row td { text-align: center; padding: 44px 20px; color: #aaa; font-style: italic; }
+
+    /* ── Modal ── */
+    #modal-overlay {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,0.5); z-index: 999;
+      align-items: center; justify-content: center;
+    }
+    #modal-overlay.open { display: flex; }
+    #modal {
+      background: white; border-radius: 8px; width: 92%; max-width: 700px;
+      max-height: 92vh; overflow-y: auto;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    }
+    #modal-header {
+      background: #2e6da4; color: white; padding: 14px 18px;
+      display: flex; justify-content: space-between; align-items: center;
+      border-radius: 8px 8px 0 0; position: sticky; top: 0; z-index: 1;
+    }
+    #modal-header h2 { font-size: 0.95rem; }
+    #modal-close {
+      background: none; border: none; color: white; font-size: 1.3rem;
+      cursor: pointer; line-height: 1; padding: 0 2px;
+    }
+    #modal-body { padding: 18px; display: flex; flex-direction: column; gap: 14px; }
+    .form-row { display: grid; gap: 14px; }
+    .form-row.cols-2 { grid-template-columns: 1fr 1fr; }
+    .form-row.cols-3 { grid-template-columns: auto 1fr 1fr; }
+    .form-row.cols-1 { grid-template-columns: 1fr; }
+    .form-group { display: flex; flex-direction: column; gap: 5px; }
+    .form-group label { font-size: 0.72rem; font-weight: 700; color: #555; text-transform: uppercase; }
+    .form-group input, .form-group select, .form-group textarea {
+      border: 1px solid #ccc; border-radius: 4px; padding: 7px 9px;
+      font-size: 0.88rem; font-family: inherit; outline: none; resize: vertical;
+    }
+    .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+      border-color: #2e6da4; background: #f0f7ff;
+    }
+    .form-group input[readonly] { background: #f5f5f5; color: #888; cursor: default; }
+    .form-group textarea { min-height: 72px; }
+    #modal-footer {
+      padding: 12px 18px; border-top: 1px solid #eee;
+      display: flex; justify-content: flex-end; gap: 8px; position: sticky; bottom: 0; background: white;
+    }
+    .btn-cancel {
+      background: #f0f0f0; border: 1px solid #ccc; padding: 8px 20px;
+      border-radius: 4px; cursor: pointer; font-size: 0.85rem;
+    }
+    .btn-cancel:hover { background: #e0e0e0; }
+    .btn-save {
+      background: #2e6da4; color: white; border: none; padding: 8px 26px;
+      border-radius: 4px; cursor: pointer; font-size: 0.85rem; font-weight: 700;
+    }
+    .btn-save:hover { background: #4a86e8; }
+
+    /* ── Toast ── */
+    #toast {
+      position: fixed; bottom: 22px; left: 50%; transform: translateX(-50%);
+      background: #222; color: white; padding: 9px 22px; border-radius: 20px;
+      font-size: 0.82rem; opacity: 0; pointer-events: none;
+      transition: opacity 0.25s; z-index: 9999; white-space: nowrap;
+    }
+    #toast.show { opacity: 1; }
+
+    @media (max-width: 640px) {
+      .form-row.cols-2, .form-row.cols-3 { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── Top Bar ── -->
+<div id="top-bar">
+  <h1>📋 FLIPS Work Log</h1>
+  <div id="nav-links">
+    <a href="index.html">Work Order</a>
+    <a href="create-invoices.html">Invoices</a>
+    <a href="worklog.html" class="active">Work Log</a>
+  </div>
+  <span class="conn-status-pill" id="conn-pill">⚠ Not connected</span>
+  <button class="top-btn" onclick="document.getElementById('conn-drawer').classList.toggle('open')">⚙ Settings</button>
+</div>
+
+<!-- ── Connect Drawer ── -->
+<div id="conn-drawer">
+  <div id="conn-inner">
+    <div class="conn-section-label" style="border-top:none;margin-top:0;">Google Auth</div>
+    <div class="conn-field">
+      <label>API Key</label>
+      <input type="password" id="api-key" placeholder="AIzaSy…">
+    </div>
+    <div class="conn-field">
+      <label>OAuth Client ID</label>
+      <input type="text" id="client-id" placeholder="123456….apps.googleusercontent.com" style="width:300px;">
+    </div>
+    <div class="conn-section-label">Work Log Storage</div>
+    <div class="conn-field">
+      <label>Work Log Sheet ID</label>
+      <input type="text" id="worklog-sheet-id" placeholder="Google Sheet ID where work log rows are stored" style="width:340px;">
+    </div>
+    <div class="conn-field">
+      <label>Tab Name</label>
+      <input type="text" id="worklog-tab" placeholder="Work Log" style="width:130px;">
+    </div>
+    <div style="display:flex;flex-direction:column;gap:6px;align-self:flex-end;">
+      <button class="top-btn" onclick="initGoogle()">🔗 Connect</button>
+    </div>
+    <div id="conn-status" style="align-self:flex-end;padding-bottom:3px;font-size:0.8rem;"></div>
+  </div>
+</div>
+
+<!-- ── Page ── -->
+<div id="page">
+
+  <!-- Controls -->
+  <div id="controls">
+    <div class="ctrl-group">
+      <label>Search Properties</label>
+      <div class="prop-search-wrap">
+        <input type="text" id="prop-search" placeholder="Type to search…" oninput="filterPropDropdown(this.value)">
+        <span id="prop-clear" onclick="clearPropSearch()">✕</span>
+      </div>
+    </div>
+    <div class="ctrl-group">
+      <label>&nbsp;</label>
+      <select id="prop-select" onchange="applyFilters()" style="width:230px;">
+        <option value="">— All Properties —</option>
+      </select>
+    </div>
+    <div class="ctrl-group">
+      <label>Status</label>
+      <select id="status-filter" onchange="applyFilters()" style="width:140px;">
+        <option value="all">All</option>
+        <option value="open">Open</option>
+        <option value="done">Completed</option>
+        <option value="invoiced">Invoiced</option>
+        <option value="paid">Paid</option>
+      </select>
+    </div>
+    <div class="ctrl-group">
+      <label>Search</label>
+      <input type="text" id="text-search" placeholder="Search all fields…" oninput="applyFilters()" style="width:200px;">
+    </div>
+    <button id="add-btn" onclick="openModal(null)">+ New Entry</button>
+    <button class="icon-btn" onclick="loadWorkLog(true)" title="Refresh">↺ Refresh</button>
+  </div>
+
+  <!-- Stats -->
+  <div id="stats-bar">
+    <div class="stat-chip"><span class="stat-num" id="stat-total">—</span><span class="stat-lbl">Total</span></div>
+    <div class="stat-chip s-open"><span class="stat-num" id="stat-open">—</span><span class="stat-lbl">Open</span></div>
+    <div class="stat-chip s-done"><span class="stat-num" id="stat-done">—</span><span class="stat-lbl">Completed</span></div>
+    <div class="stat-chip s-inv"><span class="stat-num"  id="stat-inv">—</span><span class="stat-lbl">Invoiced</span></div>
+    <div class="stat-chip s-paid"><span class="stat-num" id="stat-paid">—</span><span class="stat-lbl">Paid</span></div>
+  </div>
+
+  <!-- Table -->
+  <div id="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th class="th-c">WL #</th>
+          <th>Date Requested</th>
+          <th>Requested By</th>
+          <th>Property</th>
+          <th>Work Requested</th>
+          <th class="th-c">Compliance</th>
+          <th>Notes</th>
+          <th>Date Completed</th>
+          <th>Invoiced</th>
+          <th>Paid</th>
+          <th class="th-c">Status</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="log-tbody">
+        <tr id="empty-row"><td colspan="12">Connect to Google to load work log entries.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ── Add / Edit Modal ── -->
+<div id="modal-overlay" onclick="onOverlayClick(event)">
+  <div id="modal">
+    <div id="modal-header">
+      <h2 id="modal-title">New Entry</h2>
+      <button id="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div id="modal-body">
+
+      <div class="form-row cols-3">
+        <div class="form-group">
+          <label>WL #</label>
+          <input type="text" id="f-wl-num" readonly placeholder="Auto">
+        </div>
+        <div class="form-group">
+          <label>Date Request Made</label>
+          <input type="text" id="f-date-req" placeholder="e.g. 5/7/25">
+        </div>
+        <div class="form-group">
+          <label>Request Made By</label>
+          <input type="text" id="f-req-by" placeholder="Name">
+        </div>
+      </div>
+
+      <div class="form-row cols-1">
+        <div class="form-group">
+          <label>Property</label>
+          <input type="text" id="f-prop-search" placeholder="Type to search properties…"
+            oninput="filterModalProps(this.value)" autocomplete="off">
+          <select id="f-prop-select" onchange="onModalPropPick()" style="margin-top:4px;">
+            <option value="">— Select from list or type above —</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-row cols-1">
+        <div class="form-group">
+          <label>Work Requested</label>
+          <textarea id="f-work-req" placeholder="Describe the work to be performed…"></textarea>
+        </div>
+      </div>
+
+      <div class="form-row cols-2">
+        <div class="form-group">
+          <label>Report Sent for Compliance?</label>
+          <select id="f-compliance">
+            <option value="">—</option>
+            <option value="Yes">Yes</option>
+            <option value="No">No</option>
+            <option value="N/A">N/A</option>
+            <option value="Pending">Pending</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Date Work Completed</label>
+          <input type="text" id="f-date-comp" placeholder="e.g. 9/23/25 or Completed">
+        </div>
+      </div>
+
+      <div class="form-row cols-1">
+        <div class="form-group">
+          <label>Notes</label>
+          <textarea id="f-notes" placeholder="Additional notes…"></textarea>
+        </div>
+      </div>
+
+      <div class="form-row cols-2">
+        <div class="form-group">
+          <label>Invoiced</label>
+          <input type="text" id="f-invoiced" placeholder="e.g. 9/23/25 or 9/20/25 Inv. 1001">
+        </div>
+        <div class="form-group">
+          <label>Paid</label>
+          <input type="text" id="f-paid" placeholder="e.g. 10/3/25">
+        </div>
+      </div>
+
+    </div>
+    <div id="modal-footer">
+      <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+      <button class="btn-save" onclick="saveEntry()">Save Entry</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script src="https://accounts.google.com/gsi/client"></script>
+<script>
+// ─────────────────────────────────────────────────────
+// CONFIG — property DB (same sheet as work order app)
+// ─────────────────────────────────────────────────────
+const PROP_SHEET_ID  = '1_Koq_v0RjsFbQ_c2qZh-eQpGQT2-0IkOal-I4CjSJrI';
+const PROP_SHEET_GID = '1899870347';
+const SCOPES         = 'https://www.googleapis.com/auth/spreadsheets';
+const LOG_HEADERS    = [
+  'WL #', 'Date Request Made', 'Request Made By', 'Property',
+  'Work Requested', 'Report sent for compliance?', 'Notes',
+  'Date Work Completed', 'Invoiced', 'Paid'
+];
+
+// ─────────────────────────────────────────────────────
+// STATE
+// ─────────────────────────────────────────────────────
+let accessToken = null;
+let tokenClient = null;
+let clientData  = {};   // { "Property Name": {...} }
+let logRows     = [];   // [{ _rowNum, wlNum, dateReq, reqBy, property, workReq, compliance, notes, dateComp, invoiced, paid }]
+let editingRow  = null; // row obj being edited, or null for new
+
+function getLogSheetId() { return document.getElementById('worklog-sheet-id').value.trim(); }
+function getLogTab()     { return document.getElementById('worklog-tab').value.trim() || 'Work Log'; }
+
+// ─────────────────────────────────────────────────────
+// GOOGLE AUTH
+// ─────────────────────────────────────────────────────
+async function initGoogle() {
+  const apiKey   = document.getElementById('api-key').value.trim();
+  const clientId = document.getElementById('client-id').value.trim();
+  if (!apiKey || !clientId) { toast('⚠ Enter API Key and Client ID'); return; }
+
+  const ls = document.getElementById('worklog-sheet-id').value.trim();
+  const lt = document.getElementById('worklog-tab').value.trim();
+  localStorage.setItem('flips_api_key',   apiKey);
+  localStorage.setItem('flips_client_id', clientId);
+  if (ls) localStorage.setItem('flips_worklog_sheet_id', ls);
+  if (lt) localStorage.setItem('flips_worklog_tab',      lt);
+
+  setConnStatus('Connecting…', '');
+  try {
+    tokenClient = google.accounts.oauth2.initTokenClient({
+      client_id: clientId,
+      scope: SCOPES,
+      callback: async (resp) => {
+        if (resp.error) { setConnStatus('✗ ' + resp.error, 'err'); return; }
+        accessToken = resp.access_token;
+        localStorage.setItem('flips_access_token', accessToken);
+        localStorage.setItem('flips_token_expiry', Date.now() + 55 * 60 * 1000);
+        setConnStatus('✓ Connected', 'ok');
+        document.getElementById('conn-drawer').classList.remove('open');
+        await Promise.all([loadClientSheet(), loadWorkLog()]);
+      },
+      error_callback: (err) => setConnStatus('✗ ' + (err.message || err.type), 'err')
+    });
+    tokenClient.requestAccessToken({ prompt: '' });
+  } catch(e) { setConnStatus('✗ ' + e.message, 'err'); }
+}
+
+// ─────────────────────────────────────────────────────
+// API FETCH (with 401 token refresh)
+// ─────────────────────────────────────────────────────
+async function apiFetch(url, method = 'GET', body = null) {
+  const opts = () => {
+    const o = { method, headers: { 'Authorization': 'Bearer ' + accessToken, 'Content-Type': 'application/json' } };
+    if (body !== null) o.body = JSON.stringify(body);
+    return o;
+  };
+  let res = await fetch(url, opts());
+  if (res.status === 401) {
+    toast('⏳ Re-authenticating…');
+    await new Promise((resolve, reject) => {
+      if (!tokenClient) { reject(new Error('Not initialized')); return; }
+      tokenClient.callback = (resp) => {
+        if (resp.error) { reject(new Error(resp.error)); return; }
+        accessToken = resp.access_token;
+        localStorage.setItem('flips_access_token', accessToken);
+        localStorage.setItem('flips_token_expiry', Date.now() + 55 * 60 * 1000);
+        resolve();
+      };
+      tokenClient.requestAccessToken({ prompt: '' });
+    });
+    res = await fetch(url, opts());
+  }
+  return res;
+}
+
+// ─────────────────────────────────────────────────────
+// LOAD PROPERTY LIST (for dropdowns)
+// ─────────────────────────────────────────────────────
+async function loadClientSheet() {
+  try {
+    const metaRes = await apiFetch(
+      `https://sheets.googleapis.com/v4/spreadsheets/${PROP_SHEET_ID}?fields=sheets.properties`
+    );
+    if (!metaRes.ok) return;
+    const meta = await metaRes.json();
+    let tabName = meta.sheets[0].properties.title;
+    for (const s of meta.sheets) {
+      if (String(s.properties.sheetId) === String(PROP_SHEET_GID)) { tabName = s.properties.title; break; }
+    }
+    const valRes = await apiFetch(
+      `https://sheets.googleapis.com/v4/spreadsheets/${PROP_SHEET_ID}/values/${encodeURIComponent(tabName)}`
+    );
+    if (!valRes.ok) return;
+    const { values = [] } = await valRes.json();
+    if (values.length < 2) return;
+    const headers = values[0].map(h => (h || '').trim().toLowerCase());
+    const nameIdx = headers.findIndex(h => h.includes('property') || h.includes('name'));
+    clientData = {};
+    for (let i = 1; i < values.length; i++) {
+      const label = (values[i][nameIdx >= 0 ? nameIdx : 0] || '').trim();
+      if (label) {
+        const obj = {};
+        headers.forEach((h, idx) => { obj[h] = (values[i][idx] || '').trim(); });
+        clientData[label] = obj;
+      }
+    }
+    buildPropDropdown('prop-select', '— All Properties —');
+    buildPropDropdown('f-prop-select', '— Select property —');
+  } catch(e) { console.error('loadClientSheet:', e); }
+}
+
+function buildPropDropdown(selId, placeholder) {
+  const sel = document.getElementById(selId);
+  const cur = sel.value;
+  sel.innerHTML = `<option value="">${placeholder}</option>`;
+  Object.keys(clientData).sort().forEach(name => {
+    const o = document.createElement('option');
+    o.value = name; o.textContent = name;
+    sel.appendChild(o);
+  });
+  if (cur) sel.value = cur;
+}
+
+function filterPropDropdown(q) {
+  const sel = document.getElementById('prop-select');
+  const clr = document.getElementById('prop-clear');
+  const query = q.trim().toLowerCase();
+  clr.style.display = query ? 'block' : 'none';
+  sel.innerHTML = `<option value="">— All Properties —</option>`;
+  Object.keys(clientData).sort().forEach(name => {
+    if (!query || name.toLowerCase().includes(query)) {
+      const o = document.createElement('option'); o.value = name; o.textContent = name; sel.appendChild(o);
+    }
+  });
+  applyFilters();
+}
+
+function clearPropSearch() {
+  document.getElementById('prop-search').value = '';
+  document.getElementById('prop-clear').style.display = 'none';
+  buildPropDropdown('prop-select', '— All Properties —');
+  applyFilters();
+}
+
+function filterModalProps(q) {
+  const sel = document.getElementById('f-prop-select');
+  const query = q.trim().toLowerCase();
+  const matches = Object.keys(clientData).filter(n => !query || n.toLowerCase().includes(query));
+  sel.innerHTML = `<option value="">${query ? matches.length + ' match' + (matches.length !== 1 ? 'es' : '') : '— Select from list —'}</option>`;
+  matches.sort().forEach(name => {
+    const o = document.createElement('option'); o.value = name; o.textContent = name; sel.appendChild(o);
+  });
+  // Auto-select if exact match
+  if (matches.length === 1) sel.value = matches[0];
+}
+
+function onModalPropPick() {
+  const v = document.getElementById('f-prop-select').value;
+  if (v) document.getElementById('f-prop-search').value = v;
+}
+
+// ─────────────────────────────────────────────────────
+// LOAD WORK LOG
+// ─────────────────────────────────────────────────────
+async function loadWorkLog(force = false) {
+  const sheetId = getLogSheetId();
+  if (!sheetId) {
+    setEmptyMsg('Enter a Work Log Sheet ID in ⚙ Settings to get started.');
+    return;
+  }
+  if (!accessToken) return;
+
+  try {
+    const res = await apiFetch(
+      `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${encodeURIComponent(getLogTab())}`
+    );
+    if (!res.ok) {
+      if (res.status === 400 || res.status === 404) {
+        // Tab likely doesn't exist yet
+        logRows = [];
+        renderTable();
+        return;
+      }
+      const e = await res.json().catch(() => ({}));
+      throw new Error(e.error?.message || 'HTTP ' + res.status);
+    }
+    const { values = [] } = await res.json();
+    logRows = parseLogRows(values);
+    renderTable();
+    toast('✓ Loaded ' + logRows.length + ' entries');
+  } catch(e) {
+    toast('⚠ Could not load: ' + e.message);
+    console.error('loadWorkLog:', e);
+  }
+}
+
+function parseLogRows(rows) {
+  if (!rows.length) return [];
+  // Detect if row 0 is a header (contains "WL" or "Date Request" or similar)
+  const isHeader = rows[0].some(c => /wl\s*#|date request|work requested|property/i.test(c || ''));
+  const dataRows = isHeader ? rows.slice(1) : rows;
+  const offset   = isHeader ? 2 : 1; // 1-indexed sheet row of first data row
+  return dataRows.map((row, i) => ({
+    _rowNum:    offset + i,
+    wlNum:      row[0] || '',
+    dateReq:    row[1] || '',
+    reqBy:      row[2] || '',
+    property:   row[3] || '',
+    workReq:    row[4] || '',
+    compliance: row[5] || '',
+    notes:      row[6] || '',
+    dateComp:   row[7] || '',
+    invoiced:   row[8] || '',
+    paid:       row[9] || '',
+  }));
+}
+
+// ─────────────────────────────────────────────────────
+// RENDER TABLE
+// ─────────────────────────────────────────────────────
+function getStatus(r) {
+  if (r.paid)     return 'paid';
+  if (r.invoiced) return 'invoiced';
+  if (r.dateComp) return 'done';
+  return 'open';
+}
+
+function statusBadge(r) {
+  const map = { open:['b-open','Open'], done:['b-done','Completed'], invoiced:['b-inv','Invoiced'], paid:['b-paid','Paid'] };
+  const [cls, label] = map[getStatus(r)];
+  return `<span class="badge ${cls}">${label}</span>`;
+}
+
+function compDisplay(val) {
+  if (!val) return '<span style="color:#ccc">—</span>';
+  if (/^y/i.test(val))                    return '<span class="comp-yes">✓ Yes</span>';
+  if (/^no?$/i.test(val))                 return '<span class="comp-no">✗ No</span>';
+  if (/^n\/?a$/i.test(val)||/^na$/i.test(val)) return '<span class="comp-na">N/A</span>';
+  if (/^pend/i.test(val))                 return '<span class="comp-pend">Pending</span>';
+  return `<span style="color:#888">${esc(val)}</span>`;
+}
+
+function esc(s) {
+  return (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function renderTable() {
+  const propFilter = document.getElementById('prop-select').value;
+  const statFilter = document.getElementById('status-filter').value;
+  const textQ      = document.getElementById('text-search').value.trim().toLowerCase();
+
+  const filtered = logRows.filter(r => {
+    if (propFilter && r.property !== propFilter) return false;
+    if (statFilter !== 'all' && getStatus(r) !== statFilter) return false;
+    if (textQ) {
+      const hay = [r.wlNum, r.dateReq, r.reqBy, r.property, r.workReq, r.notes, r.invoiced].join(' ').toLowerCase();
+      if (!hay.includes(textQ)) return false;
+    }
+    return true;
+  });
+
+  // Stats over all rows
+  document.getElementById('stat-total').textContent = logRows.length;
+  document.getElementById('stat-open').textContent  = logRows.filter(r => getStatus(r) === 'open').length;
+  document.getElementById('stat-done').textContent  = logRows.filter(r => getStatus(r) === 'done').length;
+  document.getElementById('stat-inv').textContent   = logRows.filter(r => getStatus(r) === 'invoiced').length;
+  document.getElementById('stat-paid').textContent  = logRows.filter(r => getStatus(r) === 'paid').length;
+
+  const tbody = document.getElementById('log-tbody');
+  if (!filtered.length) {
+    tbody.innerHTML = `<tr id="empty-row"><td colspan="12">${
+      !logRows.length
+        ? (getLogSheetId() ? 'No entries yet — click <strong>+ New Entry</strong> to add one.' : 'Enter a Work Log Sheet ID in ⚙ Settings.')
+        : 'No entries match the current filters.'
+    }</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = filtered.map(r => `
+    <tr>
+      <td class="td-wl">${esc(r.wlNum)}</td>
+      <td class="td-date">${esc(r.dateReq)}</td>
+      <td class="td-by">${esc(r.reqBy)}</td>
+      <td class="td-prop">${esc(r.property)}</td>
+      <td class="td-work">${esc(r.workReq)}</td>
+      <td class="td-comp">${compDisplay(r.compliance)}</td>
+      <td class="td-note">${esc(r.notes)}</td>
+      <td class="td-date">${esc(r.dateComp)}</td>
+      <td class="td-inv">${esc(r.invoiced)}</td>
+      <td class="td-date">${esc(r.paid)}</td>
+      <td style="text-align:center;white-space:nowrap;">${statusBadge(r)}</td>
+      <td class="td-acts">
+        <button class="act-btn" onclick="openModal(${r._rowNum})" title="Edit">✎</button>
+        <button class="act-btn del" onclick="deleteEntry(${r._rowNum})" title="Delete">✕</button>
+      </td>
+    </tr>`).join('');
+}
+
+function applyFilters() { renderTable(); }
+function setEmptyMsg(msg) {
+  document.getElementById('log-tbody').innerHTML = `<tr id="empty-row"><td colspan="12">${msg}</td></tr>`;
+}
+
+// ─────────────────────────────────────────────────────
+// MODAL
+// ─────────────────────────────────────────────────────
+function openModal(rowNum) {
+  editingRow = rowNum ? (logRows.find(r => r._rowNum === rowNum) || null) : null;
+  document.getElementById('modal-title').textContent = editingRow ? 'Edit Entry' : 'New Entry';
+
+  // Reset
+  ['f-wl-num','f-date-req','f-req-by','f-work-req','f-date-comp','f-notes','f-invoiced','f-paid','f-prop-search'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+  document.getElementById('f-compliance').value = '';
+  document.getElementById('f-prop-select').value = '';
+
+  if (editingRow) {
+    document.getElementById('f-wl-num').value    = editingRow.wlNum;
+    document.getElementById('f-date-req').value  = editingRow.dateReq;
+    document.getElementById('f-req-by').value    = editingRow.reqBy;
+    document.getElementById('f-prop-search').value = editingRow.property;
+    document.getElementById('f-work-req').value  = editingRow.workReq;
+    document.getElementById('f-compliance').value = editingRow.compliance;
+    document.getElementById('f-notes').value     = editingRow.notes;
+    document.getElementById('f-date-comp').value = editingRow.dateComp;
+    document.getElementById('f-invoiced').value  = editingRow.invoiced;
+    document.getElementById('f-paid').value      = editingRow.paid;
+  } else {
+    // Auto-assign next WL #
+    const maxWl = logRows.reduce((max, r) => {
+      const n = parseInt(r.wlNum, 10);
+      return isNaN(n) ? max : Math.max(max, n);
+    }, 0);
+    document.getElementById('f-wl-num').value = String(maxWl + 1);
+
+    // Default date to today M/D/YY
+    const t = new Date();
+    document.getElementById('f-date-req').value =
+      `${t.getMonth()+1}/${t.getDate()}/${String(t.getFullYear()).slice(-2)}`;
+  }
+
+  // Rebuild property dropdown and pre-select if editing
+  buildPropDropdown('f-prop-select', '— Select property —');
+  if (editingRow?.property) {
+    document.getElementById('f-prop-select').value = editingRow.property;
+  }
+
+  document.getElementById('modal-overlay').classList.add('open');
+  setTimeout(() => document.getElementById('f-date-req').focus(), 60);
+}
+
+function closeModal() {
+  document.getElementById('modal-overlay').classList.remove('open');
+  editingRow = null;
+}
+
+function onOverlayClick(e) {
+  if (e.target === document.getElementById('modal-overlay')) closeModal();
+}
+
+// ─────────────────────────────────────────────────────
+// SAVE
+// ─────────────────────────────────────────────────────
+async function saveEntry() {
+  const sheetId = getLogSheetId();
+  if (!sheetId) { toast('⚠ Enter Work Log Sheet ID in ⚙ Settings'); return; }
+  if (!accessToken) { toast('⚠ Not connected'); return; }
+
+  // Property: prefer dropdown selection, fall back to search text
+  const propPicked = document.getElementById('f-prop-select').value;
+  const propTyped  = document.getElementById('f-prop-search').value.trim();
+  const property   = propPicked || propTyped;
+
+  const wlNum    = document.getElementById('f-wl-num').value.trim();
+  const values   = [
+    wlNum,
+    document.getElementById('f-date-req').value.trim(),
+    document.getElementById('f-req-by').value.trim(),
+    property,
+    document.getElementById('f-work-req').value.trim(),
+    document.getElementById('f-compliance').value,
+    document.getElementById('f-notes').value.trim(),
+    document.getElementById('f-date-comp').value.trim(),
+    document.getElementById('f-invoiced').value.trim(),
+    document.getElementById('f-paid').value.trim(),
+  ];
+
+  try {
+    const tab = getLogTab();
+    if (editingRow) {
+      // Update existing row in sheet
+      const range = `${tab}!A${editingRow._rowNum}:J${editingRow._rowNum}`;
+      const res = await apiFetch(
+        `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${encodeURIComponent(range)}?valueInputOption=USER_ENTERED`,
+        'PUT',
+        { range, majorDimension: 'ROWS', values: [values] }
+      );
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      // Update in-memory
+      Object.assign(editingRow, {
+        wlNum, dateReq: values[1], reqBy: values[2], property: values[3],
+        workReq: values[4], compliance: values[5], notes: values[6],
+        dateComp: values[7], invoiced: values[8], paid: values[9]
+      });
+      toast('✓ Entry updated');
+      renderTable();
+    } else {
+      // New row: ensure sheet + headers exist, then append
+      await ensureSheetAndHeaders(sheetId, tab);
+      const res = await apiFetch(
+        `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${encodeURIComponent(tab)}!A1:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS`,
+        'POST',
+        { majorDimension: 'ROWS', values: [values] }
+      );
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      toast('✓ Entry saved (WL #' + wlNum + ')');
+      await loadWorkLog(true);
+    }
+    closeModal();
+  } catch(e) {
+    toast('⚠ Save failed: ' + e.message);
+    console.error('saveEntry:', e);
+  }
+}
+
+async function ensureSheetAndHeaders(sheetId, tab) {
+  // Get sheet metadata
+  const metaRes = await apiFetch(`https://sheets.googleapis.com/v4/spreadsheets/${sheetId}?fields=sheets.properties`);
+  if (!metaRes.ok) return;
+  const meta = await metaRes.json();
+  const exists = meta.sheets.some(s => s.properties.title.toLowerCase() === tab.toLowerCase());
+
+  if (!exists) {
+    // Create the tab
+    await apiFetch(`https://sheets.googleapis.com/v4/spreadsheets/${sheetId}:batchUpdate`, 'POST', {
+      requests: [{ addSheet: { properties: { title: tab } } }]
+    });
+    // Write header row
+    await apiFetch(
+      `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${encodeURIComponent(tab)}!A1:J1?valueInputOption=USER_ENTERED`,
+      'PUT',
+      { range: `${tab}!A1:J1`, majorDimension: 'ROWS', values: [LOG_HEADERS] }
+    );
+    return;
+  }
+
+  // Tab exists — check if row 1 is a header
+  const r1Res = await apiFetch(
+    `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${encodeURIComponent(tab)}!A1:J1`
+  );
+  if (!r1Res.ok) return;
+  const r1 = await r1Res.json();
+  const firstCell = ((r1.values || [[]])[0] || [])[0] || '';
+  if (!firstCell.trim()) {
+    await apiFetch(
+      `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${encodeURIComponent(tab)}!A1:J1?valueInputOption=USER_ENTERED`,
+      'PUT',
+      { range: `${tab}!A1:J1`, majorDimension: 'ROWS', values: [LOG_HEADERS] }
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────
+// DELETE
+// ─────────────────────────────────────────────────────
+async function deleteEntry(rowNum) {
+  const row = logRows.find(r => r._rowNum === rowNum);
+  if (!row) return;
+  const preview = [row.wlNum ? 'WL #' + row.wlNum : '', row.property, row.workReq].filter(Boolean).join(' — ');
+  if (!confirm(`Delete this entry?\n\n${preview || 'Row ' + rowNum}`)) return;
+
+  const sheetId = getLogSheetId();
+  if (!sheetId || !accessToken) { toast('⚠ Not connected'); return; }
+
+  try {
+    // Get the tab's internal sheetId (gid)
+    const metaRes = await apiFetch(`https://sheets.googleapis.com/v4/spreadsheets/${sheetId}?fields=sheets.properties`);
+    if (!metaRes.ok) throw new Error('Cannot read sheet metadata');
+    const meta = await metaRes.json();
+    const tabMeta = meta.sheets.find(s => s.properties.title.toLowerCase() === getLogTab().toLowerCase());
+    if (!tabMeta) throw new Error('Tab not found');
+
+    const res = await apiFetch(
+      `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}:batchUpdate`,
+      'POST',
+      { requests: [{
+          deleteDimension: {
+            range: {
+              sheetId: tabMeta.properties.sheetId,
+              dimension: 'ROWS',
+              startIndex: rowNum - 1,   // 0-indexed
+              endIndex:   rowNum        // exclusive
+            }
+          }
+        }] }
+    );
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+
+    // Update local state
+    logRows = logRows.filter(r => r._rowNum !== rowNum);
+    logRows.forEach(r => { if (r._rowNum > rowNum) r._rowNum--; });
+    renderTable();
+    toast('✓ Entry deleted');
+  } catch(e) {
+    toast('⚠ Delete failed: ' + e.message);
+    console.error('deleteEntry:', e);
+  }
+}
+
+// ─────────────────────────────────────────────────────
+// UI HELPERS
+// ─────────────────────────────────────────────────────
+function setConnStatus(msg, cls) {
+  const el   = document.getElementById('conn-status');
+  const pill = document.getElementById('conn-pill');
+  if (el)   { el.textContent = msg; el.className = cls || ''; }
+  if (pill) { pill.textContent = msg; pill.className = 'conn-status-pill' + (cls ? ' ' + cls : ''); }
+}
+
+let _toastTimer = null;
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg; el.classList.add('show');
+  clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(() => el.classList.remove('show'), 3200);
+}
+
+// ─────────────────────────────────────────────────────
+// INIT
+// ─────────────────────────────────────────────────────
+window.addEventListener('load', () => {
+  const k  = localStorage.getItem('flips_api_key');
+  const c  = localStorage.getItem('flips_client_id');
+  const ls = localStorage.getItem('flips_worklog_sheet_id');
+  const lt = localStorage.getItem('flips_worklog_tab');
+
+  if (k)  document.getElementById('api-key').value = k;
+  if (c)  document.getElementById('client-id').value = c;
+  if (ls) document.getElementById('worklog-sheet-id').value = ls;
+  if (lt) document.getElementById('worklog-tab').value = lt;
+
+  if (k && c) {
+    const cached = localStorage.getItem('flips_access_token');
+    const expiry = Number(localStorage.getItem('flips_token_expiry')) || 0;
+    if (cached && Date.now() < expiry) {
+      accessToken = cached;
+      setConnStatus('✓ Connected', 'ok');
+      Promise.all([loadClientSheet(), loadWorkLog()]);
+    } else {
+      setConnStatus('⚠ Session expired — click Connect', '');
+      document.getElementById('conn-drawer').classList.add('open');
+    }
+  } else {
+    document.getElementById('conn-drawer').classList.add('open');
+  }
+
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+});
+</script>
+</body>
+</html>
