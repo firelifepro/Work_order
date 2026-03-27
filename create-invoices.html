@@ -770,6 +770,13 @@ function parseCCEmailFromNotes(notes) {
 }
 
 function parseAmount(text) {
+  // Try fixed rate label first (★ FIXED RATE = $X or FIXED RATE = $X)
+  const mFixed = text.match(/fixed\s+rate[\s\S]{0,20}?(\d[\d,]*\.\d{2})/i);
+  if (mFixed) {
+    const val = mFixed[1].replace(/,/g, '');
+    if (val && parseFloat(val) > 0) return val;
+  }
+  // Fall back to standard "Total to Invoice" label
   const m = text.match(/total[\s\S]{0,30}?to[\s\S]{0,30}?invoice[\s\S]{0,40}?(\d[\d,]*\.\d{2})/i);
   if (!m) return null;
   const val = m[1].replace(/,/g, '');
@@ -1049,7 +1056,7 @@ async function createInvoices() {
       if (res.ok) {
         const data = await res.json();
         const text = extractText(data);
-        doc.amount    = parseAmount(text);
+        doc.amount    = parseAmount(text) || doc.amount;
         doc.client    = doc.client    || parseClient(text) || doc.name;
         doc.acctNum   = doc.acctNum   || parseAcctNum(text);
         doc.billEmail = doc.billEmail || parseBillingEmail(text);
