@@ -614,13 +614,15 @@ code { background: #ffe082; padding: 1px 5px; border-radius: 3px; font-size: 0.7
     <tr>
       <td class="label-cell">System Type:</td>
       <td class="value-cell">
-        <div class="check-group">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:3px 20px;">
           <label><input type="checkbox" name="sys-type" value="Wet"> Wet</label>
-          <label><input type="checkbox" name="sys-type" value="Dry"> Dry</label>
-          <label><input type="checkbox" name="sys-type" value="Pre-Action"> Pre-Action</label>
           <label><input type="checkbox" name="sys-type" value="Deluge"> Deluge</label>
+          <label><input type="checkbox" name="sys-type" value="Dry"> Dry</label>
           <label><input type="checkbox" name="sys-type" value="Glycol"> Glycol</label>
+          <label><input type="checkbox" name="sys-type" value="Pre-Action"> Pre-Action</label>
           <label><input type="checkbox" name="sys-type" value="Nitrogen"> Nitrogen</label>
+          <label><input type="checkbox" name="sys-type" value="Ansul"> Ansul</label>
+          <label><input type="checkbox" name="sys-type" value="Fire Extinguisher Type K"> Fire Ext. Type K</label>
         </div>
       </td>
       <td class="label-cell">Panel Manufacturer:</td>
@@ -707,13 +709,14 @@ code { background: #ffe082; padding: 1px 5px; border-radius: 3px; font-size: 0.7
       </td>
     </tr>
     <!-- Materials -->
-    <tr>
-      <td class="exp-label">Materials</td>
-      <td class="value-cell"><input type="text" id="mat-desc"></td>
-      <td class="value-cell" style="text-align:center;"><input type="number" id="mat-qty" min="0" step="1" style="text-align:center;"></td>
-      <td class="value-cell"><span class="dollar-prefix">$</span><input type="number" id="mat-expense" min="0" step="0.01" style="width:calc(100% - 14px);" oninput="onExpenseChange('mat')"></td>
-      <td class="value-cell"><span class="dollar-prefix">$</span><input type="number" id="mat-markup" min="0" step="0.01" style="width:calc(100% - 14px);background:#f5f5f5;" readonly tabindex="-1"></td>
-      <td class="value-cell"><span class="dollar-prefix">$</span><input type="number" id="mat-total" min="0" step="0.01" style="width:calc(100% - 14px);background:#f5f5f5;" readonly tabindex="-1"></td>
+    <!-- Materials — dynamic rows injected here by addMatRow() -->
+    <tr id="mat-add-row">
+      <td colspan="6" style="padding:2px 4px;">
+        <button type="button" onclick="addMatRow()"
+          style="font-size:0.78rem;padding:3px 10px;background:#e8f4ff;border:1px solid #2e6da4;color:#2e6da4;border-radius:3px;cursor:pointer;">
+          + Add Materials Line
+        </button>
+      </td>
     </tr>
     <!-- Labor 1 -->
     <tr>
@@ -1348,7 +1351,10 @@ function recalcAllMarkups() {
     const n = row.id.replace('sub-row-', '');
     setMarkupAndTotal('sub-expense-' + n, 'sub-markup-' + n, 'sub-total-' + n);
   });
-  setMarkupAndTotal('mat-expense', 'mat-markup', 'mat-total');
+  document.querySelectorAll('[id^="mat-row-"]').forEach(row => {
+    const n = row.id.replace('mat-row-', '');
+    setMarkupAndTotal('mat-expense-' + n, 'mat-markup-' + n, 'mat-total-' + n);
+  });
   setMarkupAndTotal('misc-expense', 'misc-markup', 'misc-total');
   // Labor, trip, compliance: NOT auto-markup — user enters manually
   calcTotal();
@@ -1438,6 +1444,58 @@ function getSubRows() {
 }
 
 // ─────────────────────────────────────────────────────────
+// DYNAMIC MATERIALS ROWS
+// ─────────────────────────────────────────────────────────
+let matRowCount = 0;
+
+function addMatRow(descVal, qtyVal, expenseVal) {
+  const n = ++matRowCount;
+  const tr = document.createElement('tr');
+  tr.id = 'mat-row-' + n;
+  tr.innerHTML =
+    '<td class="exp-label" style="white-space:nowrap;">Materials ' +
+    '<button type="button" onclick="removeMatRow(' + n + ')" ' +
+    'style="margin-left:4px;background:#fde8e8;border:1px solid #e53935;color:#e53935;border-radius:3px;padding:1px 6px;cursor:pointer;font-size:0.75rem;">−</button></td>' +
+    '<td class="value-cell"><input type="text" id="mat-desc-' + n + '" value="' + (descVal||'') + '" style="width:100%;"></td>' +
+    '<td class="value-cell" style="text-align:center;"><input type="number" id="mat-qty-' + n + '" value="' + (qtyVal||'') + '" min="0" step="1" style="text-align:center;"></td>' +
+    '<td class="value-cell"><span class="dollar-prefix">$</span>' +
+    '<input type="number" id="mat-expense-' + n + '" value="' + (expenseVal||'') + '" min="0" step="0.01" style="width:calc(100% - 14px);" oninput="onMatExpenseChange(' + n + ')"></td>' +
+    '<td class="value-cell"><span class="dollar-prefix">$</span>' +
+    '<input type="number" id="mat-markup-' + n + '" min="0" step="0.01" style="width:calc(100% - 14px);background:#f5f5f5;" readonly tabindex="-1"></td>' +
+    '<td class="value-cell"><span class="dollar-prefix">$</span>' +
+    '<input type="number" id="mat-total-' + n + '" min="0" step="0.01" style="width:calc(100% - 14px);background:#f5f5f5;" readonly tabindex="-1"></td>';
+  const addBtnRow = document.getElementById('mat-add-row');
+  addBtnRow.parentNode.insertBefore(tr, addBtnRow);
+  if (expenseVal) setMarkupAndTotal('mat-expense-' + n, 'mat-markup-' + n, 'mat-total-' + n);
+  calcTotal();
+}
+
+function onMatExpenseChange(n) {
+  setMarkupAndTotal('mat-expense-' + n, 'mat-markup-' + n, 'mat-total-' + n);
+  calcTotal();
+}
+
+function removeMatRow(idx) {
+  const tr = document.getElementById('mat-row-' + idx);
+  if (tr) tr.remove();
+  calcTotal();
+}
+
+function getMatRows() {
+  const rows = [];
+  document.querySelectorAll('[id^="mat-row-"]').forEach(tr => {
+    const n = tr.id.replace('mat-row-', '');
+    const desc    = document.getElementById('mat-desc-'    + n)?.value?.trim() || '';
+    const qty     = document.getElementById('mat-qty-'     + n)?.value?.trim() || '';
+    const expense = parseFloat(document.getElementById('mat-expense-' + n)?.value) || 0;
+    const markup  = parseFloat(document.getElementById('mat-markup-'  + n)?.value) || 0;
+    const total   = parseFloat(document.getElementById('mat-total-'   + n)?.value) || 0;
+    rows.push({ desc, qty, expense, markup, total });
+  });
+  return rows;
+}
+
+// ─────────────────────────────────────────────────────────
 // COMPLIANCE REPORT
 // ─────────────────────────────────────────────────────────
 function onComplianceCbChange() {
@@ -1504,7 +1562,8 @@ function onFlatRateAmountChange() {
 function calcTotal() {
   const subRows   = getSubRows ? getSubRows() : [];
   const subAmt    = subRows.reduce((s, r) => s + r.total, 0);
-  const matAmt    = parseFloat(document.getElementById('mat-total')?.value)    || 0;
+  const matRows   = getMatRows ? getMatRows() : [];
+  const matAmt    = matRows.reduce((s, r) => s + r.total, 0);
   const labor1Amt = parseFloat(document.getElementById('labor1-total')?.value) || 0;
   const labor2Amt = parseFloat(document.getElementById('labor2-total')?.value) || 0;
   const tripAmt   = parseFloat(document.getElementById('trip-total')?.value)   || 0;
@@ -1605,11 +1664,8 @@ function collectForm() {
     'COMPLIANCE TOTAL':         document.getElementById('compliance-cb')?.checked ? '$' + (parseFloat(document.getElementById('compliance-total')?.value)||0).toFixed(2) : '',
     'COMPLIANCE DESC':          document.getElementById('compliance-desc')?.value?.trim() || '',
     'NOTES / DEFICIENCIES':     v('notes-deficiencies'),
-    'MATERIALS DESCRIPTION':    v('mat-desc'),
-    'MATERIALS QTY':            v('mat-qty'),
-    'MATERIALS EXPENSE':        '$' + (v('mat-expense') || '0.00'),
-    'MATERIALS MARKUP':         '$' + (v('mat-markup')  || '0.00'),
-    'MATERIALS TOTAL':          '$' + (v('mat-total')   || '0.00'),
+    'MATERIALS ROWS':           JSON.stringify(getMatRows ? getMatRows() : []),
+    'MATERIALS AMOUNT':         '$' + ((getMatRows ? getMatRows().reduce((s,r)=>s+r.total,0) : 0) || 0).toFixed(2),
     'LABOR 1 RATE':             v('labor1-rate') ? '$' + v('labor1-rate') + '/hr' : '',
     'LABOR 1 HOURS':            v('labor1-qty'),
     'LABOR 1 EXPENSE':          '$' + (v('labor1-expense') || '0.00'),
@@ -2156,7 +2212,7 @@ function buildWorkOrderHTML(d) {
   html += tbl(
     hdr('FIRE SYSTEM INFORMATION') +
     tr(lbl('System Type:'),
-       val(['Wet','Dry','Pre-Action','Deluge','Glycol','Nitrogen'].map(t=>chk((d['SYSTEM TYPE']||'').split(', ').includes(t),t)).join('&nbsp;&nbsp;')),
+       val(['Wet','Dry','Pre-Action','Deluge','Glycol','Nitrogen','Ansul','Fire Extinguisher Type K'].map(t=>chk((d['SYSTEM TYPE']||'').split(', ').includes(t),t)).join('&nbsp;&nbsp;')),
        lbl('Panel Manufacturer:'), val(d['PANEL MANUFACTURER'])) +
     tr(lbl('Panel System Type:'),
        val(['Conventional','Addressable'].map(t=>chk(d['PANEL SYSTEM TYPE']===t,t)).join('&nbsp;&nbsp;')),
@@ -2216,8 +2272,22 @@ function buildWorkOrderHTML(d) {
     } catch(_) { html += erow('Sub-Contractor/Vendor', '', '', d['SUB-CONTRACTOR AMOUNT']||'', '', ''); }
   })();
 
-  html += erow('Materials', d['MATERIALS DESCRIPTION']||'', d['MATERIALS QTY']||'',
-    d['MATERIALS EXPENSE']||'', d['MATERIALS MARKUP']||'', d['MATERIALS TOTAL']||'');
+  // Materials rows
+  (() => {
+    try {
+      const rows = JSON.parse(d['MATERIALS ROWS'] || '[]');
+      if (rows.length === 0) {
+        html += erow('Materials', '', '', '', '', '');
+      } else {
+        rows.forEach((r, i) => {
+          html += erow(i === 0 ? 'Materials' : '', r.desc||'', r.qty||'',
+            r.expense ? '$'+r.expense.toFixed(2) : '',
+            r.markup  ? '$'+r.markup.toFixed(2)  : '',
+            r.total   ? '$'+r.total.toFixed(2)   : '');
+        });
+      }
+    } catch(_) { html += erow('Materials', '', '', d['MATERIALS AMOUNT']||'', '', ''); }
+  })();
 
   // Labor 1
   if (d['LABOR 1 RATE'] || d['LABOR 1 HOURS']) {
@@ -2408,6 +2478,7 @@ window.addEventListener('load', () => {
   // date-requested field is now 'Date Completed' — default to today
   // Date Completed intentionally left blank — user must pick it
   addSubRow(); // Start with one sub-contractor row
+  addMatRow(); // Start with one materials row
   calcTotal();
 
   // Auto-connect: reuse cached token if still valid (no popup needed)
