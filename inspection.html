@@ -246,7 +246,7 @@ body { font-family: 'DM Sans', sans-serif; background: var(--light); color: var(
 .ost-btn.impaired.selected   { background: var(--fail-bg); box-shadow: 0 0 0 2px var(--red); }
 
 /* ── SIGNATURE ── */
-#sig-canvas {
+#sig-canvas, #cust-sig-canvas {
   border: 2px solid var(--border); border-radius: 8px; background: white;
   cursor: crosshair; display: block; width: 100%; max-width: 500px; height: 100px;
   touch-action: none;
@@ -700,11 +700,15 @@ body { font-family: 'DM Sans', sans-serif; background: var(--light); color: var(
     </div>
 
     <div class="card">
-      <div class="card-header"><span class="icon">📝</span><span>General Notes & Recommendations</span></div>
+      <div class="card-header"><span class="icon">📝</span><span>General Notes &amp; Site Observations</span></div>
       <div class="card-body">
-        <div class="field-group">
-          <label>Additional Comments / Recommendations</label>
-          <textarea id="general-notes" rows="4" placeholder="Note any general observations, access issues, equipment not tested, or recommendations for the building owner…"></textarea>
+        <table class="dyn-table">
+          <thead><tr><th style="width:32px;">#</th><th>Note / Observation</th><th style="width:32px;"></th></tr></thead>
+          <tbody id="fa-notes-tbody"></tbody>
+        </table>
+        <button class="add-row-btn" onclick="addFANoteRow()">+ Add Note</button>
+        <div style="margin-top:12px;background:#f8fafc;border:1px solid var(--border);border-radius:7px;padding:10px 14px;font-size:.75rem;color:var(--slate);line-height:1.5;">
+          Listed above are any General Notes to report. This section also contains any issues found during inspections that either require a substantial investment to correct (permits, engineering, etc.) or may have been previously approved in their as-is condition by the Authority Having Jurisdiction. Please contact our office for information, consultation, or services for any items contained herein.
         </div>
       </div>
     </div>
@@ -719,6 +723,25 @@ body { font-family: 'DM Sans', sans-serif; background: var(--light); color: var(
           <input type="file" id="photo-input" accept="image/*" multiple capture="environment" style="display:none;" onchange="handlePhotoUpload(this)">
         </label>
         <div id="photo-count" style="font-size:0.72rem;color:var(--slate);margin-top:6px;"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><span class="icon">✍️</span><span>Customer Signature <span style="font-size:.72rem;font-weight:400;opacity:.8;">— Optional</span></span></div>
+      <div class="card-body">
+        <p style="font-size:0.78rem;color:var(--slate);margin-bottom:8px;">Customer or building representative signature (not required):</p>
+        <canvas id="cust-sig-canvas" width="500" height="100"></canvas>
+        <button class="sig-clear" onclick="clearCustSig()">Clear Signature</button>
+        <div style="margin-top:12px;" class="field-grid">
+          <div class="field-group">
+            <label>Print Name</label>
+            <input type="text" id="cust-sig-name">
+          </div>
+          <div class="field-group">
+            <label>Title / Role</label>
+            <input type="text" id="cust-sig-title" placeholder="e.g. Building Manager">
+          </div>
+        </div>
       </div>
     </div>
 
@@ -1130,20 +1153,6 @@ body { font-family: 'DM Sans', sans-serif; background: var(--light); color: var(
           <tbody id="fa-battery-tbody"></tbody>
         </table>
         <button class="add-row-btn" onclick="addFABatteryRow()">+ Add Failed Battery</button>
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="card-header"><span class="icon">📝</span><span>General Notes &amp; Site Observations</span></div>
-      <div class="card-body">
-        <table class="dyn-table">
-          <thead><tr><th style="width:32px;">#</th><th>Note / Observation</th><th style="width:32px;"></th></tr></thead>
-          <tbody id="fa-notes-tbody"></tbody>
-        </table>
-        <button class="add-row-btn" onclick="addFANoteRow()">+ Add Note</button>
-        <div style="margin-top:12px;background:#f8fafc;border:1px solid var(--border);border-radius:7px;padding:10px 14px;font-size:.75rem;color:var(--slate);line-height:1.5;">
-          Listed above are any General Notes to report. This section also contains any issues found during inspections that either require a substantial investment to correct (permits, engineering, etc.) or may have been previously approved in their as-is condition by the Authority Having Jurisdiction. Please contact our office for information, consultation, or services for any items contained herein.
-        </div>
       </div>
     </div>
 
@@ -3328,6 +3337,34 @@ function setOverallStatus(val, btn) {
 // ─────────────────────────────────────────────────────────────────────────────
 // SIGNATURE PAD
 // ─────────────────────────────────────────────────────────────────────────────
+let custSigCtx = null, custSigDrawing = false, custSigHasData = false;
+function initCustSig() {
+  const canvas = document.getElementById('cust-sig-canvas');
+  if (!canvas || custSigCtx) return;
+  custSigCtx = canvas.getContext('2d');
+  custSigCtx.strokeStyle = '#0d1b2a';
+  custSigCtx.lineWidth = 2;
+  custSigCtx.lineCap = 'round';
+  const getPos = (e) => {
+    const r = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / r.width;
+    const scaleY = canvas.height / r.height;
+    const src = e.touches ? e.touches[0] : e;
+    return { x: (src.clientX - r.left) * scaleX, y: (src.clientY - r.top) * scaleY };
+  };
+  canvas.addEventListener('pointerdown', e => {
+    custSigDrawing = true; const p = getPos(e);
+    custSigCtx.beginPath(); custSigCtx.moveTo(p.x, p.y); e.preventDefault();
+  });
+  canvas.addEventListener('pointermove', e => {
+    if (!custSigDrawing) return; const p = getPos(e);
+    custSigCtx.lineTo(p.x, p.y); custSigCtx.stroke(); custSigHasData = true; e.preventDefault();
+  });
+  canvas.addEventListener('pointerup', () => custSigDrawing = false);
+  canvas.addEventListener('pointerleave', () => custSigDrawing = false);
+}
+function clearCustSig() { if (custSigCtx) custSigCtx.clearRect(0,0,500,100); custSigHasData = false; }
+
 function initSig() {
   const canvas = document.getElementById('sig-canvas');
   if (!canvas || sigCtx) return;
@@ -4619,7 +4656,7 @@ window.addEventListener('load', () => {
 
   // Init sig pad when step 4 is visited
   const observer = new MutationObserver(() => {
-    if (document.getElementById('step-4').style.display !== 'none') initSig();
+    if (document.getElementById('step-4').style.display !== 'none') { initSig(); initCustSig(); }
   });
   observer.observe(document.getElementById('step-4'), { attributes: true, attributeFilter: ['style'] });
 });
