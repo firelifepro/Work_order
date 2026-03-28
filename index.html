@@ -1965,6 +1965,7 @@ async function createDoc() {
     setStatus('submit-status', 'Applying checkboxes…', '');
     await applyCompletionChecklists(newId);
     await applyDocumentMargins(newId);
+    await applyHeaderSpacing(newId);
 
     const url = `https://docs.google.com/document/d/${newId}/edit`;
     const lnk = document.getElementById('doc-link');
@@ -2024,16 +2025,42 @@ async function createDoc() {
 // Paragraphs with "CB|" prefix are stripped then converted
 // to native BULLET_CHECKBOX items — 3 API calls total.
 // ─────────────────────────────────────────────────────────
+async function applyHeaderSpacing(docId) {
+  // Read the doc and zero out spaceAbove/spaceBelow on the first 10 paragraphs
+  // (letterhead table + title line) so Google Docs doesn't add its default gap.
+  const r = await apiFetch(`https://docs.googleapis.com/v1/documents/${docId}`);
+  if (!r.ok) return;
+  const doc = await r.json();
+  const reqs = [];
+  let count = 0;
+  for (const el of doc.body.content || []) {
+    if (count >= 10) break;
+    if (el.paragraph) {
+      reqs.push({
+        updateParagraphStyle: {
+          range: { startIndex: el.startIndex, endIndex: el.endIndex },
+          paragraphStyle: { spaceAbove: { magnitude: 0, unit: 'PT' }, spaceBelow: { magnitude: 0, unit: 'PT' } },
+          fields: 'spaceAbove,spaceBelow'
+        }
+      });
+      count++;
+    }
+  }
+  if (reqs.length) {
+    await apiFetch(`https://docs.googleapis.com/v1/documents/${docId}:batchUpdate`, 'POST', { requests: reqs });
+  }
+}
+
 async function applyDocumentMargins(docId) {
-  // 36pt = 0.5 inch on all sides (Google Docs default is 72pt = 1 inch)
+  // 72pt = 1 inch on all sides (Google Docs default)
   await apiFetch(`https://docs.googleapis.com/v1/documents/${docId}:batchUpdate`, 'POST', {
     requests: [{
       updateDocumentStyle: {
         documentStyle: {
-          marginTop:    { magnitude: 36, unit: 'PT' },
-          marginBottom: { magnitude: 36, unit: 'PT' },
-          marginLeft:   { magnitude: 36, unit: 'PT' },
-          marginRight:  { magnitude: 36, unit: 'PT' }
+          marginTop:    { magnitude: 72, unit: 'PT' },
+          marginBottom: { magnitude: 72, unit: 'PT' },
+          marginLeft:   { magnitude: 72, unit: 'PT' },
+          marginRight:  { magnitude: 72, unit: 'PT' }
         },
         fields: 'marginTop,marginBottom,marginLeft,marginRight'
       }
@@ -2197,9 +2224,8 @@ function buildWorkOrderHTML(d) {
   const titleParts2 = [`Line ${d['LINE #']}`, propTitle, firstSvcTitle, dateTitleStr, hasSubForTitle2 ? '-Sub' : ''].filter(Boolean);
   const fullDocTitle = titleParts2.join(' - ');
 
-  html += `<h2 style="font-family:Arial,sans-serif;font-size:11pt;font-weight:bold;
-    color:#2e6da4;margin:3px 0 4px 0;padding:0;border-bottom:1px solid #2e6da4;
-    padding-bottom:2px;">${fullDocTitle}</h2>`;
+  html += `<div style="font-family:Arial,sans-serif;font-size:11pt;font-weight:bold;
+    color:#2e6da4;margin:0;padding:1px 0 2px 0;border-bottom:1px solid #2e6da4;">${fullDocTitle}</div>`;
 
   // ── 1. Work Order Information ────────────────────────────────────
   html += tbl(
