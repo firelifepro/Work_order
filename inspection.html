@@ -327,6 +327,42 @@ body { font-family: 'DM Sans', sans-serif; background: var(--light); color: var(
 
 /* ── SIGNATURE WARNING ── */
 .sig-warning { background: #fef3c7; border: 1.5px solid var(--amber); border-radius: 6px; padding: 8px 12px; font-size: 0.8rem; color: #92400e; font-weight: 600; margin-bottom: 10px; display: none; }
+
+/* ── Y/N/NA CHECKLIST BUTTONS ── */
+.yna-group { display: flex; gap: 4px; flex-shrink: 0; }
+.yna-btn { padding: 5px 9px; border-radius: 6px; border: 1.5px solid var(--border); font-size: 0.72rem; font-weight: 700; cursor: pointer; transition: all 0.12s; font-family: inherit; background: white; min-width: 38px; text-align: center; }
+.yna-btn.y  { border-color: var(--pass-ring); color: var(--pass-ring); }
+.yna-btn.n  { border-color: var(--fail-ring); color: var(--fail-ring); }
+.yna-btn.na { border-color: var(--na-ring);   color: var(--na-ring); }
+.yna-btn.y.selected  { background: var(--pass-bg); box-shadow: 0 0 0 2px var(--pass-ring); }
+.yna-btn.n.selected  { background: var(--fail-bg); box-shadow: 0 0 0 2px var(--fail-ring); }
+.yna-btn.na.selected { background: var(--na-bg);   box-shadow: 0 0 0 2px var(--na-ring); }
+.note-row { display: none; gap: 6px; margin-top: 3px; align-items: center; }
+.note-row.show { display: flex; }
+.note-badge { background: var(--amber); color: white; font-size: 0.65rem; font-weight: 800; padding: 2px 7px; border-radius: 8px; white-space: nowrap; flex-shrink: 0; }
+.note-input { flex: 1; border: 1.5px solid #fcd34d; border-radius: 6px; padding: 5px 9px; font-size: 0.78rem; font-family: inherit; color: var(--navy); background: #fffbeb; outline: none; }
+.note-input.fail { border-color: var(--fail-ring) !important; background: var(--fail-bg) !important; }
+
+/* ── DYNAMIC TABLES (sub-panels, detection, flow, tamper, batteries) ── */
+.dyn-table { width: 100%; border-collapse: collapse; font-size: 0.78rem; margin-top: 6px; }
+.dyn-table th { background: var(--navy3); color: white; padding: 5px 7px; font-weight: 600; font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.03em; }
+.dyn-table td { padding: 5px 5px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+.dyn-table input, .dyn-table select { border: 1px solid var(--border); border-radius: 4px; padding: 4px 6px; font-size: 0.78rem; font-family: inherit; width: 100%; background: white; outline: none; }
+.dyn-table input:focus, .dyn-table select:focus { border-color: var(--blue); background: #eff6ff; }
+.del-btn { background: none; border: none; color: var(--red); cursor: pointer; font-size: 1rem; padding: 2px 6px; }
+
+/* ── DEVICE TESTING SUMMARY TABLE ── */
+.dev-table { width: 100%; border-collapse: collapse; font-size: 0.75rem; margin-top: 6px; }
+.dev-table th { background: var(--navy3); color: white; padding: 5px 7px; font-weight: 600; font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.03em; text-align: center; }
+.dev-table th.left { text-align: left; }
+.dev-table td { padding: 5px 5px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+.dev-table td.label-cell { font-size: 0.78rem; color: var(--navy); }
+.dev-table td.key-cell { text-align: center; font-size: 0.72rem; color: var(--slate); font-weight: 700; }
+.dev-table input[type=number] { border: 1px solid var(--border); border-radius: 4px; padding: 4px 5px; font-size: 0.78rem; font-family: inherit; width: 54px; background: white; outline: none; text-align: center; }
+.dev-table input[type=number]:focus { border-color: var(--blue); background: #eff6ff; }
+.dev-table input[type=text] { border: 1px solid var(--border); border-radius: 4px; padding: 4px 6px; font-size: 0.75rem; font-family: inherit; width: 100%; background: white; outline: none; }
+.pct.pass { color: var(--green); font-weight: 700; font-size: 0.78rem; }
+.pct.fail { color: var(--red); font-weight: 700; font-size: 0.78rem; }
 @media (max-width: 600px) {
   .field-grid { grid-template-columns: 1fr; }
   .field-grid.cols-3 { grid-template-columns: 1fr 1fr; }
@@ -1149,6 +1185,9 @@ function buildInspectionForms() {
   if (!builder) { toast('⚠ Unknown system: ' + activeInspectionSystem); return; }
   container.appendChild(builder());
 
+  // System-specific panel initialization (dynamic tables, checklists)
+  if (activeInspectionSystem === 'fire-alarm') initFireAlarmPanel();
+
   // Show active system banner in step 3
   const meta = SYS_META[activeInspectionSystem] || { label: activeInspectionSystem, icon: '⚙️' };
   const banner = document.getElementById('active-system-banner');
@@ -1269,36 +1308,73 @@ function sectionDiv(title) {
 // ─────────────────────────────────────────────────────────────────────────────
 function buildFireAlarmPanel() {
   const body = `
-    ${sectionDiv('Panel Information')}
+    ${sectionDiv('Control Panel Information')}
     ${dataRow(
-      {id:'fa-mfr',     label:'Panel Manufacturer', placeholder:'e.g. Honeywell, EST'},
-      {id:'fa-model',   label:'Panel Model'},
-      {id:'fa-serial',  label:'Serial #'}
+      {id:'fa-cp-make',     label:'Panel Make (Manufacturer)', placeholder:'e.g. Honeywell, EST, Simplex'},
+      {id:'fa-cp-model',    label:'Panel Model'},
+      {id:'fa-cp-serial',   label:'Serial #'}
     )}
     ${dataRow(
-      {id:'fa-type',    label:'Panel Type (Conventional/Addressable)'},
-      {id:'fa-zones',   label:'# of Zones / Loops', type:'number'},
-      {id:'fa-year',    label:'Year Installed', type:'number'}
+      {id:'fa-cp-location', label:'Panel Location'},
+      {id:'fa-cp-type',     label:'Panel Type', placeholder:'e.g. Addressable, Conventional'},
+      {id:'fa-cp-zones',    label:'# Zones / Loops', type:'number'}
     )}
     ${dataRow(
-      {id:'fa-monitoring', label:'Monitoring Company'},
-      {id:'fa-monacct',    label:'Monitoring Account #'}
+      {id:'fa-cp-year',         label:'Year Installed', type:'number'},
+      {id:'fa-cp-batt-date',    label:'Battery Install Date', type:'date'}
     )}
+
+    ${sectionDiv('Dialer / Radio Communicator')}
+    ${dataRow(
+      {id:'fa-dr-make',     label:'Dialer / Radio Make'},
+      {id:'fa-dr-model',    label:'Model'},
+      {id:'fa-dr-location', label:'Location'},
+      {id:'fa-dr-type',     label:'Type', placeholder:'e.g. GSM, DACT, IP'}
+    )}
+
+    ${sectionDiv('Monitoring')}
+    <div class="data-row cols-3">
+      <div class="data-field">
+        <label>Is System Monitored?</label>
+        <select id="fa-monitored">
+          <option value="">— Select —</option>
+          <option>Yes</option>
+          <option>No</option>
+        </select>
+      </div>
+      <div class="data-field"><label>Monitoring Company</label><input type="text" id="fa-monitor-company"></div>
+      <div class="data-field"><label>Account #</label><input type="text" id="fa-monitor-account"></div>
+    </div>
+    ${dataRow(
+      {id:'fa-monitor-phone',   label:'Monitoring Phone'},
+      {id:'fa-monitor-offline', label:'Time Offline', type:'time'},
+      {id:'fa-monitor-online',  label:'Time Online',  type:'time'}
+    )}
+    <div class="data-row cols-1" style="margin-bottom:8px;">
+      <div class="data-field"><label>Monitoring Notes</label><input type="text" id="fa-monitor-notes"></div>
+    </div>
+
+    ${sectionDiv('Panel Testing / Disable Instructions')}
+    <div class="data-field" style="margin-bottom:8px;">
+      <textarea id="fa-panel-instructions" rows="4" placeholder="Describe panel disable/enable procedure, access codes, key locations…" style="border:1.5px solid var(--border);border-radius:6px;padding:8px 10px;font-size:.82rem;font-family:inherit;color:var(--navy);outline:none;width:100%;background:#fafafa;resize:vertical;"></textarea>
+    </div>
+
+    ${sectionDiv('Pre-Inspection Checklist')}
+    <div id="fa-pre-checklist"></div>
 
     ${sectionDiv('Control Panel & Power')}
     ${makeRow('fa-panel-cond','Control Panel Condition','Visual — no damage, labels intact')}
     ${makeRow('fa-battery','Battery / Backup Power','24-hr minimum backup; date on batteries')}
     ${makeRow('fa-batt-date','Battery Date Check','Replace if > 3 years or failed load test')}
-    ${dataRow({id:'fa-batt-replace-date', label:'Battery Install Date', type:'date'})}
     ${makeRow('fa-ac-power','AC Power Indicator','Green LED illuminated')}
     ${makeRow('fa-tamper','Tamper Signals','All supervisory tampers tested and restored')}
     ${makeRow('fa-trouble','Trouble Signals','No active troubles on panel')}
 
     ${sectionDiv('Detection Devices')}
     ${dataRow(
-      {id:'fa-smoke-count',    label:'# Smoke Detectors', type:'number'},
-      {id:'fa-heat-count',     label:'# Heat Detectors', type:'number'},
-      {id:'fa-pull-count',     label:'# Pull Stations', type:'number'}
+      {id:'fa-smoke-count', label:'# Smoke Detectors',  type:'number'},
+      {id:'fa-heat-count',  label:'# Heat Detectors',   type:'number'},
+      {id:'fa-pull-count',  label:'# Pull Stations',    type:'number'}
     )}
     ${makeRow('fa-smoke-test','Smoke Detectors Functional','Representative sample tested per NFPA 72')}
     ${makeRow('fa-heat-test','Heat Detectors Functional','Fixed temp or rate-of-rise — tested')}
@@ -1310,6 +1386,143 @@ function buildFireAlarmPanel() {
     ${makeRow('fa-horns','Horns / Strobes / Speakers','Audible and visual — all activated')}
     ${makeRow('fa-horn-sync','Horn Synchronization','Synchronized properly')}
     ${makeRow('fa-mass-notif','Mass Notification (if present)','Message clarity and audibility confirmed')}
+
+    ${sectionDiv('Auxiliary — Annual Only')}
+    <div class="inspect-row">
+      <div class="inspect-row-top">
+        <div class="inspect-label">Visual notification present &amp; operational? <small>Strobes, combos — unobstructed, synchronized on alarm</small></div>
+        <div class="pf-group">
+          <button class="pf-btn pass" onclick="setFAPF(this)">PASS</button>
+          <button class="pf-btn fail" onclick="setFAPF(this)">FAIL</button>
+          <button class="pf-btn na"   onclick="setFAPF(this)">N/A</button>
+        </div>
+      </div>
+    </div>
+    <div class="inspect-row">
+      <div class="inspect-row-top">
+        <div class="inspect-label">Audible notification present &amp; operational? <small>Bells, chimes, horns — audible in all required areas</small></div>
+        <div class="pf-group">
+          <button class="pf-btn pass" onclick="setFAPF(this)">PASS</button>
+          <button class="pf-btn fail" onclick="setFAPF(this)">FAIL</button>
+          <button class="pf-btn na"   onclick="setFAPF(this)">N/A</button>
+        </div>
+      </div>
+    </div>
+    <div class="data-row cols-1" style="margin:6px 0 10px;">
+      <div class="data-field"><label>A/V Notes</label><input type="text" id="fa-av-notes"></div>
+    </div>
+    <div class="inspect-row">
+      <div class="inspect-row-top">
+        <div class="inspect-label">Door holders present &amp; release on alarm? <small>Magnetic locks, card access — release and close as intended</small></div>
+        <div class="pf-group">
+          <button class="pf-btn pass" onclick="setFAPF(this)">PASS</button>
+          <button class="pf-btn fail" onclick="setFAPF(this)">FAIL</button>
+          <button class="pf-btn na"   onclick="setFAPF(this)">N/A</button>
+        </div>
+      </div>
+    </div>
+    <div class="data-row cols-1" style="margin:6px 0 10px;">
+      <div class="data-field"><label>Door Holder Notes</label><input type="text" id="fa-door-notes"></div>
+    </div>
+    <div class="inspect-row">
+      <div class="inspect-row-top">
+        <div class="inspect-label">HVAC shutdown on alarm? <small>Tested and confirmed functional</small></div>
+        <div class="pf-group">
+          <button class="pf-btn pass" onclick="setFAPF(this)">PASS</button>
+          <button class="pf-btn fail" onclick="setFAPF(this)">FAIL</button>
+          <button class="pf-btn na"   onclick="setFAPF(this)">N/A</button>
+        </div>
+      </div>
+    </div>
+    ${dataRow(
+      {id:'fa-hvac-method', label:'HVAC Control Method', placeholder:'e.g. Relay, BACnet, Direct wired'},
+      {id:'fa-hvac-notes',  label:'HVAC Notes'}
+    )}
+
+    ${sectionDiv('Sub Panel / Power Supply')}
+    <div style="overflow-x:auto;">
+      <table class="dyn-table" id="fa-subpanel-table">
+        <thead>
+          <tr>
+            <th>Location</th><th>Make</th><th>Model</th><th>Address</th>
+            <th>Panel/Circuit</th><th>Amps/Style</th><th>Avail. NACs</th>
+            <th>Install Date</th><th>(L) Batt Load</th><th>(R) Batt Load</th>
+            <th>SPVSD?</th><th style="width:80px;">Pass/Fail</th><th style="width:30px;"></th>
+          </tr>
+        </thead>
+        <tbody id="fa-subpanel-tbody"></tbody>
+      </table>
+    </div>
+    <button class="add-row-btn" onclick="addFASubpanelRow()">+ Add Sub Panel / Power Supply</button>
+
+    ${sectionDiv('Device Testing Summary')}
+    <p style="font-size:.72rem;color:var(--slate);margin-bottom:6px;">PASS = Functional/Visual  |  FAIL = Failed Test  |  NT = Not Tested  |  NF = Not Found</p>
+    <div style="overflow-x:auto;">
+      <table class="dev-table" id="fa-device-table">
+        <thead>
+          <tr>
+            <th class="left" style="min-width:150px;">Device / System</th>
+            <th>Key</th>
+            <th>Total</th>
+            <th>Pass #</th>
+            <th>Fail #</th>
+            <th>% Pass</th>
+            <th>% Fail</th>
+            <th>Not Tested</th>
+            <th>Not Found</th>
+            <th>Notes</th>
+          </tr>
+        </thead>
+        <tbody id="fa-device-tbody"></tbody>
+      </table>
+    </div>
+
+    ${sectionDiv('On-Site System Notes')}
+    <div style="overflow-x:auto;">
+      <table class="dyn-table">
+        <thead><tr><th style="min-width:160px;">Equipment</th><th style="width:130px;">Condition</th><th>Notes &amp; Observations</th></tr></thead>
+        <tbody>
+          <tr><td><input type="text" id="fa-onsite-eq-1" value="Fire Alarm Control Panel"></td><td><input type="text" id="fa-onsite-cond-1"></td><td><input type="text" id="fa-onsite-notes-1"></td></tr>
+          <tr><td><input type="text" id="fa-onsite-eq-2" value="Initiating Devices"></td><td><input type="text" id="fa-onsite-cond-2"></td><td><input type="text" id="fa-onsite-notes-2"></td></tr>
+          <tr><td><input type="text" id="fa-onsite-eq-3" value="Power Supplies"></td><td><input type="text" id="fa-onsite-cond-3"></td><td><input type="text" id="fa-onsite-notes-3"></td></tr>
+          <tr><td><input type="text" id="fa-onsite-eq-4" value="Graphic Maps / Annunciators"></td><td><input type="text" id="fa-onsite-cond-4"></td><td><input type="text" id="fa-onsite-notes-4"></td></tr>
+          <tr><td><input type="text" id="fa-onsite-eq-5" value="Other"></td><td><input type="text" id="fa-onsite-cond-5"></td><td><input type="text" id="fa-onsite-notes-5"></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    ${sectionDiv('Device Locations — Detection')}
+    <div style="overflow-x:auto;">
+      <table class="dyn-table">
+        <thead>
+          <tr><th style="width:80px;">Type</th><th>Location</th><th style="width:90px;">Address</th><th style="width:90px;">Alarm</th><th style="width:100px;">Supervisory</th><th style="width:70px;">Note #</th><th style="width:30px;"></th></tr>
+        </thead>
+        <tbody id="fa-detection-tbody"></tbody>
+      </table>
+    </div>
+    <button class="add-row-btn" onclick="addFADetectionRow()">+ Add Device</button>
+
+    ${sectionDiv('Device Locations — Flow Switches')}
+    <div style="overflow-x:auto;">
+      <table class="dyn-table">
+        <thead>
+          <tr><th style="width:80px;">Type</th><th>Location</th><th style="width:90px;">Scan ID</th><th style="width:90px;">Address</th><th style="width:110px;">Supervisory</th><th style="width:80px;">Seconds</th><th style="width:30px;"></th></tr>
+        </thead>
+        <tbody id="fa-flow-tbody"></tbody>
+      </table>
+    </div>
+    <button class="add-row-btn" onclick="addFAFlowRow()">+ Add Flow Switch</button>
+
+    ${sectionDiv('Device Locations — Tamper Switches')}
+    <div style="overflow-x:auto;">
+      <table class="dyn-table">
+        <thead>
+          <tr><th style="width:80px;">Type</th><th>Location</th><th style="width:90px;">Scan ID</th><th style="width:90px;">Address</th><th style="width:110px;">Supervisory</th><th>Notes</th><th style="width:30px;"></th></tr>
+        </thead>
+        <tbody id="fa-tamper-tbody"></tbody>
+      </table>
+    </div>
+    <button class="add-row-btn" onclick="addFATamperRow()">+ Add Tamper Switch</button>
 
     ${sectionDiv('Supervisory & Monitoring')}
     ${makeRow('fa-valve-super','Valve Supervisory Switches','All closed valves indicated on panel')}
@@ -1323,13 +1536,24 @@ function buildFireAlarmPanel() {
     ${sectionDiv('Documentation & Tags')}
     ${makeRow('fa-tags','Panel Tags / Labels','Current inspection tag affixed')}
     ${makeRow('fa-logbook','System Log / As-Builts Available','On-site documentation accessible')}
-    ${dataRow(
-      {id:'fa-last-insp', label:'Previous Inspection Date', type:'date'},
-      {id:'fa-defic-from-last', label:'Prior Deficiencies Corrected?'},
-    )}
-    <div class="field-group" style="margin-top:8px;">
-      <label>Fire Alarm System Notes</label>
-      <textarea id="fa-notes" rows="3" placeholder="Additional notes, observations…"></textarea>
+
+    ${sectionDiv('Post-Inspection Checklist')}
+    <div id="fa-post-checklist"></div>
+
+    ${sectionDiv('Failed Batteries')}
+    <div style="overflow-x:auto;">
+      <table class="dyn-table">
+        <thead>
+          <tr><th style="width:80px;">Size (AH)</th><th style="width:100px;">Type</th><th style="width:60px;">Count</th><th>Locations</th><th style="width:30px;"></th></tr>
+        </thead>
+        <tbody id="fa-battery-tbody"></tbody>
+      </table>
+    </div>
+    <button class="add-row-btn" onclick="addFABatteryRow()">+ Add Failed Battery</button>
+
+    <div class="field-group" style="margin-top:12px;">
+      <label style="font-size:.66rem;font-weight:700;color:var(--slate);text-transform:uppercase;letter-spacing:.05em;">Fire Alarm System Notes</label>
+      <textarea id="fa-notes" rows="3" placeholder="Additional notes, observations…" style="border:1.5px solid var(--border);border-radius:6px;padding:8px 10px;font-size:.82rem;font-family:inherit;color:var(--navy);outline:none;width:100%;background:#fafafa;resize:vertical;min-height:56px;margin-top:4px;"></textarea>
     </div>`;
   return makePanel('fire-alarm', '🔔', 'Fire Alarm System (NFPA 72)', body);
 }
@@ -1991,6 +2215,226 @@ function buildBackflowPanel() {
       <textarea id="bf-notes" rows="3"></textarea>
     </div>`;
   return makePanel('backflow', '🔁', 'Backflow Prevention Device (AWWA / Local Code)', body);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// FIRE ALARM — DEVICE LIST, CHECKLISTS, DYNAMIC TABLES
+// ─────────────────────────────────────────────────────────────────────────────
+const FA_DEVICES = [
+  {label:'Smoke Detector',         key:'SD'},
+  {label:'Combo Smoke/CO/Other',   key:'CBO'},
+  {label:'Heat Detector',          key:'HD'},
+  {label:'Manual Pull Station',    key:'PS'},
+  {label:'Duct Detector',          key:'DD'},
+  {label:'Beam Detector',          key:'BD'},
+  {label:'CO Detector',            key:'CO'},
+  {label:'Wet Flow Switch',        key:'FS'},
+  {label:'Dry Pressure Switch',    key:'PRS'},
+  {label:'Tamper Switch',          key:'TS'},
+  {label:'Low Air Switch',         key:'LA'},
+  {label:'High Air Switch',        key:'HA'},
+  {label:'Power Supply',           key:'PWR'},
+  {label:'Batteries',              key:'BAT'},
+  {label:'Annunciator',            key:'ANN'},
+  {label:'Elevator Recall Bank',   key:'ELV'},
+  {label:'Phone Jack',             key:'PJ'},
+  {label:'Fire Phone',             key:'FP'},
+  {label:'Other (specify)',        key:'OTH'},
+];
+const FA_PRE_CHECKS = [
+  'Check in with engineer / building contact?',
+  'Were keys provided?',
+  'All fire equipment in working order on arrival?',
+  'Panel showing "Normal" upon arrival?',
+  'Panel taken offline / disabled before testing?',
+  'All lamps / LEDs / LCDs functioning?',
+  'All fuses in good condition / functional?',
+];
+const FA_POST_CHECKS = [
+  'Signals received at central station?',
+  'Panel restored to "Normal" state upon departure?',
+  'Panel re-enabled and placed online?',
+  'Applicable device tags updated?',
+  'Checkout with engineer / keys returned?',
+  'Customer notified of any deficiencies?',
+  'FCC left clean and organized?',
+];
+const FA_SEV_OPTS = ['','Critical','High','Moderate','Low','Advisory'];
+let faSubpanelCount = 0, faDetectionCount = 0, faFlowCount = 0, faTamperCount = 0, faBatteryCount = 0;
+let faYNANoteCounter = 0;
+
+function setFAPF(btn) {
+  const group = btn.closest('.pf-group');
+  group.querySelectorAll('.pf-btn').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+}
+
+function setFAYNA(btn, noteId, type) {
+  const group = btn.closest('.yna-group');
+  group.querySelectorAll('.yna-btn').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+  const noteRow = document.getElementById(noteId);
+  if (!noteRow) return;
+  if (type === 'N') {
+    faYNANoteCounter++;
+    noteRow.querySelector('.note-badge').textContent = 'Note #' + faYNANoteCounter;
+    const inp = noteRow.querySelector('input');
+    inp.classList.add('fail'); inp.placeholder = 'Describe issue…';
+    noteRow.classList.add('show');
+  } else {
+    noteRow.classList.remove('show');
+  }
+}
+
+function buildFADeviceTable() {
+  const tbody = document.getElementById('fa-device-tbody');
+  if (!tbody) return;
+  FA_DEVICES.forEach((d, i) => {
+    const id = `fa-dev-${i}`;
+    tbody.insertAdjacentHTML('beforeend', `
+      <tr>
+        <td class="label-cell">${d.label}</td>
+        <td class="key-cell">${d.key}</td>
+        <td><input type="number" id="${id}-total" min="0" placeholder="0" oninput="calcFAPct(${i})"></td>
+        <td><input type="number" id="${id}-pass"  min="0" placeholder="0" oninput="calcFAPct(${i})"></td>
+        <td><input type="number" id="${id}-fail"  min="0" placeholder="0" oninput="calcFAPct(${i})"></td>
+        <td><span class="pct pass" id="${id}-pct-pass">—</span></td>
+        <td><span class="pct fail" id="${id}-pct-fail">—</span></td>
+        <td><input type="number" id="${id}-nt" min="0" placeholder="0"></td>
+        <td><input type="number" id="${id}-nf" min="0" placeholder="0"></td>
+        <td><input type="text"   id="${id}-notes" style="min-width:100px;"></td>
+      </tr>`);
+  });
+}
+
+function calcFAPct(i) {
+  const id = `fa-dev-${i}`;
+  const total = +document.getElementById(`${id}-total`)?.value || 0;
+  const pass  = +document.getElementById(`${id}-pass`)?.value  || 0;
+  const fail  = +document.getElementById(`${id}-fail`)?.value  || 0;
+  const pPass = document.getElementById(`${id}-pct-pass`);
+  const pFail = document.getElementById(`${id}-pct-fail`);
+  if (pPass) pPass.textContent = total > 0 ? Math.round(pass / total * 100) + '%' : '—';
+  if (pFail) pFail.textContent = total > 0 ? Math.round(fail / total * 100) + '%' : '—';
+}
+
+function buildFAChecklists() {
+  buildFACL('fa-pre-checklist',  FA_PRE_CHECKS,  'fa-pre');
+  buildFACL('fa-post-checklist', FA_POST_CHECKS, 'fa-post');
+}
+
+function buildFACL(containerId, items, prefix) {
+  const c = document.getElementById(containerId);
+  if (!c) return;
+  items.forEach((label, i) => {
+    const rowId = `${prefix}-note-${i}`;
+    c.insertAdjacentHTML('beforeend', `
+      <div class="inspect-row">
+        <div class="inspect-row-top">
+          <div class="inspect-label">${label}</div>
+          <div class="yna-group">
+            <button class="yna-btn y"  onclick="setFAYNA(this,'${rowId}','Y')">Y</button>
+            <button class="yna-btn n"  onclick="setFAYNA(this,'${rowId}','N')">N</button>
+            <button class="yna-btn na" onclick="setFAYNA(this,'${rowId}','N/A')">N/A</button>
+          </div>
+        </div>
+        <div class="note-row" id="${rowId}">
+          <span class="note-badge">Note #—</span>
+          <input class="note-input" type="text" id="${rowId}-text" placeholder="Note…">
+        </div>
+      </div>`);
+  });
+}
+
+function addFASubpanelRow() {
+  faSubpanelCount++;
+  const n = faSubpanelCount;
+  const pfOpts = ['','PASS','FAIL','N/A'].map(o => `<option>${o}</option>`).join('');
+  document.getElementById('fa-subpanel-tbody').insertAdjacentHTML('beforeend', `
+    <tr id="fa-sp-row-${n}">
+      <td><input type="text" id="fa-sp-loc-${n}"></td>
+      <td><input type="text" id="fa-sp-make-${n}"></td>
+      <td><input type="text" id="fa-sp-model-${n}"></td>
+      <td><input type="text" id="fa-sp-addr-${n}"></td>
+      <td><input type="text" id="fa-sp-circuit-${n}"></td>
+      <td><input type="text" id="fa-sp-amps-${n}"></td>
+      <td><input type="text" id="fa-sp-nacs-${n}"></td>
+      <td><input type="date" id="fa-sp-install-${n}"></td>
+      <td><input type="text" id="fa-sp-lbatt-${n}" placeholder="Pass/Fail/V"></td>
+      <td><input type="text" id="fa-sp-rbatt-${n}" placeholder="Pass/Fail/V"></td>
+      <td><select id="fa-sp-spvsd-${n}"><option></option><option>Yes</option><option>No</option></select></td>
+      <td><select id="fa-sp-pf-${n}">${pfOpts}</select></td>
+      <td><button class="del-btn" onclick="document.getElementById('fa-sp-row-${n}').remove()">✕</button></td>
+    </tr>`);
+}
+
+function addFADetectionRow() {
+  faDetectionCount++;
+  const n = faDetectionCount;
+  const alOpts = ['','Alarm','Supervisory','Trouble','Monitor'].map(o => `<option>${o}</option>`).join('');
+  const supOpts = ['','Pass','Fail','N/A','NT'].map(o => `<option>${o}</option>`).join('');
+  document.getElementById('fa-detection-tbody').insertAdjacentHTML('beforeend', `
+    <tr id="fa-det-row-${n}">
+      <td><input type="text" id="fa-det-type-${n}" placeholder="SD, HD…"></td>
+      <td><input type="text" id="fa-det-loc-${n}"></td>
+      <td><input type="text" id="fa-det-addr-${n}"></td>
+      <td><select id="fa-det-alarm-${n}">${alOpts}</select></td>
+      <td><select id="fa-det-sup-${n}">${supOpts}</select></td>
+      <td><input type="text" id="fa-det-note-${n}"></td>
+      <td><button class="del-btn" onclick="document.getElementById('fa-det-row-${n}').remove()">✕</button></td>
+    </tr>`);
+}
+
+function addFAFlowRow() {
+  faFlowCount++;
+  const n = faFlowCount;
+  const supOpts = ['','Pass','Fail','N/A','NT'].map(o => `<option>${o}</option>`).join('');
+  document.getElementById('fa-flow-tbody').insertAdjacentHTML('beforeend', `
+    <tr id="fa-flow-row-${n}">
+      <td><input type="text" id="fa-flow-type-${n}" placeholder="FS, WFS…"></td>
+      <td><input type="text" id="fa-flow-loc-${n}"></td>
+      <td><input type="text" id="fa-flow-scan-${n}"></td>
+      <td><input type="text" id="fa-flow-addr-${n}"></td>
+      <td><select id="fa-flow-sup-${n}">${supOpts}</select></td>
+      <td><input type="number" id="fa-flow-secs-${n}" placeholder="sec"></td>
+      <td><button class="del-btn" onclick="document.getElementById('fa-flow-row-${n}').remove()">✕</button></td>
+    </tr>`);
+}
+
+function addFATamperRow() {
+  faTamperCount++;
+  const n = faTamperCount;
+  const supOpts = ['','Pass','Fail','N/A','NT'].map(o => `<option>${o}</option>`).join('');
+  document.getElementById('fa-tamper-tbody').insertAdjacentHTML('beforeend', `
+    <tr id="fa-tamper-row-${n}">
+      <td><input type="text" id="fa-tamper-type-${n}" placeholder="TS…"></td>
+      <td><input type="text" id="fa-tamper-loc-${n}"></td>
+      <td><input type="text" id="fa-tamper-scan-${n}"></td>
+      <td><input type="text" id="fa-tamper-addr-${n}"></td>
+      <td><select id="fa-tamper-sup-${n}">${supOpts}</select></td>
+      <td><input type="text" id="fa-tamper-notes-${n}"></td>
+      <td><button class="del-btn" onclick="document.getElementById('fa-tamper-row-${n}').remove()">✕</button></td>
+    </tr>`);
+}
+
+function addFABatteryRow() {
+  faBatteryCount++;
+  const n = faBatteryCount;
+  document.getElementById('fa-battery-tbody').insertAdjacentHTML('beforeend', `
+    <tr id="fa-bat-row-${n}">
+      <td><input type="text" id="fa-bat-size-${n}" placeholder="e.g. 7AH"></td>
+      <td><input type="text" id="fa-bat-type-${n}" placeholder="e.g. SLA, Li"></td>
+      <td><input type="number" id="fa-bat-count-${n}" min="1" placeholder="1"></td>
+      <td><input type="text" id="fa-bat-loc-${n}" placeholder="Panel location…"></td>
+      <td><button class="del-btn" onclick="document.getElementById('fa-bat-row-${n}').remove()">✕</button></td>
+    </tr>`);
+}
+
+function initFireAlarmPanel() {
+  faSubpanelCount = 0; faDetectionCount = 0; faFlowCount = 0;
+  faTamperCount = 0; faBatteryCount = 0; faYNANoteCounter = 0;
+  buildFADeviceTable();
+  buildFAChecklists();
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -2872,11 +3316,13 @@ async function buildPDFDoc() {
   // ══════════════════════════════════════════════════════════
   const systemDataFields = {
     'fire-alarm': [
-      [{label:'Panel Manufacturer',id:'fa-mfr'},{label:'Panel Model',id:'fa-model'},{label:'Serial #',id:'fa-serial'}],
-      [{label:'Panel Type',id:'fa-type'},{label:'# Zones/Loops',id:'fa-zones'},{label:'Year Installed',id:'fa-year'}],
-      [{label:'Monitoring Company',id:'fa-monitoring'},{label:'Monitoring Account #',id:'fa-monacct'},{label:'Battery Install Date',id:'fa-batt-replace-date'}],
+      [{label:'Panel Make',id:'fa-cp-make'},{label:'Panel Model',id:'fa-cp-model'},{label:'Serial #',id:'fa-cp-serial'}],
+      [{label:'Panel Location',id:'fa-cp-location'},{label:'Panel Type',id:'fa-cp-type'},{label:'# Zones/Loops',id:'fa-cp-zones'}],
+      [{label:'Year Installed',id:'fa-cp-year'},{label:'Battery Install Date',id:'fa-cp-batt-date'}],
+      [{label:'Dialer Make',id:'fa-dr-make'},{label:'Dialer Model',id:'fa-dr-model'},{label:'Dialer Type',id:'fa-dr-type'}],
+      [{label:'Monitored?',id:'fa-monitored'},{label:'Monitoring Company',id:'fa-monitor-company'},{label:'Account #',id:'fa-monitor-account'}],
+      [{label:'Monitor Phone',id:'fa-monitor-phone'},{label:'Time Offline',id:'fa-monitor-offline'},{label:'Time Online',id:'fa-monitor-online'}],
       [{label:'# Smoke Detectors',id:'fa-smoke-count'},{label:'# Heat Detectors',id:'fa-heat-count'},{label:'# Pull Stations',id:'fa-pull-count'}],
-      [{label:'Previous Inspection',id:'fa-last-insp'},{label:'Prior Defic. Corrected',id:'fa-defic-from-last'}],
     ],
     'sprinkler': [
       [{label:'System Type',id:'sp-type'},{label:'Manufacturer',id:'sp-mfr'},{label:'Year Installed',id:'sp-year'}],
@@ -2983,8 +3429,8 @@ async function buildPDFDoc() {
     'special-suppression':'ss-notes','backflow':'bf-notes','extinguisher':'ext-notes',
   };
 
-  // ── Render each system ──
-  data.systems.forEach(sys => {
+  // ── Render active system ──
+  [activeInspectionSystem].filter(Boolean).forEach(sys => {
     const title = systemTitles[sys] || sys.toUpperCase();
     sectionHdr(title);
 
@@ -3032,7 +3478,7 @@ async function buildPDFDoc() {
   });
 
   // ── Extinguisher per-unit table ──
-  if (activeSystems.has('extinguisher') && data.extinguishers.length > 0) {
+  if (activeInspectionSystem === 'extinguisher' && data.extinguishers.length > 0) {
     checkPage(20);
     setFill([240,244,252]); doc.rect(ML, y, usableW, 5.5, 'F');
     setFont(FS.tiny,'bold'); setTxt([50,80,130]);
