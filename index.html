@@ -1964,6 +1964,7 @@ async function createDoc() {
     // Convert Completion & Billing checkboxes to native Docs checklist items
     setStatus('submit-status', 'Applying checkboxes…', '');
     await applyCompletionChecklists(newId);
+    await applyDocumentMargins(newId);
 
     const url = `https://docs.google.com/document/d/${newId}/edit`;
     const lnk = document.getElementById('doc-link');
@@ -2023,6 +2024,23 @@ async function createDoc() {
 // Paragraphs with "CB|" prefix are stripped then converted
 // to native BULLET_CHECKBOX items — 3 API calls total.
 // ─────────────────────────────────────────────────────────
+async function applyDocumentMargins(docId) {
+  // 36pt = 0.5 inch on all sides (Google Docs default is 72pt = 1 inch)
+  await apiFetch(`https://docs.googleapis.com/v1/documents/${docId}:batchUpdate`, 'POST', {
+    requests: [{
+      updateDocumentStyle: {
+        documentStyle: {
+          marginTop:    { magnitude: 36, unit: 'PT' },
+          marginBottom: { magnitude: 36, unit: 'PT' },
+          marginLeft:   { magnitude: 36, unit: 'PT' },
+          marginRight:  { magnitude: 36, unit: 'PT' }
+        },
+        fields: 'marginTop,marginBottom,marginLeft,marginRight'
+      }
+    }]
+  });
+}
+
 async function applyCompletionChecklists(docId) {
   // Pass 1: find all "CB|" paragraphs
   const r1 = await apiFetch(`https://docs.googleapis.com/v1/documents/${docId}`);
@@ -2134,7 +2152,7 @@ function buildWorkOrderHTML(d) {
 
   // ── Letterhead ──────────────────────────────────────────────────
   html += `
-  <table style="width:100%;border-collapse:collapse;margin-bottom:3px;border:none;">
+  <table style="width:100%;border-collapse:collapse;margin-bottom:1px;border:none;">
     <tr>
       <td style="width:44px;padding:2px 8px 2px 0;vertical-align:middle;border:none;">
         <div style="width:38px;height:38px;background:#2e6da4;border-radius:50%;
@@ -2151,7 +2169,7 @@ function buildWorkOrderHTML(d) {
         </div>
       </td>
       <td style="vertical-align:middle;text-align:right;padding:2px 0;border:none;">
-        <div style="font-family:Arial,sans-serif;font-size:15pt;font-weight:bold;
+        <div style="font-family:Arial,sans-serif;font-size:15pt;
                     color:#000;letter-spacing:1px;">
           WORK ORDER
         </div>
