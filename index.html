@@ -2210,43 +2210,6 @@ function buildWorkOrderHTML(d) {
   // ── 3. Scope of Work ─────────────────────────────────────────────
   html += tbl(
     hdr('SCOPE OF WORK') +
-    tr(th('Service Type(s) \u2014 check all that apply:', 4, S.subhdr)) +
-    tr(
-      td(chk(hasAnySvc('Fire Alarm \u2013 Annual','Fire Alarm \u2013 Semi Annual','Fire Alarm \u2013 Quarterly','Fire Alarm \u2013 Monthly'), 'Fire Alarm Inspection')),
-      td(chk(hasAnySvc('Sprinkler \u2013 Annual','Sprinkler \u2013 Semi Annual','Sprinkler \u2013 Quarterly','Sprinkler \u2013 Monthly'), 'Sprinkler Inspection')),
-      td(chk(hasAnySvc('Extinguisher \u2013 Annual','Extinguisher \u2013 Semi Annual','Extinguisher \u2013 Quarterly','Extinguisher \u2013 Monthly'), 'Extinguisher Inspection')),
-      td(chk(hasAnySvc('Exit Light \u2013 Annual','Exit Light \u2013 Semi Annual','Exit Light \u2013 Quarterly','Exit Light \u2013 Monthly'), 'Emergency Exit Light Inspection'))
-    ) +
-    tr(td(freqRow('Fire Alarm')), td(freqRow('Sprinkler')), td(freqRow('Extinguisher')), td(freqRow('Exit Light'))) +
-    tr(
-      td(chk(hasSvc('5-Year Internal Pipe Inspection'), '5-Year Internal Pipe Inspection')),
-      td(chk(hasSvc('5-Year FDC Hydrostatic Test'), '5-Year FDC Hydrostatic Test')),
-      td(chk(hasSvc('3-Year Dry Pipe Test'), '3-Year Dry Pipe Test')),
-      td(chk(hasSvc('Annual Backflow Prevention Test'), 'Annual Backflow Prevention Test'))
-    ) +
-    tr(
-      td(chk(hasSvc('Deficiency Correction'), 'Deficiency Correction')),
-      td(chk(hasSvc('Repair / Service Call'), 'Repair / Service Call')),
-      td(chk(hasSvc('New Installation'), 'New Installation')),
-      td('')
-    ) +
-    tr(
-      td(chk(hasAnySvc('Hood Inspection – Annual','Hood Inspection – Semi Annual'), 'Hood Inspection')),
-      td('■ '.repeat(0) + ['☐ Annual','☐ Semi Annual'].map(f => chk(hasSvc('Hood Inspection – ' + f.replace('☐ ','')),f.replace('☐ ',''))).join('<br>')),
-      td(chk(hasAnySvc('Fire Pump Inspection – Annual','Fire Pump Inspection – Semi Annual','Fire Pump Inspection – Quarterly','Fire Pump Inspection – Monthly'), 'Fire Pump Inspection')),
-      td(freqRow('Fire Pump Inspection'))
-    ) +
-    tr(
-      td(chk(hasAnySvc('Jockey Pump Inspection – Annual','Jockey Pump Inspection – Semi Annual','Jockey Pump Inspection – Quarterly','Jockey Pump Inspection – Monthly'), 'Jockey Pump Inspection')),
-      td(freqRow('Jockey Pump Inspection')),
-      td(''), td('')
-    ) +
-    tr(
-      td(chk(hasSvc('Monitoring Setup / Change'), 'Monitoring Setup / Change')),
-      td(chk(hasSvc('Sub-Contractor Work'), 'Sub-Contractor Work')),
-      td(chk(hasSvc('Walk-Through / Consultation'), 'Walk-Through / Consultation')),
-      td(chk(otherChecked, 'Other: ' + (otherText||'')))
-    ) +
     tr(th('Description of Work Requested:', 4, S.subhdr)) +
     tr(`<td colspan="4" style="${S.val}">${v(d['DESCRIPTION OF WORK'])}</td>`) +
     tr(th('List of Selected Work Scope Items to be included in QB Invoice:', 4, 'background:#e8f0fe;color:#1a1a2e;font-weight:bold;font-size:9pt;padding:4px 5px;')) +
