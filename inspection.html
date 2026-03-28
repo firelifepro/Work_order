@@ -1196,6 +1196,7 @@ const FA_STEP_ORDER = ['panel', 'devices', 'aux', 'defic'];  // 'sign' reuses #s
 let activeSystems = new Set();
 let activeInspectionSystem = null;
 let _propertyProfile = null;
+let _currentPropertyAcct = '';  // FLPS account number for the selected property (Drive profile key)
 let overallStatus = '';
 let sigDrawing = false;
 let sigCtx = null;
@@ -1552,6 +1553,10 @@ function onPropertySelect() {
   fill('service-address', 'service address','address');
   fill('city-state-zip', 'city','zip');
   fill('property-contact', 'property manager','contact name');
+
+  // Extract FLPS account number for stable Drive profile lookup
+  const acctHeader = Object.keys(d).find(h => h.includes('acct') || h.includes('account'));
+  _currentPropertyAcct = (acctHeader && d[acctHeader]) ? d[acctHeader].trim() : '';
 
   // Reset state
   window._prevInspectionData = null;
@@ -3585,8 +3590,15 @@ async function loadLatestInspection(propName) {
 async function findPropertyProfileFile(propName) {
   try {
     const folderId = await findOrCreateFolder('FLPS Property Profiles', await getFlpsRootFolderId());
-    const safeSearch = propName.replace(/'/g, "\\'").replace(/"/g, '\\"');
-    const q = `"${folderId}" in parents and trashed=false and appProperties has { key='flips_profile_property' and value='${safeSearch}' }`;
+    // Prefer acct-based lookup (stable key); fall back to property name for older profiles
+    let q;
+    if (_currentPropertyAcct) {
+      const safeAcct = _currentPropertyAcct.replace(/'/g, "\\'").replace(/"/g, '\\"');
+      q = `"${folderId}" in parents and trashed=false and appProperties has { key='flips_profile_acct' and value='${safeAcct}' }`;
+    } else {
+      const safeSearch = propName.replace(/'/g, "\\'").replace(/"/g, '\\"');
+      q = `"${folderId}" in parents and trashed=false and appProperties has { key='flips_profile_property' and value='${safeSearch}' }`;
+    }
     const res = await googleFetch(
       `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q)}` +
       `&fields=files(id,name,appProperties,modifiedTime)&orderBy=modifiedTime+desc&pageSize=5` +
@@ -3629,6 +3641,7 @@ async function savePropertyProfile(propName, profile) {
     headers: { 'Authorization': 'Bearer ' + accessToken, 'Content-Type': 'application/json' },
     body: JSON.stringify({ appProperties: {
       flips_profile_property: propName,
+      ...(_currentPropertyAcct ? { flips_profile_acct: _currentPropertyAcct } : {}),
       flips_profile_version:  '1.0'
     }})
   });
@@ -3638,7 +3651,8 @@ async function savePropertyProfile(propName, profile) {
 async function updatePropertyProfileAfterSave(data, sysKey) {
   if (!accessToken || !sysKey) return;
   const propName = data.property.name;
-  const profile = _propertyProfile || { property: propName, systems: [...activeSystems], lastInspBySystem: {} };
+  const profile = _propertyProfile || { property: propName, acct: _currentPropertyAcct, systems: [...activeSystems], lastInspBySystem: {} };
+  if (_currentPropertyAcct) profile.acct = _currentPropertyAcct;
 
   profile.systems = [...activeSystems];
   profile.updatedAt = data.inspection.date || todayMT();
@@ -3712,7 +3726,10 @@ function collectAllData() {
 
   // Collect ALL input/select/textarea values from the inspection panels
   const fieldData = {};
-  document.querySelectorAll('#sys-forms input, #sys-forms select, #sys-forms textarea').forEach(el => {
+  document.querySelectorAll(
+    '#sys-forms input, #sys-forms select, #sys-forms textarea,' +
+    '#step-fa-panel input, #step-fa-panel select, #step-fa-panel textarea'
+  ).forEach(el => {
     if (el.id && el.type !== 'button') fieldData[el.id] = el.value;
   });
   // Also step-1 fields
