@@ -707,9 +707,6 @@ body { font-family: 'DM Sans', sans-serif; background: var(--light); color: var(
           <tbody id="fa-notes-tbody"></tbody>
         </table>
         <button class="add-row-btn" onclick="addFANoteRow()">+ Add Note</button>
-        <div style="margin-top:12px;background:#f8fafc;border:1px solid var(--border);border-radius:7px;padding:10px 14px;font-size:.75rem;color:var(--slate);line-height:1.5;">
-          Listed above are any General Notes to report. This section also contains any issues found during inspections that either require a substantial investment to correct (permits, engineering, etc.) or may have been previously approved in their as-is condition by the Authority Having Jurisdiction. Please contact our office for information, consultation, or services for any items contained herein.
-        </div>
       </div>
     </div>
 
@@ -740,6 +737,10 @@ body { font-family: 'DM Sans', sans-serif; background: var(--light); color: var(
           <div class="field-group">
             <label>Title / Role</label>
             <input type="text" id="cust-sig-title" placeholder="e.g. Building Manager">
+          </div>
+          <div class="field-group">
+            <label>Date Signed</label>
+            <input type="date" id="cust-sig-date">
           </div>
         </div>
       </div>
@@ -1241,6 +1242,7 @@ function goStep(n) {
   if (n === 4) {
     const todayStr = todayMT();
     if (!document.getElementById('sig-date').value) document.getElementById('sig-date').value = todayStr;
+    if (!document.getElementById('cust-sig-date').value) document.getElementById('cust-sig-date').value = todayStr;
     updateDeficiencySummary();
   }
 }
@@ -1262,6 +1264,7 @@ function goFAStep(key) {
     document.getElementById('step-4').style.display = 'block';
     const todayStr = todayMT();
     if (!document.getElementById('sig-date').value) document.getElementById('sig-date').value = todayStr;
+    if (!document.getElementById('cust-sig-date').value) document.getElementById('cust-sig-date').value = todayStr;
     updateDeficiencySummary();
   } else {
     const target = document.getElementById('step-fa-' + key);
@@ -1364,6 +1367,12 @@ function clearFAInspectionState() {
       if (f.tagName === 'SELECT') f.selectedIndex = 0;
       else f.value = '';
     });
+  });
+  // Restore On-Site equipment defaults
+  const onsiteDefaults = ['Fire Alarm Control Panel','Initiating Devices','Power Supplies','Graphic Maps','Notification Appliance Devices'];
+  onsiteDefaults.forEach((val, i) => {
+    const el = document.getElementById('fa-onsite-eq-' + (i + 1));
+    if (el) el.value = val;
   });
 }
 
