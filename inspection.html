@@ -922,7 +922,7 @@ body { font-family: 'DM Sans', sans-serif; background: var(--light); color: var(
   <!-- ══ FIRE ALARM STEP 4: AUXILIARY & LOCATIONS ══ -->
   <div id="step-fa-aux" style="display:none;">
 
-    <div class="card">
+    <div class="card" id="fa-av-card">
       <div class="card-header"><span class="icon">📢</span><span>Audio / Visual Functionality <span style="font-size:.72rem;font-weight:400;opacity:.8;">— Annual Only</span></span></div>
       <div class="card-body">
         <div class="inspect-row">
@@ -931,9 +931,9 @@ body { font-family: 'DM Sans', sans-serif; background: var(--light); color: var(
             <div style="display:flex;gap:6px;align-items:center;">
               <span style="font-size:.7rem;color:var(--slate);">Present:</span>
               <div class="pf-group">
-                <button class="pf-btn na" onclick="setFAPF(this)">N/A</button>
-                <button class="pf-btn pass" onclick="setFAPF(this)">YES</button>
-                <button class="pf-btn fail" onclick="setFAPF(this)">NO</button>
+                <button class="pf-btn na" onclick="setSectionNA('fa-av-card', this)">N/A</button>
+                <button class="pf-btn pass" onclick="clearSectionNA('fa-av-card', this)">YES</button>
+                <button class="pf-btn fail" onclick="setSectionNA('fa-av-card', this)">NO</button>
               </div>
               <span style="font-size:.7rem;color:var(--slate);">Operational:</span>
               <div class="pf-group">
@@ -980,7 +980,7 @@ body { font-family: 'DM Sans', sans-serif; background: var(--light); color: var(
       </div>
     </div>
 
-    <div class="card">
+    <div class="card" id="fa-door-card">
       <div class="card-header"><span class="icon">🚪</span><span>Door Holder Functionality <span style="font-size:.72rem;font-weight:400;opacity:.8;">— Annual Only</span></span></div>
       <div class="card-body">
         <div class="inspect-row">
@@ -989,8 +989,8 @@ body { font-family: 'DM Sans', sans-serif; background: var(--light); color: var(
             <div style="display:flex;gap:6px;align-items:center;">
               <span style="font-size:.7rem;color:var(--slate);">Present:</span>
               <div class="pf-group">
-                <button class="pf-btn na" onclick="setFAPF(this)">N/A</button>
-                <button class="pf-btn pass" onclick="setFAPF(this)">YES</button>
+                <button class="pf-btn na" onclick="setSectionNA('fa-door-card', this)">N/A</button>
+                <button class="pf-btn pass" onclick="clearSectionNA('fa-door-card', this)">YES</button>
               </div>
               <span style="font-size:.7rem;color:var(--slate);">Operational:</span>
               <div class="pf-group">
@@ -1027,7 +1027,7 @@ body { font-family: 'DM Sans', sans-serif; background: var(--light); color: var(
       </div>
     </div>
 
-    <div class="card">
+    <div class="card" id="fa-hvac-card">
       <div class="card-header"><span class="icon">🌡️</span><span>HVAC Control <span style="font-size:.72rem;font-weight:400;opacity:.8;">— Annual Only</span></span></div>
       <div class="card-body">
         <div class="inspect-row">
@@ -1036,8 +1036,8 @@ body { font-family: 'DM Sans', sans-serif; background: var(--light); color: var(
             <div style="display:flex;gap:6px;align-items:center;">
               <span style="font-size:.7rem;color:var(--slate);">Present:</span>
               <div class="pf-group">
-                <button class="pf-btn na" onclick="setFAPF(this)">N/A</button>
-                <button class="pf-btn pass" onclick="setFAPF(this)">YES</button>
+                <button class="pf-btn na" onclick="setSectionNA('fa-hvac-card', this)">N/A</button>
+                <button class="pf-btn pass" onclick="clearSectionNA('fa-hvac-card', this)">YES</button>
               </div>
               <span style="font-size:.7rem;color:var(--slate);">Operational:</span>
               <div class="pf-group">
@@ -1076,7 +1076,7 @@ body { font-family: 'DM Sans', sans-serif; background: var(--light); color: var(
       <div class="card-header"><span class="icon">🔍</span><span>Devices — Fire Detection (by Level / Floor / Location)</span></div>
       <div class="card-body" style="overflow-x:auto;">
         <table class="dyn-table">
-          <thead><tr><th style="width:80px;">Type</th><th>Location</th><th style="width:90px;">Address</th><th style="width:90px;">Alarm</th><th style="width:100px;">Supervisory</th><th style="width:70px;">Note #</th><th style="width:30px;"></th></tr></thead>
+          <thead><tr><th style="width:60px;">Type</th><th>Location</th><th style="width:80px;">Scan ID</th><th style="width:80px;">Address</th><th style="width:60px;">Alarm</th><th style="width:70px;">Supervisory</th><th style="width:60px;">Note #</th><th style="width:30px;"></th></tr></thead>
           <tbody id="fa-detection-tbody"></tbody>
         </table>
         <button class="add-row-btn" onclick="addFADetectionRow()">+ Add Device</button>
@@ -2844,6 +2844,32 @@ function setFAPF(btn) {
   btn.classList.add('selected');
 }
 
+// Set all pf-groups in a card to N/A except the Present group (first pf-group in first row)
+function setSectionNA(cardId, btn) {
+  setFAPF(btn);
+  const card = document.getElementById(cardId);
+  if (!card) return;
+  const presentGroup = card.querySelector('.inspect-row .pf-group');
+  card.querySelectorAll('.pf-group').forEach(group => {
+    if (group === presentGroup) return;
+    group.querySelectorAll('.pf-btn').forEach(b => b.classList.remove('selected'));
+    const naBtn = group.querySelector('.pf-btn.na');
+    if (naBtn) naBtn.classList.add('selected');
+  });
+}
+
+// Clear forced N/A when YES is clicked — deselect all groups except Present
+function clearSectionNA(cardId, btn) {
+  setFAPF(btn);
+  const card = document.getElementById(cardId);
+  if (!card) return;
+  const presentGroup = card.querySelector('.inspect-row .pf-group');
+  card.querySelectorAll('.pf-group').forEach(group => {
+    if (group === presentGroup) return;
+    group.querySelectorAll('.pf-btn').forEach(b => b.classList.remove('selected'));
+  });
+}
+
 function setFAYNA(btn, noteId, type) {
   const group = btn.closest('.yna-group');
   group.querySelectorAll('.yna-btn').forEach(b => b.classList.remove('selected'));
@@ -2929,7 +2955,6 @@ function addFASubpanelRow() {
     <div style="display:flex;gap:2px;">
       <button class="pf-btn pass" style="padding:3px 7px;" onclick="setPFTable(this,'${prefix}-${n}','PASS')" title="Pass">✓</button>
       <button class="pf-btn fail" style="padding:3px 7px;" onclick="setPFTable(this,'${prefix}-${n}','FAIL')" title="Fail">✗</button>
-      <button class="pf-btn na"   style="padding:3px 5px;font-size:.65rem;" onclick="setPFTable(this,'${prefix}-${n}','N/A')" title="N/A">N/A</button>
       <input type="hidden" id="${prefix}-${n}">
     </div>`;
   document.getElementById('fa-subpanel-tbody').insertAdjacentHTML('beforeend', `
@@ -2949,16 +2974,21 @@ function addFASubpanelRow() {
 function addFADetectionRow() {
   faDetectionCount++;
   const n = faDetectionCount;
-  const alOpts = ['','Alarm','Supervisory','Trouble','Monitor'].map(o => `<option>${o}</option>`).join('');
-  const supOpts = ['','Pass','Fail','N/A','NT'].map(o => `<option>${o}</option>`).join('');
+  const iconBtns2 = (prefix) => `
+    <div style="display:flex;gap:2px;">
+      <button class="pf-btn pass" style="padding:3px 7px;" onclick="setPFTable(this,'${prefix}-${n}','PASS')" title="Pass">✓</button>
+      <button class="pf-btn fail" style="padding:3px 7px;" onclick="setPFTable(this,'${prefix}-${n}','FAIL')" title="Fail">✗</button>
+      <input type="hidden" id="${prefix}-${n}">
+    </div>`;
   document.getElementById('fa-detection-tbody').insertAdjacentHTML('beforeend', `
     <tr id="fa-det-row-${n}">
-      <td><input type="text" id="fa-det-type-${n}" placeholder="SD, HD…"></td>
+      <td><select id="fa-det-type-${n}"><option>SD</option><option>HD</option></select></td>
       <td><input type="text" id="fa-det-loc-${n}"></td>
+      <td><input type="text" id="fa-det-scan-${n}"></td>
       <td><input type="text" id="fa-det-addr-${n}"></td>
-      <td><select id="fa-det-alarm-${n}">${alOpts}</select></td>
-      <td><select id="fa-det-sup-${n}">${supOpts}</select></td>
-      <td><input type="text" id="fa-det-note-${n}"></td>
+      <td>${iconBtns2('fa-det-alarm')}</td>
+      <td>${iconBtns2('fa-det-sup')}</td>
+      <td>${iconBtns2('fa-det-note')}</td>
       <td><button class="del-btn" onclick="document.getElementById('fa-det-row-${n}').remove()">✕</button></td>
     </tr>`);
 }
@@ -3078,9 +3108,6 @@ function removeOnsiteDeficRow(n) {
   const row = document.getElementById('fa-defic-onsite-' + n);
   if (row) row.remove();
   _onsiteUnsat[n] = false;
-  // Deselect the Unsatisfactory button visually
-  const tableRow = document.getElementById('fa-onsite-row-' + n);
-  if (tableRow) tableRow.querySelectorAll('.pf-btn').forEach(b => b.classList.remove('selected'));
 }
 
 function syncOnsiteDefic(n) {
