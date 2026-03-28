@@ -752,7 +752,7 @@ code { background: #ffe082; padding: 1px 5px; border-radius: 3px; font-size: 0.7
       <td class="exp-label">Trip Charge</td>
       <td class="value-cell">
         <div class="check-group">
-          <label><input type="checkbox" id="trip-cb" value="$90.00" onchange="onTripChange()"> $90.00</label>
+          <label><input type="checkbox" id="trip-cb" value="$90.00" onchange="onTripChange()" checked> $90.00</label>
         </div>
       </td>
       <td class="value-cell"></td>
@@ -2708,6 +2708,9 @@ function parseDisplayDate(str) {
   if (!isNaN(d)) return d.toISOString().slice(0, 10);
   return null;
 }
+
+// Default trip charge checked and populated on load
+onTripChange();
 </script>
 </body>
 </html>
