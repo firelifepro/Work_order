@@ -335,6 +335,27 @@ body { font-family: 'DM Sans', sans-serif; background: var(--light); color: var(
   .inspect-row-top { flex-wrap: wrap; }
   .pf-group { flex-shrink: 0; }
 }
+
+/* ── INSPECTION START CARDS ── */
+.insp-start-card {
+  background: white; border: 1.5px solid var(--border); border-radius: 8px;
+  padding: 12px 14px; margin-bottom: 8px;
+  transition: border-color 0.15s;
+}
+.insp-start-card:hover { border-color: var(--blue); }
+.insp-start-card:last-child { margin-bottom: 0; }
+.sys-status-pill {
+  display: inline-block; font-size: 0.68rem; font-weight: 700;
+  padding: 2px 8px; border-radius: 8px; margin-left: 6px; vertical-align: middle;
+}
+.sys-status-pill.compliant { background: rgba(22,163,74,0.12); color: var(--green); border: 1px solid rgba(22,163,74,0.3); }
+.sys-status-pill.deficient { background: rgba(217,119,6,0.12); color: var(--amber); border: 1px solid rgba(217,119,6,0.3); }
+.sys-status-pill.impaired  { background: rgba(220,38,38,0.12); color: var(--red);   border: 1px solid rgba(220,38,38,0.3); }
+#active-system-banner {
+  background: var(--fire); color: white;
+  padding: 10px 16px; border-radius: 8px; margin-bottom: 14px;
+  font-weight: 700; font-size: 0.9rem; display: none;
+}
 </style>
 </head>
 <body>
@@ -347,7 +368,7 @@ body { font-family: 'DM Sans', sans-serif; background: var(--light); color: var(
       <a href="schedule.html">📅 Inspection Schedule</a>
       <a href="create-invoices.html">🧾 Create QB Invoices</a>
       <a href="clients.html">👥 Client Management</a>
-      <a href="inspection.html" class="active">🔥 Fire Inspection (Multi-System)</a>
+      <a href="inspection.html" class="active">🔥 Fire Inspection</a>
       <a href="inspection-hood.html">🍳 Kitchen Hood Inspection</a>
       <a href="inspection-fire-alarm.html">🔔 Fire Alarm Inspection</a>
     </div>
@@ -558,15 +579,28 @@ body { font-family: 'DM Sans', sans-serif; background: var(--light); color: var(
       </div>
     </div>
 
+    <!-- ── START INSPECTION SECTION ── -->
+    <div class="card" id="inspection-start-card" style="display:none;">
+      <div class="card-header" style="background:var(--fire);">
+        <span class="icon">🔥</span><span>Start an Inspection</span>
+      </div>
+      <div class="card-body">
+        <p style="font-size:0.82rem;color:var(--slate);margin-bottom:12px;">
+          Each inspection covers one system and generates its own report. Select which system you are inspecting today.
+        </p>
+        <div id="insp-start-grid"></div>
+      </div>
+    </div>
+
     <div class="btn-row">
       <button class="btn-secondary" onclick="goStep(1)">← Back</button>
-      <button class="btn-primary" onclick="buildInspectionForms()">Begin Inspection →</button>
       <span id="save-indicator">✓ Saved</span>
     </div>
   </div>
 
   <!-- ══ STEP 3: INSPECTION FORMS ══ -->
   <div id="step-3" style="display:none;">
+    <div id="active-system-banner"></div>
     <div id="defic-summary" class="defic-summary">
       <div class="defic-summary-hdr">
         ⚠ Active Deficiencies — <span class="defic-count-pill" id="defic-count-pill">0</span>
@@ -642,7 +676,7 @@ body { font-family: 'DM Sans', sans-serif; background: var(--light); color: var(
       <div class="card-header" style="background:var(--fire);"><span class="icon">📄</span><span>Save &amp; Download Report</span></div>
       <div class="card-body">
         <p style="font-size:0.82rem;color:#92400e;margin-bottom:12px;">
-          Saves inspection data to <strong>FLPS Software Inspection Data</strong>, saves the PDF to <strong>FLPS Previous Inspections</strong>, and downloads the PDF to this device for upload to <strong>The Compliance Engine (Brycer)</strong>.
+          Saves inspection data to <strong>FLPS Inspection History</strong>, updates the <strong>property profile</strong>, saves the PDF to <strong>FLPS Inspection Reports</strong>, and downloads the PDF to this device for upload to <strong>The Compliance Engine (Brycer)</strong>.
         </p>
         <div id="sig-warning" class="sig-warning"></div>
         <div class="btn-row">
@@ -671,10 +705,27 @@ let tokenClient = null;
 let clientData  = {};
 let currentStep = 1;
 let activeSystems = new Set();
+let activeInspectionSystem = null;
+let _propertyProfile = null;
 let overallStatus = '';
 let sigDrawing = false;
 let sigCtx = null;
 let sigHasData = false;
+
+const SYS_META = {
+  'fire-alarm':          { label: 'Fire Alarm',              icon: '🔔' },
+  'sprinkler':           { label: 'Sprinkler System',        icon: '💧' },
+  'fire-pump':           { label: 'Fire Pump',               icon: '🔄' },
+  'standpipe':           { label: 'Standpipe',              icon: '🚿' },
+  'hood':                { label: 'Kitchen Hood Suppression',icon: '🍳' },
+  'extinguisher':        { label: 'Extinguishers',          icon: '🧯' },
+  'hydrant':             { label: 'Private Hydrants',       icon: '🔴' },
+  'bda':                 { label: 'BDA / Emergency Radio',  icon: '📡' },
+  'smoke-control':       { label: 'Smoke Control',          icon: '💨' },
+  'gas-detection':       { label: 'Gas Detection',          icon: '⚗️' },
+  'special-suppression': { label: 'Special Suppression',    icon: '🧪' },
+  'backflow':            { label: 'Backflow Prevention',    icon: '🔁' }
+};
 
 // ─────────────────────────────────────────────────────────────────────────────
 // NAV
@@ -863,10 +914,11 @@ function onPropertySelect() {
   fill('city-state-zip', 'city','zip');
   fill('property-contact', 'property manager','contact name');
 
-  // Reset previous inspection UI
+  // Reset state
   window._prevInspectionData = null;
+  _propertyProfile = null;
+  activeInspectionSystem = null;
   document.getElementById('prev-insp-banner').style.display = 'none';
-  document.getElementById('prev-insp-card').style.display = 'none';
   document.getElementById('prev-insp-summary').textContent = '';
 
   // Load saved building system config (local cache — instant)
@@ -881,63 +933,46 @@ function onPropertySelect() {
     document.querySelectorAll('.sys-toggle').forEach(el => el.classList.remove('active'));
   }
 
-  // Search Drive for previous inspection (async — shows searching indicator)
+  // Render cards immediately with local data (no prev info yet)
+  renderInspectionStartCards();
+
+  // Load property profile from Drive for per-system history
   if (accessToken) {
     const searchEl = document.getElementById('prev-insp-searching');
     if (searchEl) searchEl.style.display = 'block';
 
-    loadLatestInspection(propName).then(prevData => {
+    loadPropertyProfile(propName).then(profile => {
       if (searchEl) searchEl.style.display = 'none';
-      if (!prevData) return;
+      _propertyProfile = profile;
 
-      window._prevInspectionData = prevData;
-      const insp = prevData.inspection || {};
-      const deficCount = (prevData.deficiencies || []).length;
-      const prevDeficNote = prevData.pfStates
-        ? Object.values(prevData.pfStates).filter(s => s.val === 'FAIL').length
-        : deficCount;
+      if (profile) {
+        // Restore systems from profile if nothing saved locally
+        if (profile.systems && profile.systems.length > 0 &&
+            (!saved || !saved.systems || saved.systems.length === 0)) {
+          activeSystems = new Set(profile.systems);
+          document.querySelectorAll('.sys-toggle').forEach(el => {
+            el.classList.toggle('active', activeSystems.has(el.dataset.sys));
+          });
+          saveBuildingConfig();
+        }
 
-      // Step 1 banner (compact, no API wait visible)
-      const banner  = document.getElementById('prev-insp-banner');
-      const summary = document.getElementById('prev-insp-summary');
-      if (banner && summary) {
-        summary.textContent = ` ${insp.date || '—'}  ·  ${insp.inspectorName || '—'}  ·  ${insp.reportType || '—'}` +
-          (prevDeficNote > 0 ? `  ·  ⚠ ${prevDeficNote} prior deficiencie(s)` : '  ·  ✓ No prior deficiencies');
-        banner.style.display = 'block';
-      }
-
-      // Step 2 card (more detail)
-      const card = document.getElementById('prev-insp-card');
-      if (card) {
-        const setRO = (id, val) => { const el = document.getElementById(id); if (el) el.value = val || '—'; };
-        setRO('last-insp-date',      insp.date);
-        setRO('last-insp-inspector', insp.inspectorName);
-        setRO('last-insp-type',      insp.reportType);
-        setRO('last-insp-status',    prevData.overallStatus || '—');
-        const noteEl = document.getElementById('prev-defic-note');
-        if (noteEl) {
-          if (prevDeficNote > 0) {
-            noteEl.textContent = ` ⚠ Previous inspection had ${prevDeficNote} deficiencie(s) — check if they were corrected.`;
-            noteEl.style.display = 'inline';
-          } else {
-            noteEl.style.display = 'none';
+        // Step 1 banner — show summary of inspected systems
+        const sysList = Object.keys(profile.lastInspBySystem || {});
+        if (sysList.length > 0) {
+          const banner  = document.getElementById('prev-insp-banner');
+          const summary = document.getElementById('prev-insp-summary');
+          if (banner && summary) {
+            summary.textContent = ` ${sysList.length} system${sysList.length !== 1 ? 's' : ''} with prior inspection data on file`;
+            banner.style.display = 'block';
           }
         }
-        card.style.display = 'block';
       }
 
-      // Restore systems from previous if nothing saved locally
-      if (prevData.systems && prevData.systems.length > 0 &&
-          (!saved || !saved.systems || saved.systems.length === 0)) {
-        activeSystems = new Set(prevData.systems);
-        document.querySelectorAll('.sys-toggle').forEach(el => {
-          el.classList.toggle('active', activeSystems.has(el.dataset.sys));
-        });
-        saveBuildingConfig();
-      }
+      // Re-render cards with profile data
+      renderInspectionStartCards();
     }).catch(err => {
       if (searchEl) searchEl.style.display = 'none';
-      console.warn('[onPropertySelect] Drive search failed:', err.message);
+      console.warn('[onPropertySelect] Profile load failed:', err.message);
     });
   }
 }
@@ -962,6 +997,85 @@ function loadBuildingConfig(propName) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// INSPECTION START CARDS — per-system cards on Step 2
+// ─────────────────────────────────────────────────────────────────────────────
+function renderInspectionStartCards() {
+  const card = document.getElementById('inspection-start-card');
+  const grid = document.getElementById('insp-start-grid');
+  if (!card || !grid) return;
+
+  if (activeSystems.size === 0) {
+    card.style.display = 'none';
+    return;
+  }
+  card.style.display = 'block';
+
+  const lastBySystem = (_propertyProfile && _propertyProfile.lastInspBySystem) || {};
+  const SYS_ORDER = ['fire-alarm','sprinkler','fire-pump','standpipe','hood','extinguisher','hydrant','bda','smoke-control','gas-detection','special-suppression','backflow'];
+  const ordered = SYS_ORDER.filter(k => activeSystems.has(k));
+
+  grid.innerHTML = '';
+  ordered.forEach(sysKey => {
+    const meta = SYS_META[sysKey] || { label: sysKey, icon: '⚙️' };
+    const last = lastBySystem[sysKey];
+
+    let prevHtml = '';
+    if (last) {
+      const statusCls = last.status === 'COMPLIANT' ? 'compliant' : last.status === 'DEFICIENT' ? 'deficient' : last.status === 'IMPAIRED' ? 'impaired' : '';
+      const statusPill = last.status
+        ? `<span class="sys-status-pill ${statusCls}">${last.status}</span>`
+        : '';
+      const deficCount = (last.deficiencies || []).length;
+      const deficHtml = deficCount > 0
+        ? `<span style="font-size:0.72rem;color:var(--red);font-weight:600;"> · ⚠ ${deficCount} prior deficiencie${deficCount !== 1 ? 's' : ''}</span>`
+        : `<span style="font-size:0.72rem;color:var(--green);"> · ✓ No deficiencies</span>`;
+      prevHtml = `<div style="font-size:0.75rem;color:var(--slate);margin-top:3px;">
+        Last: <strong>${last.date || '—'}</strong> · ${last.inspector || '—'} · ${last.reportType || '—'} ${statusPill}${deficHtml}
+      </div>`;
+    } else {
+      prevHtml = `<div style="font-size:0.75rem;color:var(--slate);margin-top:3px;font-style:italic;">No previous inspection on file</div>`;
+    }
+
+    const div = document.createElement('div');
+    div.className = 'insp-start-card';
+    div.innerHTML = `
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span style="font-size:1.5rem;flex-shrink:0;">${meta.icon}</span>
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:0.88rem;font-weight:700;color:var(--navy);">${meta.label}</div>
+          ${prevHtml}
+        </div>
+        <button class="btn-primary fire" style="font-size:0.78rem;padding:8px 14px;white-space:nowrap;flex-shrink:0;"
+          onclick="startInspectionForSystem('${sysKey}')">Inspect →</button>
+      </div>`;
+    grid.appendChild(div);
+  });
+}
+
+function startInspectionForSystem(sysKey) {
+  activeInspectionSystem = sysKey;
+  const lastBySystem = (_propertyProfile && _propertyProfile.lastInspBySystem) || {};
+  const last = lastBySystem[sysKey];
+
+  // Build _prevInspectionData from the profile's per-system record
+  window._prevInspectionData = last ? {
+    inspection: {
+      date:          last.date,
+      inspectorName: last.inspector,
+      reportType:    last.reportType
+    },
+    overallStatus: last.status,
+    systems:       [sysKey],
+    fieldData:     last.fieldData     || {},
+    pfStates:      last.pfStates      || {},
+    deficiencies:  last.deficiencies  || [],
+    extinguishers: last.extinguishers || []
+  } : null;
+
+  buildInspectionForms();
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // SYSTEM TOGGLES
 // ─────────────────────────────────────────────────────────────────────────────
 function toggleSys(el) {
@@ -969,29 +1083,40 @@ function toggleSys(el) {
   if (activeSystems.has(sys)) { activeSystems.delete(sys); el.classList.remove('active'); }
   else { activeSystems.add(sys); el.classList.add('active'); }
   saveBuildingConfig();
+  renderInspectionStartCards();
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
 // BUILD INSPECTION FORMS
 // ─────────────────────────────────────────────────────────────────────────────
 function buildInspectionForms() {
-  if (activeSystems.size === 0) { toast('⚠ Select at least one system'); return; }
+  if (!activeInspectionSystem) { toast('⚠ Select a system to inspect from the Start an Inspection section'); return; }
   saveBuildingConfig();
   const container = document.getElementById('sys-forms');
   container.innerHTML = '';
 
-  if (activeSystems.has('fire-alarm'))        container.appendChild(buildFireAlarmPanel());
-  if (activeSystems.has('sprinkler'))         container.appendChild(buildSprinklerPanel());
-  if (activeSystems.has('fire-pump'))         container.appendChild(buildFirePumpPanel());
-  if (activeSystems.has('standpipe'))         container.appendChild(buildStandpipePanel());
-  if (activeSystems.has('hood'))              container.appendChild(buildHoodPanel());
-  if (activeSystems.has('extinguisher'))      container.appendChild(buildExtinguisherPanel());
-  if (activeSystems.has('hydrant'))           container.appendChild(buildHydrantPanel());
-  if (activeSystems.has('bda'))               container.appendChild(buildBDAPanel());
-  if (activeSystems.has('smoke-control'))     container.appendChild(buildSmokeControlPanel());
-  if (activeSystems.has('gas-detection'))     container.appendChild(buildGasDetectionPanel());
-  if (activeSystems.has('special-suppression')) container.appendChild(buildSpecialSuppressionPanel());
-  if (activeSystems.has('backflow'))          container.appendChild(buildBackflowPanel());
+  const BUILDERS = {
+    'fire-alarm':          buildFireAlarmPanel,
+    'sprinkler':           buildSprinklerPanel,
+    'fire-pump':           buildFirePumpPanel,
+    'standpipe':           buildStandpipePanel,
+    'hood':                buildHoodPanel,
+    'extinguisher':        buildExtinguisherPanel,
+    'hydrant':             buildHydrantPanel,
+    'bda':                 buildBDAPanel,
+    'smoke-control':       buildSmokeControlPanel,
+    'gas-detection':       buildGasDetectionPanel,
+    'special-suppression': buildSpecialSuppressionPanel,
+    'backflow':            buildBackflowPanel
+  };
+  const builder = BUILDERS[activeInspectionSystem];
+  if (!builder) { toast('⚠ Unknown system: ' + activeInspectionSystem); return; }
+  container.appendChild(builder());
+
+  // Show active system banner in step 3
+  const meta = SYS_META[activeInspectionSystem] || { label: activeInspectionSystem, icon: '⚙️' };
+  const banner = document.getElementById('active-system-banner');
+  if (banner) { banner.textContent = `${meta.icon}  Inspecting: ${meta.label}`; banner.style.display = 'block'; }
 
   // Restore previous inspection data (typed fields + previous deficiencies)
   const prev = window._prevInspectionData;
@@ -2148,6 +2273,86 @@ async function loadLatestInspection(propName) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// PROPERTY PROFILE — one JSON per property, tracks per-system last inspection
+// Stored in "FLPS Property Profiles" with appProperties for fast search
+// ─────────────────────────────────────────────────────────────────────────────
+async function findPropertyProfileFile(propName) {
+  try {
+    const folderId = await findOrCreateFolder('FLPS Property Profiles');
+    const safeSearch = propName.replace(/'/g, "\\'").replace(/"/g, '\\"');
+    const q = `"${folderId}" in parents and trashed=false and appProperties has { key='flips_profile_property' and value='${safeSearch}' }`;
+    const res = await googleFetch(
+      `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q)}` +
+      `&fields=files(id,name,appProperties,modifiedTime)&orderBy=modifiedTime+desc&pageSize=5` +
+      `&includeItemsFromAllDrives=true&supportsAllDrives=true&corpora=allDrives`
+    );
+    if (!res.ok) return null;
+    const json = await res.json();
+    const files = json.files || [];
+    return files.length > 0 ? files[0] : null;
+  } catch(e) {
+    console.warn('[findPropertyProfileFile] error:', e.message);
+    return null;
+  }
+}
+
+async function loadPropertyProfile(propName) {
+  const file = await findPropertyProfileFile(propName);
+  if (!file) return null;
+  try {
+    const res = await googleFetch(`https://www.googleapis.com/drive/v3/files/${file.id}?alt=media`);
+    if (!res.ok) return null;
+    const profile = await res.json();
+    profile._fileId = file.id;  // stash for upsert on next save
+    return profile;
+  } catch(e) {
+    console.warn('[loadPropertyProfile] read error:', e.message);
+    return null;
+  }
+}
+
+async function savePropertyProfile(propName, profile) {
+  const folderId = await findOrCreateFolder('FLPS Property Profiles');
+  const slug = propName.replace(/[^a-zA-Z0-9]/g, '_').slice(0, 60);
+  const fileName = `FLPS_Profile_${slug}.json`;
+  const existingId = profile._fileId || null;
+  const content = JSON.stringify(profile, null, 2);
+  const uploaded = await driveUploadFile(fileName, 'application/json', content, folderId, existingId);
+  await fetch(`https://www.googleapis.com/drive/v3/files/${uploaded.id}?supportsAllDrives=true`, {
+    method: 'PATCH',
+    headers: { 'Authorization': 'Bearer ' + accessToken, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ appProperties: {
+      flips_profile_property: propName,
+      flips_profile_version:  '1.0'
+    }})
+  });
+  profile._fileId = uploaded.id;
+}
+
+async function updatePropertyProfileAfterSave(data, sysKey) {
+  if (!accessToken || !sysKey) return;
+  const propName = data.property.name;
+  const profile = _propertyProfile || { property: propName, systems: [...activeSystems], lastInspBySystem: {} };
+
+  profile.systems = [...activeSystems];
+  profile.updatedAt = data.inspection.date || todayMT();
+  profile.lastInspBySystem = profile.lastInspBySystem || {};
+  profile.lastInspBySystem[sysKey] = {
+    date:         data.inspection.date || todayMT(),
+    inspector:    data.inspection.inspectorName || '',
+    reportType:   data.inspection.reportType || '',
+    status:       data.overallStatus || '',
+    deficiencies: data.deficiencies || [],
+    fieldData:    data.fieldData || {},
+    pfStates:     data.pfStates || {},
+    extinguishers:data.extinguishers || []
+  };
+
+  _propertyProfile = profile;
+  await savePropertyProfile(propName, profile);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // SAVE INSPECTION JSON TO DRIVE
 // ─────────────────────────────────────────────────────────────────────────────
 async function saveInspectionToDrive() {
@@ -2257,7 +2462,7 @@ function collectAllData() {
   }
 
   return {
-    meta: { generatedAt: new Date().toISOString(), version: '2.0' },
+    meta: { generatedAt: new Date().toISOString(), version: '3.0' },
     property: {
       name:        document.getElementById('property-select')?.value || '',
       company:     v('client-company'),
@@ -2275,7 +2480,8 @@ function collectAllData() {
       nfpaRef:      v('nfpa-ref'),
       weather:      v('weather')
     },
-    systems:      [...activeSystems],
+    inspectionSystem: activeInspectionSystem,
+    systems:      activeInspectionSystem ? [activeInspectionSystem] : [...activeSystems],
     overallStatus,
     generalNotes: v('general-notes'),
     fieldData,
@@ -3052,7 +3258,8 @@ async function saveAndDownload() {
     const data = collectAllData();
     const propSlug = buildFileSlug(data);
     const dateSlug = data.inspection.date || todayMT();
-    filename = `FLPS_Inspection_${propSlug}_${dateSlug}.pdf`;
+    const sysSlug  = activeInspectionSystem ? activeInspectionSystem.replace(/-/g, '_') : 'inspection';
+    filename = `FLPS_${sysSlug}_${propSlug}_${dateSlug}.pdf`;
 
     // ── 4. Save JSON inspection data to Drive ──────────────────────────────────
     if (accessToken) {
@@ -3060,26 +3267,35 @@ async function saveAndDownload() {
         setStatus2('Saving inspection data…', 'var(--slate)');
         const propName = data.property.name || 'Unknown';
         const dateStr  = data.inspection.date || todayMT();
-        const jsonFileName = `FLPS_Insp_${propSlug}_${dateStr}.json`;
-        const folderId = await findOrCreateFolder('FLPS Software Inspection Data');
-        const existing = await findLatestInspectionFile(propName);
-        const existingId = (existing && existing.appProperties?.flips_insp_date === dateStr) ? existing.id : null;
+        const jsonFileName = `FLPS_Insp_${sysSlug}_${propSlug}_${dateStr}.json`;
+        const folderId = await findOrCreateFolder('FLPS Inspection History');
+        // Always create a new history record (never upsert — each inspection is a unique record)
         const content = JSON.stringify({ ...data, photos: inspectionPhotos.map(p => ({ note: p.note })) }, null, 2);
-        const uploaded = await driveUploadFile(jsonFileName, 'application/json', content, folderId, existingId);
+        const uploaded = await driveUploadFile(jsonFileName, 'application/json', content, folderId, null);
         await fetch(`https://www.googleapis.com/drive/v3/files/${uploaded.id}?supportsAllDrives=true`, {
           method: 'PATCH',
           headers: { 'Authorization': 'Bearer ' + accessToken, 'Content-Type': 'application/json' },
           body: JSON.stringify({ appProperties: {
             flips_insp_property: propName,
+            flips_insp_system:   activeInspectionSystem || '',
             flips_insp_date:     dateStr,
             flips_insp_type:     data.inspection.reportType || '',
             flips_insp_status:   data.overallStatus || '',
             flips_insp_inspector:data.inspection.inspectorName || finalSigName || '',
-            flips_insp_version:  '2.0'
+            flips_insp_version:  '3.0'
           }})
         });
         jsonSaveOk = true;
-        setStatus2('✓ Inspection data saved to FLPS Software Inspection Data', 'var(--green)');
+        setStatus2('✓ Inspection data saved to FLPS Inspection History', 'var(--green)');
+
+        // ── 4b. Update property profile with this system's results ─────────────
+        try {
+          setStatus2('Updating property profile…', 'var(--slate)');
+          await updatePropertyProfileAfterSave(data, activeInspectionSystem);
+          setStatus2('✓ Property profile updated', 'var(--green)');
+        } catch(e) {
+          setStatus2('⚠ Profile update failed: ' + e.message, 'var(--amber)');
+        }
       } catch(e) {
         setStatus2('⚠ JSON save failed: ' + e.message + ' (PDF still downloading)', 'var(--amber)');
       }
@@ -3088,9 +3304,9 @@ async function saveAndDownload() {
       try {
         setStatus2('Saving PDF to Drive…', 'var(--slate)');
         const pdfBase64 = pdfDoc.output('datauristring').split(',')[1];
-        const pdfFolderId = await findOrCreateFolder('FLPS Previous Inspections');
+        const pdfFolderId = await findOrCreateFolder('FLPS Inspection Reports');
         await driveUploadFile(filename, 'application/pdf', pdfBase64, pdfFolderId, null);
-        setStatus2('✓ PDF saved to FLPS Previous Inspections', 'var(--green)');
+        setStatus2('✓ PDF saved to FLPS Inspection Reports', 'var(--green)');
       } catch(e) {
         setStatus2('⚠ PDF Drive save failed: ' + e.message + ' (still downloading locally)', 'var(--amber)');
       }
