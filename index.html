@@ -2026,26 +2026,47 @@ async function createDoc() {
 // to native BULLET_CHECKBOX items — 3 API calls total.
 // ─────────────────────────────────────────────────────────
 async function applyHeaderSpacing(docId) {
-  // Read the doc and zero out spaceAbove/spaceBelow on the first 10 paragraphs
-  // (letterhead table + title line) so Google Docs doesn't add its default gap.
+  // Zero out spaceAbove/spaceBelow on all paragraphs in the letterhead table
+  // and the title paragraph immediately after it, so Docs doesn't add gaps.
   const r = await apiFetch(`https://docs.googleapis.com/v1/documents/${docId}`);
   if (!r.ok) return;
   const doc = await r.json();
   const reqs = [];
-  let count = 0;
-  for (const el of doc.body.content || []) {
-    if (count >= 10) break;
+
+  function zeroSpacing(startIndex, endIndex) {
+    reqs.push({
+      updateParagraphStyle: {
+        range: { startIndex, endIndex },
+        paragraphStyle: { spaceAbove: { magnitude: 0, unit: 'PT' }, spaceBelow: { magnitude: 0, unit: 'PT' } },
+        fields: 'spaceAbove,spaceBelow'
+      }
+    });
+  }
+
+  const topLevel = doc.body.content || [];
+  let pastFirstTable = false;
+  let afterTableCount = 0;
+
+  for (const el of topLevel) {
     if (el.paragraph) {
-      reqs.push({
-        updateParagraphStyle: {
-          range: { startIndex: el.startIndex, endIndex: el.endIndex },
-          paragraphStyle: { spaceAbove: { magnitude: 0, unit: 'PT' }, spaceBelow: { magnitude: 0, unit: 'PT' } },
-          fields: 'spaceAbove,spaceBelow'
+      // Paragraphs before the table (e.g. empty leading paragraph) and a few after (title)
+      if (!pastFirstTable || afterTableCount < 3) {
+        zeroSpacing(el.startIndex, el.endIndex);
+        if (pastFirstTable) afterTableCount++;
+      }
+    } else if (el.table && !pastFirstTable) {
+      pastFirstTable = true;
+      // Walk all cells in the letterhead table
+      for (const row of el.table.tableRows || []) {
+        for (const cell of row.tableCells || []) {
+          for (const cellEl of cell.content || []) {
+            if (cellEl.paragraph) zeroSpacing(cellEl.startIndex, cellEl.endIndex);
+          }
         }
-      });
-      count++;
+      }
     }
   }
+
   if (reqs.length) {
     await apiFetch(`https://docs.googleapis.com/v1/documents/${docId}:batchUpdate`, 'POST', { requests: reqs });
   }
