@@ -537,7 +537,7 @@ body { font-family: 'DM Sans', sans-serif; background: var(--light); color: var(
     <div class="card">
       <div class="card-header"><span class="icon">⚙️</span><span>Systems Present at This Building</span></div>
       <div class="card-body">
-        <p style="font-size:0.82rem;color:var(--slate);margin-bottom:12px;">Tap all systems that exist at this property. Press <strong>Save Systems</strong> to sync across all devices.</p>
+        <p style="font-size:0.82rem;color:var(--slate);margin-bottom:12px;">Tap all systems that exist at this property. Changes sync across all devices when saved.</p>
         <div id="systems-grid">
           <div class="sys-toggle" data-sys="fire-alarm" onclick="toggleSys(this)">
             <span class="sys-icon">🔔</span>Fire Alarm
@@ -545,17 +545,17 @@ body { font-family: 'DM Sans', sans-serif; background: var(--light); color: var(
           <div class="sys-toggle" data-sys="sprinkler" onclick="toggleSys(this)">
             <span class="sys-icon">💧</span>Sprinkler System
           </div>
+          <div class="sys-toggle" data-sys="extinguisher" onclick="toggleSys(this)">
+            <span class="sys-icon">🧯</span>Extinguishers
+          </div>
+          <div class="sys-toggle" data-sys="hood" onclick="toggleSys(this)">
+            <span class="sys-icon">🍳</span>Kitchen Hood Suppression
+          </div>
           <div class="sys-toggle" data-sys="fire-pump" onclick="toggleSys(this)">
             <span class="sys-icon">🔄</span>Fire Pump
           </div>
           <div class="sys-toggle" data-sys="standpipe" onclick="toggleSys(this)">
             <span class="sys-icon">🚿</span>Standpipe
-          </div>
-          <div class="sys-toggle" data-sys="hood" onclick="toggleSys(this)">
-            <span class="sys-icon">🍳</span>Kitchen Hood Suppression
-          </div>
-          <div class="sys-toggle" data-sys="extinguisher" onclick="toggleSys(this)">
-            <span class="sys-icon">🧯</span>Extinguishers
           </div>
           <div class="sys-toggle" data-sys="hydrant" onclick="toggleSys(this)">
             <span class="sys-icon">🔴</span>Private Hydrants
@@ -579,6 +579,10 @@ body { font-family: 'DM Sans', sans-serif; background: var(--light); color: var(
       </div>
     </div>
 
+    <div id="save-systems-row" style="display:none;margin-bottom:14px;">
+      <button class="btn-primary green" id="save-systems-btn" onclick="saveBuildingSystemsToDrive()" style="width:100%;">💾 Save Systems Changes</button>
+    </div>
+
     <!-- ── START INSPECTION SECTION ── -->
     <div class="card" id="inspection-start-card" style="display:none;">
       <div class="card-header" style="background:var(--fire);">
@@ -594,7 +598,6 @@ body { font-family: 'DM Sans', sans-serif; background: var(--light); color: var(
 
     <div class="btn-row">
       <button class="btn-secondary" onclick="goStep(1)">← Back</button>
-      <button class="btn-primary" id="save-systems-btn" onclick="saveBuildingSystemsToDrive()">💾 Save Systems</button>
       <span id="save-indicator">✓ Saved</span>
     </div>
   </div>
@@ -921,6 +924,7 @@ function onPropertySelect() {
   activeInspectionSystem = null;
   document.getElementById('prev-insp-banner').style.display = 'none';
   document.getElementById('prev-insp-summary').textContent = '';
+  document.getElementById('save-systems-row').style.display = 'none';
 
   // Load saved building system config (local cache — instant)
   const saved = loadBuildingConfig(propName);
@@ -1018,6 +1022,7 @@ async function saveBuildingSystemsToDrive() {
     // Also keep localStorage in sync as local cache
     saveBuildingConfig();
 
+    document.getElementById('save-systems-row').style.display = 'none';
     toast('✓ Systems saved — synced across devices');
   } catch(e) {
     toast('✗ Save failed: ' + e.message);
@@ -1041,7 +1046,7 @@ function renderInspectionStartCards() {
   card.style.display = 'block';
 
   const lastBySystem = (_propertyProfile && _propertyProfile.lastInspBySystem) || {};
-  const SYS_ORDER = ['fire-alarm','sprinkler','fire-pump','standpipe','hood','extinguisher','hydrant','bda','smoke-control','gas-detection','special-suppression','backflow'];
+  const SYS_ORDER = ['fire-alarm','sprinkler','extinguisher','hood','fire-pump','standpipe','hydrant','bda','smoke-control','gas-detection','special-suppression','backflow'];
   const ordered = SYS_ORDER.filter(k => activeSystems.has(k));
 
   grid.innerHTML = '';
@@ -1113,6 +1118,7 @@ function toggleSys(el) {
   if (activeSystems.has(sys)) { activeSystems.delete(sys); el.classList.remove('active'); }
   else { activeSystems.add(sys); el.classList.add('active'); }
   saveBuildingConfig();
+  document.getElementById('save-systems-row').style.display = 'block';
   renderInspectionStartCards();
 }
 
