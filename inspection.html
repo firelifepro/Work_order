@@ -73,7 +73,7 @@ body { font-family: 'DM Sans', sans-serif; background: var(--light); color: var(
 #app { max-width: 900px; margin: 0 auto; padding: 16px; }
 
 /* ── STEP WIZARD ── */
-#step-nav {
+#step-nav, #fa-step-nav {
   display: flex; gap: 0; margin-bottom: 20px;
   background: white; border-radius: 10px; overflow: hidden;
   box-shadow: 0 1px 6px rgba(0,0,0,0.08); border: 1px solid var(--border);
@@ -429,10 +429,10 @@ body { font-family: 'DM Sans', sans-serif; background: var(--light); color: var(
 
 <div id="app">
 
-  <!-- ── STEP NAV ── -->
+  <!-- ── STEP NAV (default) ── -->
   <div id="step-nav">
     <div class="step-tab active" data-step="1" onclick="goStep(1)">
-      <span class="step-num">1</span><span class="step-check">✓</span>Property
+      <span class="step-num">1</span><span class="step-check">✓</span>Job Info
     </div>
     <div class="step-tab" data-step="2" onclick="goStep(2)">
       <span class="step-num">2</span><span class="step-check">✓</span>Systems
@@ -441,8 +441,34 @@ body { font-family: 'DM Sans', sans-serif; background: var(--light); color: var(
       <span class="step-num">3</span><span class="step-check">✓</span>Inspect
     </div>
     <div class="step-tab" data-step="4" onclick="goStep(4)">
-      <span class="step-num">4</span><span class="step-check">✓</span>Report
+      <span class="step-num">4</span><span class="step-check">✓</span>Sign &amp; Export
     </div>
+  </div>
+
+  <!-- ── FIRE ALARM STEP NAV (shown only when doing a fire alarm inspection) ── -->
+  <div id="fa-step-nav" style="display:none;">
+    <div class="step-tab done" data-fstep="job" onclick="exitFireAlarmInspection()">
+      <span class="step-num">1</span><span class="step-check">✓</span>Job Info
+    </div>
+    <div class="step-tab active" data-fstep="panel" onclick="goFAStep('panel')">
+      <span class="step-num">2</span><span class="step-check">✓</span>Panel &amp; Monitoring
+    </div>
+    <div class="step-tab" data-fstep="devices" onclick="goFAStep('devices')">
+      <span class="step-num">3</span><span class="step-check">✓</span>Device Testing
+    </div>
+    <div class="step-tab" data-fstep="aux" onclick="goFAStep('aux')">
+      <span class="step-num">4</span><span class="step-check">✓</span>Auxiliary &amp; Locations
+    </div>
+    <div class="step-tab" data-fstep="defic" onclick="goFAStep('defic')">
+      <span class="step-num">5</span><span class="step-check">✓</span>Deficiencies
+    </div>
+    <div class="step-tab" data-fstep="sign" onclick="goFAStep('sign')">
+      <span class="step-num">6</span><span class="step-check">✓</span>Sign &amp; Export
+    </div>
+  </div>
+  <!-- ── FIRE ALARM ACTIVE BANNER ── -->
+  <div id="fa-active-banner" style="display:none;background:var(--fire);color:white;padding:10px 16px;border-radius:8px;margin-bottom:14px;font-weight:700;font-size:.9rem;">
+    🔔 Inspecting: Fire Alarm System (NFPA 72)
   </div>
 
   <!-- ══ STEP 1: PROPERTY ══ -->
@@ -721,10 +747,316 @@ body { font-family: 'DM Sans', sans-serif; background: var(--light); color: var(
         <div id="sig-warning" class="sig-warning"></div>
         <div class="btn-row">
           <button class="btn-primary fire" id="save-download-btn" onclick="saveAndDownload()">📄 Save &amp; Download PDF</button>
-          <button class="btn-secondary" onclick="goStep(3)">← Back to Inspection</button>
+          <button class="btn-secondary" onclick="goBackFromSign()">← Back</button>
         </div>
         <div id="pdf-status" style="margin-top:10px;font-size:0.8rem;color:var(--green);line-height:1.6;"></div>
       </div>
+    </div>
+  </div>
+
+  <!-- ══ FIRE ALARM STEP 2: PANEL & MONITORING ══ -->
+  <div id="step-fa-panel" style="display:none;">
+
+    <div class="card">
+      <div class="card-header"><span class="icon">🖥️</span><span>Main Fire Alarm Control Panel &amp; Monitoring Information</span></div>
+      <div class="card-body">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+          <div>
+            <div class="sys-section">Control Panel Specification</div>
+            <div class="data-row cols-1"><div class="data-field"><label>Make</label><input type="text" id="fa-cp-make" placeholder="e.g. Honeywell, EST, Simplex"></div></div>
+            <div class="data-row cols-1"><div class="data-field"><label>Model</label><input type="text" id="fa-cp-model"></div></div>
+            <div class="data-row cols-1"><div class="data-field"><label>Serial #</label><input type="text" id="fa-cp-serial"></div></div>
+            <div class="data-row cols-1"><div class="data-field"><label>Location</label><input type="text" id="fa-cp-location"></div></div>
+            <div class="data-row cols-1"><div class="data-field"><label>Type</label><input type="text" id="fa-cp-type" placeholder="e.g. Addressable, Conventional"></div></div>
+          </div>
+          <div>
+            <div class="sys-section">Dialer / Radio Specifications</div>
+            <div class="data-row cols-1"><div class="data-field"><label>Make</label><input type="text" id="fa-dr-make"></div></div>
+            <div class="data-row cols-1"><div class="data-field"><label>Model</label><input type="text" id="fa-dr-model"></div></div>
+            <div class="data-row cols-1"><div class="data-field"><label>Location</label><input type="text" id="fa-dr-location"></div></div>
+            <div class="data-row cols-1"><div class="data-field"><label>Type</label><input type="text" id="fa-dr-type" placeholder="e.g. GSM, DACT, IP"></div></div>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:12px;">
+          <div>
+            <div class="sys-section">Panel Testing / Disable Instructions</div>
+            <div class="data-field">
+              <textarea id="fa-panel-instructions" rows="5" placeholder="Describe panel disable/enable procedure, access codes, key locations…" style="border:1.5px solid var(--border);border-radius:6px;padding:8px 10px;font-size:.82rem;font-family:inherit;color:var(--navy);outline:none;width:100%;background:#fafafa;resize:vertical;"></textarea>
+            </div>
+          </div>
+          <div>
+            <div class="sys-section">Monitoring Specifications</div>
+            <div class="data-row cols-1" style="margin-bottom:6px;">
+              <div class="data-field">
+                <label>Is the system currently monitored?</label>
+                <select id="fa-monitored"><option value="">— Select —</option><option>Yes</option><option>No</option></select>
+              </div>
+            </div>
+            <div class="data-row cols-1"><div class="data-field"><label>Monitoring Company</label><input type="text" id="fa-monitor-company"></div></div>
+            <div class="data-row cols-1"><div class="data-field"><label>Phone</label><input type="tel" id="fa-monitor-phone"></div></div>
+            <div class="data-row cols-1"><div class="data-field"><label>Account #</label><input type="text" id="fa-monitor-account"></div></div>
+            <div class="data-row">
+              <div class="data-field"><label>Time Offline</label><input type="time" id="fa-monitor-offline"></div>
+              <div class="data-field"><label>Time Online</label><input type="time" id="fa-monitor-online"></div>
+            </div>
+            <div class="data-row cols-1"><div class="data-field"><label>Monitoring Notes</label><input type="text" id="fa-monitor-notes"></div></div>
+          </div>
+        </div>
+        <div style="margin-top:12px;">
+          <div class="sys-section">Additional Panel Details</div>
+          <div class="data-row cols-3">
+            <div class="data-field"><label># Zones / Loops</label><input type="number" id="fa-cp-zones"></div>
+            <div class="data-field"><label>Year Installed</label><input type="number" id="fa-cp-year"></div>
+            <div class="data-field"><label>Battery Install Date</label><input type="date" id="fa-cp-batt-date"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><span class="icon">✅</span><span>Pre &amp; Post Inspection Checklist</span></div>
+      <div class="card-body">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+          <div>
+            <div class="sys-section">Pre-Inspection</div>
+            <div id="fa-pre-checklist"></div>
+          </div>
+          <div>
+            <div class="sys-section">Post-Inspection</div>
+            <div id="fa-post-checklist"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn-secondary" onclick="exitFireAlarmInspection()">← Systems</button>
+      <button class="btn-primary" onclick="goFAStep('devices')">Next: Device Testing →</button>
+    </div>
+  </div>
+
+  <!-- ══ FIRE ALARM STEP 3: DEVICE TESTING ══ -->
+  <div id="step-fa-devices" style="display:none;">
+
+    <div class="card">
+      <div class="card-header"><span class="icon">⚙️</span><span>Control Panel &amp; Power</span></div>
+      <div class="card-body">
+        <div class="inspect-row" id="row-fa-panel-cond"><div class="inspect-row-top"><div class="inspect-label">Control Panel Condition<small>Visual — no damage, labels intact</small></div><div class="pf-group"><button class="pf-btn pass" onclick="setPF(this,'fa-panel-cond','PASS')">PASS</button><button class="pf-btn fail" onclick="setPF(this,'fa-panel-cond','FAIL')">FAIL</button><button class="pf-btn na" onclick="setPF(this,'fa-panel-cond','N/A')">N/A</button></div></div><div class="deficiency-row" id="defic-fa-panel-cond"><input type="text" id="defic-txt-fa-panel-cond" placeholder="Describe deficiency / location…" oninput="updateDeficiencySummary()"></div></div>
+        <div class="inspect-row" id="row-fa-battery"><div class="inspect-row-top"><div class="inspect-label">Battery / Backup Power<small>24-hr minimum backup; date on batteries</small></div><div class="pf-group"><button class="pf-btn pass" onclick="setPF(this,'fa-battery','PASS')">PASS</button><button class="pf-btn fail" onclick="setPF(this,'fa-battery','FAIL')">FAIL</button><button class="pf-btn na" onclick="setPF(this,'fa-battery','N/A')">N/A</button></div></div><div class="deficiency-row" id="defic-fa-battery"><input type="text" id="defic-txt-fa-battery" placeholder="Describe deficiency / location…" oninput="updateDeficiencySummary()"></div></div>
+        <div class="inspect-row" id="row-fa-batt-date"><div class="inspect-row-top"><div class="inspect-label">Battery Date Check<small>Replace if &gt; 3 years or failed load test</small></div><div class="pf-group"><button class="pf-btn pass" onclick="setPF(this,'fa-batt-date','PASS')">PASS</button><button class="pf-btn fail" onclick="setPF(this,'fa-batt-date','FAIL')">FAIL</button><button class="pf-btn na" onclick="setPF(this,'fa-batt-date','N/A')">N/A</button></div></div><div class="deficiency-row" id="defic-fa-batt-date"><input type="text" id="defic-txt-fa-batt-date" placeholder="Describe deficiency / location…" oninput="updateDeficiencySummary()"></div></div>
+        <div class="inspect-row" id="row-fa-ac-power"><div class="inspect-row-top"><div class="inspect-label">AC Power Indicator<small>Green LED illuminated</small></div><div class="pf-group"><button class="pf-btn pass" onclick="setPF(this,'fa-ac-power','PASS')">PASS</button><button class="pf-btn fail" onclick="setPF(this,'fa-ac-power','FAIL')">FAIL</button><button class="pf-btn na" onclick="setPF(this,'fa-ac-power','N/A')">N/A</button></div></div><div class="deficiency-row" id="defic-fa-ac-power"><input type="text" id="defic-txt-fa-ac-power" placeholder="Describe deficiency / location…" oninput="updateDeficiencySummary()"></div></div>
+        <div class="inspect-row" id="row-fa-tamper"><div class="inspect-row-top"><div class="inspect-label">Tamper Signals<small>All supervisory tampers tested and restored</small></div><div class="pf-group"><button class="pf-btn pass" onclick="setPF(this,'fa-tamper','PASS')">PASS</button><button class="pf-btn fail" onclick="setPF(this,'fa-tamper','FAIL')">FAIL</button><button class="pf-btn na" onclick="setPF(this,'fa-tamper','N/A')">N/A</button></div></div><div class="deficiency-row" id="defic-fa-tamper"><input type="text" id="defic-txt-fa-tamper" placeholder="Describe deficiency / location…" oninput="updateDeficiencySummary()"></div></div>
+        <div class="inspect-row" id="row-fa-trouble"><div class="inspect-row-top"><div class="inspect-label">Trouble Signals<small>No active troubles on panel</small></div><div class="pf-group"><button class="pf-btn pass" onclick="setPF(this,'fa-trouble','PASS')">PASS</button><button class="pf-btn fail" onclick="setPF(this,'fa-trouble','FAIL')">FAIL</button><button class="pf-btn na" onclick="setPF(this,'fa-trouble','N/A')">N/A</button></div></div><div class="deficiency-row" id="defic-fa-trouble"><input type="text" id="defic-txt-fa-trouble" placeholder="Describe deficiency / location…" oninput="updateDeficiencySummary()"></div></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><span class="icon">🔍</span><span>Detection Devices</span></div>
+      <div class="card-body">
+        <div class="data-row cols-3" style="margin-bottom:10px;">
+          <div class="data-field"><label># Smoke Detectors</label><input type="number" id="fa-smoke-count"></div>
+          <div class="data-field"><label># Heat Detectors</label><input type="number" id="fa-heat-count"></div>
+          <div class="data-field"><label># Pull Stations</label><input type="number" id="fa-pull-count"></div>
+        </div>
+        <div class="inspect-row" id="row-fa-smoke-test"><div class="inspect-row-top"><div class="inspect-label">Smoke Detectors Functional<small>Representative sample tested per NFPA 72</small></div><div class="pf-group"><button class="pf-btn pass" onclick="setPF(this,'fa-smoke-test','PASS')">PASS</button><button class="pf-btn fail" onclick="setPF(this,'fa-smoke-test','FAIL')">FAIL</button><button class="pf-btn na" onclick="setPF(this,'fa-smoke-test','N/A')">N/A</button></div></div><div class="deficiency-row" id="defic-fa-smoke-test"><input type="text" id="defic-txt-fa-smoke-test" placeholder="Describe deficiency / location…" oninput="updateDeficiencySummary()"></div></div>
+        <div class="inspect-row" id="row-fa-heat-test"><div class="inspect-row-top"><div class="inspect-label">Heat Detectors Functional<small>Fixed temp or rate-of-rise — tested</small></div><div class="pf-group"><button class="pf-btn pass" onclick="setPF(this,'fa-heat-test','PASS')">PASS</button><button class="pf-btn fail" onclick="setPF(this,'fa-heat-test','FAIL')">FAIL</button><button class="pf-btn na" onclick="setPF(this,'fa-heat-test','N/A')">N/A</button></div></div><div class="deficiency-row" id="defic-fa-heat-test"><input type="text" id="defic-txt-fa-heat-test" placeholder="Describe deficiency / location…" oninput="updateDeficiencySummary()"></div></div>
+        <div class="inspect-row" id="row-fa-pull-test"><div class="inspect-row-top"><div class="inspect-label">Manual Pull Stations<small>Each pull station tested</small></div><div class="pf-group"><button class="pf-btn pass" onclick="setPF(this,'fa-pull-test','PASS')">PASS</button><button class="pf-btn fail" onclick="setPF(this,'fa-pull-test','FAIL')">FAIL</button><button class="pf-btn na" onclick="setPF(this,'fa-pull-test','N/A')">N/A</button></div></div><div class="deficiency-row" id="defic-fa-pull-test"><input type="text" id="defic-txt-fa-pull-test" placeholder="Describe deficiency / location…" oninput="updateDeficiencySummary()"></div></div>
+        <div class="inspect-row" id="row-fa-duct-smoke"><div class="inspect-row-top"><div class="inspect-label">Duct Smoke Detectors<small>Tested per NFPA 72 — HVAC shut down confirmed</small></div><div class="pf-group"><button class="pf-btn pass" onclick="setPF(this,'fa-duct-smoke','PASS')">PASS</button><button class="pf-btn fail" onclick="setPF(this,'fa-duct-smoke','FAIL')">FAIL</button><button class="pf-btn na" onclick="setPF(this,'fa-duct-smoke','N/A')">N/A</button></div></div><div class="deficiency-row" id="defic-fa-duct-smoke"><input type="text" id="defic-txt-fa-duct-smoke" placeholder="Describe deficiency / location…" oninput="updateDeficiencySummary()"></div></div>
+        <div class="inspect-row" id="row-fa-co"><div class="inspect-row-top"><div class="inspect-label">CO Detectors (if present)<small>Functional test performed</small></div><div class="pf-group"><button class="pf-btn pass" onclick="setPF(this,'fa-co','PASS')">PASS</button><button class="pf-btn fail" onclick="setPF(this,'fa-co','FAIL')">FAIL</button><button class="pf-btn na" onclick="setPF(this,'fa-co','N/A')">N/A</button></div></div><div class="deficiency-row" id="defic-fa-co"><input type="text" id="defic-txt-fa-co" placeholder="Describe deficiency / location…" oninput="updateDeficiencySummary()"></div></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><span class="icon">📢</span><span>Notification Appliances</span></div>
+      <div class="card-body">
+        <div class="inspect-row" id="row-fa-horns"><div class="inspect-row-top"><div class="inspect-label">Horns / Strobes / Speakers<small>Audible and visual — all activated</small></div><div class="pf-group"><button class="pf-btn pass" onclick="setPF(this,'fa-horns','PASS')">PASS</button><button class="pf-btn fail" onclick="setPF(this,'fa-horns','FAIL')">FAIL</button><button class="pf-btn na" onclick="setPF(this,'fa-horns','N/A')">N/A</button></div></div><div class="deficiency-row" id="defic-fa-horns"><input type="text" id="defic-txt-fa-horns" placeholder="Describe deficiency / location…" oninput="updateDeficiencySummary()"></div></div>
+        <div class="inspect-row" id="row-fa-horn-sync"><div class="inspect-row-top"><div class="inspect-label">Horn Synchronization<small>Synchronized properly</small></div><div class="pf-group"><button class="pf-btn pass" onclick="setPF(this,'fa-horn-sync','PASS')">PASS</button><button class="pf-btn fail" onclick="setPF(this,'fa-horn-sync','FAIL')">FAIL</button><button class="pf-btn na" onclick="setPF(this,'fa-horn-sync','N/A')">N/A</button></div></div><div class="deficiency-row" id="defic-fa-horn-sync"><input type="text" id="defic-txt-fa-horn-sync" placeholder="Describe deficiency / location…" oninput="updateDeficiencySummary()"></div></div>
+        <div class="inspect-row" id="row-fa-mass-notif"><div class="inspect-row-top"><div class="inspect-label">Mass Notification (if present)<small>Message clarity and audibility confirmed</small></div><div class="pf-group"><button class="pf-btn pass" onclick="setPF(this,'fa-mass-notif','PASS')">PASS</button><button class="pf-btn fail" onclick="setPF(this,'fa-mass-notif','FAIL')">FAIL</button><button class="pf-btn na" onclick="setPF(this,'fa-mass-notif','N/A')">N/A</button></div></div><div class="deficiency-row" id="defic-fa-mass-notif"><input type="text" id="defic-txt-fa-mass-notif" placeholder="Describe deficiency / location…" oninput="updateDeficiencySummary()"></div></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><span class="icon">📊</span><span>Device Testing Summary <span style="font-size:.72rem;font-weight:400;opacity:.8;">(PASS = Functional/Visual  |  FAIL = Failed  |  NT = Not Tested  |  NF = Not Found)</span></span></div>
+      <div class="card-body" style="overflow-x:auto;">
+        <table class="dev-table" id="fa-device-table">
+          <thead>
+            <tr>
+              <th class="left" style="min-width:150px;">Device / System</th>
+              <th>Key</th><th>Total</th><th>Pass #</th><th>Fail #</th>
+              <th>% Pass</th><th>% Fail</th><th>Not Tested</th><th>Not Found</th><th>Notes</th>
+            </tr>
+          </thead>
+          <tbody id="fa-device-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><span class="icon">📝</span><span>On-Site System Notes <span style="font-size:.72rem;font-weight:400;opacity:.8;">— Conditions, Integrity, Outdated/Obsolete Equipment</span></span></div>
+      <div class="card-body" style="overflow-x:auto;">
+        <table class="dyn-table">
+          <thead><tr><th style="min-width:160px;">Equipment</th><th style="width:130px;">Condition</th><th>Notes &amp; Observations</th></tr></thead>
+          <tbody>
+            <tr><td><input type="text" id="fa-onsite-eq-1" value="Fire Alarm Control Panel"></td><td><input type="text" id="fa-onsite-cond-1"></td><td><input type="text" id="fa-onsite-notes-1"></td></tr>
+            <tr><td><input type="text" id="fa-onsite-eq-2" value="Initiating Devices"></td><td><input type="text" id="fa-onsite-cond-2"></td><td><input type="text" id="fa-onsite-notes-2"></td></tr>
+            <tr><td><input type="text" id="fa-onsite-eq-3" value="Power Supplies"></td><td><input type="text" id="fa-onsite-cond-3"></td><td><input type="text" id="fa-onsite-notes-3"></td></tr>
+            <tr><td><input type="text" id="fa-onsite-eq-4" value="Graphic Maps / Annunciators"></td><td><input type="text" id="fa-onsite-cond-4"></td><td><input type="text" id="fa-onsite-notes-4"></td></tr>
+            <tr><td><input type="text" id="fa-onsite-eq-5" value="Other"></td><td><input type="text" id="fa-onsite-cond-5"></td><td><input type="text" id="fa-onsite-notes-5"></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn-secondary" onclick="goFAStep('panel')">← Panel &amp; Monitoring</button>
+      <button class="btn-primary" onclick="goFAStep('aux')">Next: Auxiliary &amp; Locations →</button>
+    </div>
+  </div>
+
+  <!-- ══ FIRE ALARM STEP 4: AUXILIARY & LOCATIONS ══ -->
+  <div id="step-fa-aux" style="display:none;">
+
+    <div class="card">
+      <div class="card-header"><span class="icon">📢</span><span>Audio / Visual Functionality <span style="font-size:.72rem;font-weight:400;opacity:.8;">— Annual Only</span></span></div>
+      <div class="card-body">
+        <div class="inspect-row"><div class="inspect-row-top"><div class="inspect-label">Visual notification present &amp; operational?<small>Strobes, combos — unobstructed, synchronized on alarm</small></div><div class="pf-group"><button class="pf-btn pass" onclick="setFAPF(this)">PASS</button><button class="pf-btn fail" onclick="setFAPF(this)">FAIL</button><button class="pf-btn na" onclick="setFAPF(this)">N/A</button></div></div></div>
+        <div class="inspect-row"><div class="inspect-row-top"><div class="inspect-label">Audible notification present &amp; operational?<small>Bells, chimes, horns — audible in all required areas</small></div><div class="pf-group"><button class="pf-btn pass" onclick="setFAPF(this)">PASS</button><button class="pf-btn fail" onclick="setFAPF(this)">FAIL</button><button class="pf-btn na" onclick="setFAPF(this)">N/A</button></div></div></div>
+        <div class="data-row cols-1" style="margin-top:6px;"><div class="data-field"><label>A/V Notes</label><input type="text" id="fa-av-notes"></div></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><span class="icon">🚪</span><span>Door Holder Functionality <span style="font-size:.72rem;font-weight:400;opacity:.8;">— Annual Only</span></span></div>
+      <div class="card-body">
+        <div class="inspect-row"><div class="inspect-row-top"><div class="inspect-label">Door holders present &amp; release on alarm?<small>Magnetic locks, card access — release and close as intended</small></div><div class="pf-group"><button class="pf-btn pass" onclick="setFAPF(this)">PASS</button><button class="pf-btn fail" onclick="setFAPF(this)">FAIL</button><button class="pf-btn na" onclick="setFAPF(this)">N/A</button></div></div></div>
+        <div class="inspect-row"><div class="inspect-row-top"><div class="inspect-label">All door hardware free from damage?</div><div class="pf-group"><button class="pf-btn pass" onclick="setFAPF(this)">PASS</button><button class="pf-btn fail" onclick="setFAPF(this)">FAIL</button><button class="pf-btn na" onclick="setFAPF(this)">N/A</button></div></div></div>
+        <div class="data-row cols-1" style="margin-top:6px;"><div class="data-field"><label>Door Holder Notes</label><input type="text" id="fa-door-notes"></div></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><span class="icon">🌡️</span><span>HVAC Control <span style="font-size:.72rem;font-weight:400;opacity:.8;">— Annual Only</span></span></div>
+      <div class="card-body">
+        <div class="inspect-row"><div class="inspect-row-top"><div class="inspect-label">HVAC shutdown on alarm?<small>Tested and confirmed functional</small></div><div class="pf-group"><button class="pf-btn pass" onclick="setFAPF(this)">PASS</button><button class="pf-btn fail" onclick="setFAPF(this)">FAIL</button><button class="pf-btn na" onclick="setFAPF(this)">N/A</button></div></div></div>
+        <div class="data-row" style="margin-top:6px;">
+          <div class="data-field"><label>Method</label><input type="text" id="fa-hvac-method" placeholder="e.g. Relay, BACnet, Direct wired"></div>
+          <div class="data-field"><label>HVAC Notes</label><input type="text" id="fa-hvac-notes"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><span class="icon">⚡</span><span>Sub Panel / Power Supply Information</span></div>
+      <div class="card-body" style="overflow-x:auto;">
+        <table class="dyn-table" id="fa-subpanel-table">
+          <thead>
+            <tr>
+              <th>Location</th><th>Make</th><th>Model</th><th>Address</th>
+              <th>Panel/Circuit</th><th>Amps/Style</th><th>Avail. NACs</th>
+              <th>Install Date</th><th>(L) Batt Load</th><th>(R) Batt Load</th>
+              <th>SPVSD?</th><th style="width:80px;">Pass/Fail</th><th style="width:30px;"></th>
+            </tr>
+          </thead>
+          <tbody id="fa-subpanel-tbody"></tbody>
+        </table>
+        <button class="add-row-btn" onclick="addFASubpanelRow()">+ Add Sub Panel / Power Supply</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><span class="icon">🔍</span><span>Devices — Fire Detection (by Level / Floor / Location)</span></div>
+      <div class="card-body" style="overflow-x:auto;">
+        <table class="dyn-table">
+          <thead><tr><th style="width:80px;">Type</th><th>Location</th><th style="width:90px;">Address</th><th style="width:90px;">Alarm</th><th style="width:100px;">Supervisory</th><th style="width:70px;">Note #</th><th style="width:30px;"></th></tr></thead>
+          <tbody id="fa-detection-tbody"></tbody>
+        </table>
+        <button class="add-row-btn" onclick="addFADetectionRow()">+ Add Device</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><span class="icon">💧</span><span>Flow Switches — Sprinkler Systems</span></div>
+      <div class="card-body" style="overflow-x:auto;">
+        <table class="dyn-table">
+          <thead><tr><th style="width:80px;">Type</th><th>Location</th><th style="width:90px;">Scan ID</th><th style="width:90px;">Address</th><th style="width:110px;">Supervisory</th><th style="width:80px;">Seconds</th><th style="width:30px;"></th></tr></thead>
+          <tbody id="fa-flow-tbody"></tbody>
+        </table>
+        <button class="add-row-btn" onclick="addFAFlowRow()">+ Add Flow Switch</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><span class="icon">🔒</span><span>Tamper Switches — Sprinkler Systems</span></div>
+      <div class="card-body" style="overflow-x:auto;">
+        <table class="dyn-table">
+          <thead><tr><th style="width:80px;">Type</th><th>Location</th><th style="width:90px;">Scan ID</th><th style="width:90px;">Address</th><th style="width:110px;">Supervisory</th><th>Notes</th><th style="width:30px;"></th></tr></thead>
+          <tbody id="fa-tamper-tbody"></tbody>
+        </table>
+        <button class="add-row-btn" onclick="addFATamperRow()">+ Add Tamper Switch</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><span class="icon">📡</span><span>Supervisory &amp; Monitoring</span></div>
+      <div class="card-body">
+        <div class="inspect-row" id="row-fa-valve-super"><div class="inspect-row-top"><div class="inspect-label">Valve Supervisory Switches<small>All closed valves indicated on panel</small></div><div class="pf-group"><button class="pf-btn pass" onclick="setPF(this,'fa-valve-super','PASS')">PASS</button><button class="pf-btn fail" onclick="setPF(this,'fa-valve-super','FAIL')">FAIL</button><button class="pf-btn na" onclick="setPF(this,'fa-valve-super','N/A')">N/A</button></div></div><div class="deficiency-row" id="defic-fa-valve-super"><input type="text" id="defic-txt-fa-valve-super" placeholder="Describe deficiency / location…" oninput="updateDeficiencySummary()"></div></div>
+        <div class="inspect-row" id="row-fa-waterflow"><div class="inspect-row-top"><div class="inspect-label">Waterflow Alarms<small>Flow alarm activates within 90 seconds</small></div><div class="pf-group"><button class="pf-btn pass" onclick="setPF(this,'fa-waterflow','PASS')">PASS</button><button class="pf-btn fail" onclick="setPF(this,'fa-waterflow','FAIL')">FAIL</button><button class="pf-btn na" onclick="setPF(this,'fa-waterflow','N/A')">N/A</button></div></div><div class="deficiency-row" id="defic-fa-waterflow"><input type="text" id="defic-txt-fa-waterflow" placeholder="Describe deficiency / location…" oninput="updateDeficiencySummary()"></div></div>
+        <div class="inspect-row" id="row-fa-monitoring-test"><div class="inspect-row-top"><div class="inspect-label">Central Station Transmission<small>Alarm and trouble signals received at CS</small></div><div class="pf-group"><button class="pf-btn pass" onclick="setPF(this,'fa-monitoring-test','PASS')">PASS</button><button class="pf-btn fail" onclick="setPF(this,'fa-monitoring-test','FAIL')">FAIL</button><button class="pf-btn na" onclick="setPF(this,'fa-monitoring-test','N/A')">N/A</button></div></div><div class="deficiency-row" id="defic-fa-monitoring-test"><input type="text" id="defic-txt-fa-monitoring-test" placeholder="Describe deficiency / location…" oninput="updateDeficiencySummary()"></div></div>
+        <div class="inspect-row" id="row-fa-annunciator"><div class="inspect-row-top"><div class="inspect-label">Remote Annunciators<small>Indicating correct zones</small></div><div class="pf-group"><button class="pf-btn pass" onclick="setPF(this,'fa-annunciator','PASS')">PASS</button><button class="pf-btn fail" onclick="setPF(this,'fa-annunciator','FAIL')">FAIL</button><button class="pf-btn na" onclick="setPF(this,'fa-annunciator','N/A')">N/A</button></div></div><div class="deficiency-row" id="defic-fa-annunciator"><input type="text" id="defic-txt-fa-annunciator" placeholder="Describe deficiency / location…" oninput="updateDeficiencySummary()"></div></div>
+        <div class="inspect-row" id="row-fa-elevator"><div class="inspect-row-top"><div class="inspect-label">Elevator Recall (if present)<small>Floor-level and lobby recall tested</small></div><div class="pf-group"><button class="pf-btn pass" onclick="setPF(this,'fa-elevator','PASS')">PASS</button><button class="pf-btn fail" onclick="setPF(this,'fa-elevator','FAIL')">FAIL</button><button class="pf-btn na" onclick="setPF(this,'fa-elevator','N/A')">N/A</button></div></div><div class="deficiency-row" id="defic-fa-elevator"><input type="text" id="defic-txt-fa-elevator" placeholder="Describe deficiency / location…" oninput="updateDeficiencySummary()"></div></div>
+        <div class="inspect-row" id="row-fa-door-release"><div class="inspect-row-top"><div class="inspect-label">Door Holders / Door Release<small>All released on alarm</small></div><div class="pf-group"><button class="pf-btn pass" onclick="setPF(this,'fa-door-release','PASS')">PASS</button><button class="pf-btn fail" onclick="setPF(this,'fa-door-release','FAIL')">FAIL</button><button class="pf-btn na" onclick="setPF(this,'fa-door-release','N/A')">N/A</button></div></div><div class="deficiency-row" id="defic-fa-door-release"><input type="text" id="defic-txt-fa-door-release" placeholder="Describe deficiency / location…" oninput="updateDeficiencySummary()"></div></div>
+        <div class="inspect-row" id="row-fa-suppression-rel"><div class="inspect-row-top"><div class="inspect-label">Suppression System Release<small>Agent release tested (if applicable)</small></div><div class="pf-group"><button class="pf-btn pass" onclick="setPF(this,'fa-suppression-rel','PASS')">PASS</button><button class="pf-btn fail" onclick="setPF(this,'fa-suppression-rel','FAIL')">FAIL</button><button class="pf-btn na" onclick="setPF(this,'fa-suppression-rel','N/A')">N/A</button></div></div><div class="deficiency-row" id="defic-fa-suppression-rel"><input type="text" id="defic-txt-fa-suppression-rel" placeholder="Describe deficiency / location…" oninput="updateDeficiencySummary()"></div></div>
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn-secondary" onclick="goFAStep('devices')">← Device Testing</button>
+      <button class="btn-primary" onclick="goFAStep('defic')">Next: Deficiencies →</button>
+    </div>
+  </div>
+
+  <!-- ══ FIRE ALARM STEP 5: DEFICIENCIES ══ -->
+  <div id="step-fa-defic" style="display:none;">
+
+    <div id="fa-defic-summary" class="defic-summary">
+      <div class="defic-summary-hdr">
+        ⚠ Active Deficiencies — <span class="defic-count-pill" id="fa-defic-count-pill">0</span>
+        <span style="font-size:0.72rem;font-weight:400;opacity:0.85;margin-left:4px;">Click PASS on an item to clear it</span>
+      </div>
+      <div class="defic-list-inner" id="fa-defic-list"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><span class="icon">📋</span><span>Documentation &amp; Tags</span></div>
+      <div class="card-body">
+        <div class="inspect-row" id="row-fa-tags"><div class="inspect-row-top"><div class="inspect-label">Panel Tags / Labels<small>Current inspection tag affixed</small></div><div class="pf-group"><button class="pf-btn pass" onclick="setPF(this,'fa-tags','PASS')">PASS</button><button class="pf-btn fail" onclick="setPF(this,'fa-tags','FAIL')">FAIL</button><button class="pf-btn na" onclick="setPF(this,'fa-tags','N/A')">N/A</button></div></div><div class="deficiency-row" id="defic-fa-tags"><input type="text" id="defic-txt-fa-tags" placeholder="Describe deficiency / location…" oninput="updateDeficiencySummary()"></div></div>
+        <div class="inspect-row" id="row-fa-logbook"><div class="inspect-row-top"><div class="inspect-label">System Log / As-Builts Available<small>On-site documentation accessible</small></div><div class="pf-group"><button class="pf-btn pass" onclick="setPF(this,'fa-logbook','PASS')">PASS</button><button class="pf-btn fail" onclick="setPF(this,'fa-logbook','FAIL')">FAIL</button><button class="pf-btn na" onclick="setPF(this,'fa-logbook','N/A')">N/A</button></div></div><div class="deficiency-row" id="defic-fa-logbook"><input type="text" id="defic-txt-fa-logbook" placeholder="Describe deficiency / location…" oninput="updateDeficiencySummary()"></div></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><span class="icon">🔋</span><span>Failed Batteries (if applicable)</span></div>
+      <div class="card-body" style="overflow-x:auto;">
+        <table class="dyn-table">
+          <thead><tr><th style="width:80px;">Size (AH)</th><th style="width:100px;">Type</th><th style="width:60px;">Count</th><th>Locations</th><th style="width:30px;"></th></tr></thead>
+          <tbody id="fa-battery-tbody"></tbody>
+        </table>
+        <button class="add-row-btn" onclick="addFABatteryRow()">+ Add Failed Battery</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><span class="icon">📝</span><span>Additional Notes &amp; Observations</span></div>
+      <div class="card-body">
+        <div class="field-group">
+          <textarea id="fa-notes" rows="5" placeholder="Site-specific conditions, observations, or notes not captured elsewhere…" style="border:1.5px solid var(--border);border-radius:6px;padding:8px 10px;font-size:.82rem;font-family:inherit;color:var(--navy);outline:none;width:100%;background:#fafafa;resize:vertical;min-height:80px;"></textarea>
+        </div>
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn-secondary" onclick="goFAStep('aux')">← Auxiliary &amp; Locations</button>
+      <button class="btn-primary" onclick="goFAStep('sign')">Next: Sign &amp; Export →</button>
     </div>
   </div>
 
@@ -744,6 +1076,8 @@ let accessToken = null;
 let tokenClient = null;
 let clientData  = {};
 let currentStep = 1;
+let currentFAStep = 'panel';
+const FA_STEP_ORDER = ['panel', 'devices', 'aux', 'defic'];  // 'sign' reuses #step-4
 let activeSystems = new Set();
 let activeInspectionSystem = null;
 let _propertyProfile = null;
@@ -795,6 +1129,133 @@ function goStep(n) {
     const todayStr = todayMT();
     if (!document.getElementById('sig-date').value) document.getElementById('sig-date').value = todayStr;
     updateDeficiencySummary();
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// FIRE ALARM MULTI-STEP NAVIGATION
+// ─────────────────────────────────────────────────────────────────────────────
+function goFAStep(key) {
+  const ALL_FA_KEYS = [...FA_STEP_ORDER, 'sign'];
+  // Hide all FA step divs and step-4
+  FA_STEP_ORDER.forEach(k => {
+    const el = document.getElementById('step-fa-' + k);
+    if (el) el.style.display = 'none';
+  });
+  document.getElementById('step-4').style.display = 'none';
+
+  // Show target — 'sign' reuses #step-4
+  if (key === 'sign') {
+    document.getElementById('step-4').style.display = 'block';
+    const todayStr = todayMT();
+    if (!document.getElementById('sig-date').value) document.getElementById('sig-date').value = todayStr;
+    updateDeficiencySummary();
+  } else {
+    const target = document.getElementById('step-fa-' + key);
+    if (target) target.style.display = 'block';
+    if (key === 'defic') updateDeficiencySummary();
+  }
+
+  // Update tab states
+  document.querySelectorAll('#fa-step-nav .step-tab').forEach(t => {
+    t.classList.remove('active', 'done');
+    const fstep = t.dataset.fstep;
+    if (fstep === key) t.classList.add('active');
+    else if (fstep !== 'job' && ALL_FA_KEYS.indexOf(fstep) < ALL_FA_KEYS.indexOf(key)) t.classList.add('done');
+  });
+  currentFAStep = key;
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function startFireAlarmInspection() {
+  // Swap navigation
+  document.getElementById('step-nav').style.display = 'none';
+  document.getElementById('fa-step-nav').style.display = 'flex';
+  document.getElementById('fa-active-banner').style.display = 'block';
+
+  // Hide regular step content
+  document.getElementById('step-3').style.display = 'none';
+  document.getElementById('step-4').style.display = 'none';
+
+  // Hide all FA step divs first
+  FA_STEP_ORDER.forEach(k => {
+    const el = document.getElementById('step-fa-' + k);
+    if (el) el.style.display = 'none';
+  });
+
+  // Reset and initialize
+  clearFAInspectionState();
+  initFireAlarmPanel();
+
+  // Restore previous inspection data typed fields
+  const prev = window._prevInspectionData;
+  if (prev) {
+    restorePanelFields(prev);
+    toast('✓ Previous data loaded');
+  }
+
+  buildItemPanelMap();
+  updateDeficiencySummary();
+
+  // Show first FA step, reset all tab states
+  currentFAStep = 'panel';
+  document.getElementById('step-fa-panel').style.display = 'block';
+  document.querySelectorAll('#fa-step-nav .step-tab').forEach(t => {
+    t.classList.remove('active', 'done');
+    if (t.dataset.fstep === 'job') t.classList.add('done');
+    else if (t.dataset.fstep === 'panel') t.classList.add('active');
+  });
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function exitFireAlarmInspection() {
+  // Hide all FA steps and step-4
+  FA_STEP_ORDER.forEach(k => {
+    const el = document.getElementById('step-fa-' + k);
+    if (el) el.style.display = 'none';
+  });
+  document.getElementById('step-4').style.display = 'none';
+  document.getElementById('fa-step-nav').style.display = 'none';
+  document.getElementById('fa-active-banner').style.display = 'none';
+  document.getElementById('step-nav').style.display = 'flex';
+  activeInspectionSystem = null;
+  goStep(2);
+}
+
+function clearFAInspectionState() {
+  // Clear all PF button selections in FA steps
+  FA_STEP_ORDER.forEach(k => {
+    const el = document.getElementById('step-fa-' + k);
+    if (!el) return;
+    el.querySelectorAll('.pf-btn').forEach(b => b.classList.remove('selected'));
+    el.querySelectorAll('.inspect-row').forEach(r => { r.dataset.val = ''; });
+    el.querySelectorAll('.defic-row').forEach(r => { r.classList.remove('show'); });
+    el.querySelectorAll('.defic-txt').forEach(i => { i.value = ''; });
+    el.querySelectorAll('.yna-btn').forEach(b => b.classList.remove('y','n','na'));
+    el.querySelectorAll('.note-row').forEach(r => r.classList.remove('show'));
+    el.querySelectorAll('.note-input').forEach(i => { i.value = ''; });
+  });
+  // Reset dynamic table bodies (rows will be re-built by initFireAlarmPanel)
+  ['fa-subpanel-tbody','fa-detection-tbody','fa-flow-tbody','fa-tamper-tbody','fa-battery-tbody'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.innerHTML = '';
+  });
+  // Clear text fields in FA steps
+  FA_STEP_ORDER.forEach(k => {
+    const el = document.getElementById('step-fa-' + k);
+    if (!el) return;
+    el.querySelectorAll('input[type=text], input[type=date], input[type=number], select, textarea').forEach(f => {
+      if (f.tagName === 'SELECT') f.selectedIndex = 0;
+      else f.value = '';
+    });
+  });
+}
+
+function goBackFromSign() {
+  if (activeInspectionSystem === 'fire-alarm') {
+    goFAStep('defic');
+  } else {
+    goStep(3);
   }
 }
 
@@ -1164,6 +1625,13 @@ function toggleSys(el) {
 function buildInspectionForms() {
   if (!activeInspectionSystem) { toast('⚠ Select a system to inspect from the Start an Inspection section'); return; }
   saveBuildingConfig();
+
+  // Fire alarm uses static multi-step navigation instead of the dynamic panel approach
+  if (activeInspectionSystem === 'fire-alarm') {
+    startFireAlarmInspection();
+    return;
+  }
+
   const container = document.getElementById('sys-forms');
   container.innerHTML = '';
 
@@ -2433,6 +2901,7 @@ function addFABatteryRow() {
 function initFireAlarmPanel() {
   faSubpanelCount = 0; faDetectionCount = 0; faFlowCount = 0;
   faTamperCount = 0; faBatteryCount = 0; faYNANoteCounter = 0;
+  // Always rebuild device table and checklists (clearFAInspectionState wiped them)
   buildFADeviceTable();
   buildFAChecklists();
 }
@@ -2445,12 +2914,25 @@ const ITEM_PANEL_MAP = {};   // itemId  → { panelId, panelTitle }
 
 function buildItemPanelMap() {
   Object.keys(ITEM_PANEL_MAP).forEach(k => delete ITEM_PANEL_MAP[k]);
+  // Dynamic panels (non-FA systems)
   document.querySelectorAll('.sys-panel').forEach(panel => {
     const panelId    = panel.id.replace('panel-', '');
     const panelTitle = panel.querySelector('.sys-panel-header span:nth-child(2)')?.textContent?.trim() || panelId;
     panel.querySelectorAll('.inspect-row').forEach(row => {
       const itemId = row.id.replace('row-', '');
       ITEM_PANEL_MAP[itemId] = { panelId, panelTitle };
+    });
+  });
+  // Static FA steps — map each card's inspect-rows to the FA step key
+  ['fa-devices', 'fa-aux', 'fa-defic'].forEach(stepKey => {
+    const stepEl = document.getElementById('step-' + stepKey);
+    if (!stepEl) return;
+    stepEl.querySelectorAll('.card').forEach(card => {
+      const panelTitle = card.querySelector('.card-header')?.textContent?.trim() || stepKey;
+      card.querySelectorAll('.inspect-row').forEach(row => {
+        const itemId = row.id.replace('row-', '');
+        ITEM_PANEL_MAP[itemId] = { panelId: 'step-' + stepKey, panelTitle };
+      });
     });
   });
 }
@@ -2543,11 +3025,51 @@ function updateDeficiencySummary() {
     if (hdr)   hdr.classList.add('has-defic');
     if (badge) { badge.textContent = count + (count === 1 ? ' defic.' : ' defic.'); badge.style.display = 'inline-block'; }
   });
+
+  // Also update the FA deficiency summary (step-fa-defic)
+  const faSumDiv   = document.getElementById('fa-defic-summary');
+  const faListDiv  = document.getElementById('fa-defic-list');
+  const faCountPill= document.getElementById('fa-defic-count-pill');
+  if (faSumDiv && faListDiv) {
+    if (faCountPill) faCountPill.textContent = defics.length + (defics.length === 1 ? ' deficiency' : ' deficiencies');
+    if (defics.length > 0) {
+      faSumDiv.classList.add('show');
+      faListDiv.innerHTML = defics.map(d => `
+        <div class="defic-item" id="fa-defic-card-${d.itemId}">
+          <div class="defic-item-body">
+            <div class="defic-item-section">${escHtml(d.panelTitle)}</div>
+            <div class="defic-item-label">&#9888; ${escHtml(d.label)}</div>
+            ${d.note
+              ? `<div class="defic-item-note">${escHtml(d.note)}</div>`
+              : `<div class="defic-item-note missing">No description entered — tap the item to add details</div>`
+            }
+          </div>
+          ${d.panelId ? `<button class="defic-jump-btn" onclick="goFAStep('${d.panelId.replace('step-fa-','')}')" >Go to item ↓</button>` : ''}
+        </div>`).join('');
+    } else {
+      faSumDiv.classList.remove('show');
+      faListDiv.innerHTML = '';
+    }
+  }
 }
 
 // Scroll to an inspection item and open its panel if collapsed
 function jumpToItem(itemId, panelId) {
-  // Open panel if collapsed
+  // Handle FA step navigation
+  if (panelId && panelId.startsWith('step-fa-')) {
+    const faKey = panelId.replace('step-fa-', '');
+    goFAStep(faKey);
+    setTimeout(() => {
+      const row = document.getElementById('row-' + itemId);
+      if (!row) return;
+      row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      row.style.outline = '3px solid var(--red)';
+      row.style.borderRadius = '4px';
+      setTimeout(() => { row.style.outline = ''; row.style.borderRadius = ''; }, 2000);
+    }, 300);
+    return;
+  }
+  // Open panel if collapsed (dynamic panels)
   const panelBody = document.getElementById('panel-body-' + panelId);
   const panelHdr  = document.getElementById('panel-hdr-' + panelId);
   if (panelBody && panelBody.classList.contains('hidden')) {
