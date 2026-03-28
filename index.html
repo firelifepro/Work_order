@@ -2060,7 +2060,7 @@ async function applyCompletionChecklists(docId) {
 
   const CB_LABELS = new Set([
     'Complete','Incomplete','Follow-Up Needed',
-    'Yes','No','Pending','Partial',
+    'Yes','No','Pending','N/A','Partial',
     'Check','ACH','Credit Card','Other',
     'Google Sheet Work Tracker Updated'
   ]);
@@ -2367,9 +2367,8 @@ function buildWorkOrderHTML(d) {
     hdr('COMPLETION &amp; BILLING') +
     (d['FLAT RATE']==='Yes' ? tr(lbl('★ Fixed Rate Invoice:'), val(d['FLAT RATE AMOUNT']||''), lbl(''), val('')) : '') +
     tr(lbl('Work Status:'), cbOpts(['Complete','Incomplete','Follow-Up Needed']),
-       lbl(''), val('')) +
-    tr(lbl('Report Submitted:'), cbOpts(['Yes','No','Pending','N/A']),
-       lbl('Invoice #:'), val(d['INVOICE #'])) +
+       lbl('Report Submitted:'), cbOpts(['Yes','No','Pending','N/A'])) +
+    tr(lbl('Invoice #:'), val(d['INVOICE #']), lbl(''), val('')) +
     tr(lbl('Invoice Date:'), val(d['INVOICE DATE']), lbl('Total Invoice Amount:'), val(d['TOTAL INVOICE AMOUNT'])) +
     tr(lbl('Payment Received:'), cbOpts(['Yes','No','Partial']),
        lbl('Payment Method:'),   cbOpts(['Check','ACH','Credit Card','Other'])) +
