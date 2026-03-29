@@ -245,6 +245,10 @@ body { font-family: 'DM Sans', sans-serif; background: var(--light); color: var(
 .ost-btn.compliant.selected  { background: var(--pass-bg); box-shadow: 0 0 0 2px var(--green); }
 .ost-btn.deficient.selected  { background: #fffbeb; box-shadow: 0 0 0 2px var(--amber); }
 .ost-btn.impaired.selected   { background: var(--fail-bg); box-shadow: 0 0 0 2px var(--red); }
+.ost-btn.annual    { border-color: var(--blue);  color: var(--blue); }
+.ost-btn.semi      { border-color: var(--navy3); color: var(--navy3); }
+.ost-btn.annual.selected  { background: #eff6ff; box-shadow: 0 0 0 2px var(--blue); }
+.ost-btn.semi.selected    { background: #f1f5f9; box-shadow: 0 0 0 2px var(--navy3); }
 
 /* ── SIGNATURE ── */
 #sig-canvas, #cust-sig-canvas {
@@ -777,16 +781,20 @@ body { font-family: 'DM Sans', sans-serif; background: var(--light); color: var(
   <div id="step-fa-panel" style="display:none;">
 
     <div class="card">
+      <div class="card-header"><span class="icon">📋</span><span>Report Type</span></div>
+      <div class="card-body">
+        <div class="overall-status-group">
+          <button class="ost-btn annual selected" id="fa-rt-annual" onclick="setFAReportType('Annual',this)">Annual<br><small style="font-weight:400;font-size:.7rem;">Full annual inspection</small></button>
+          <button class="ost-btn semi" id="fa-rt-semi" onclick="setFAReportType('Semi-Annual',this)">Semi Annual<br><small style="font-weight:400;font-size:.7rem;">6-month inspection</small></button>
+        </div>
+        <input type="hidden" id="report-type" value="Annual">
+      </div>
+    </div>
+
+    <div class="card">
       <div class="card-header"><span class="icon">🖥️</span><span>Main Fire Alarm Control Panel &amp; Monitoring Information</span></div>
       <div class="card-body">
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
-          <div class="field-group">
-            <label>Report Type</label>
-            <select id="report-type">
-              <option>Annual</option>
-              <option>Semi-Annual</option>
-            </select>
-          </div>
           <div>
             <div class="sys-section">Control Panel Specification</div>
             <div class="data-row cols-1"><div class="data-field"><label>Make</label><input type="text" id="fa-cp-make" placeholder="e.g. Honeywell, EST, Simplex"></div></div>
@@ -1320,6 +1328,7 @@ function startFireAlarmInspection() {
   const prev = window._prevInspectionData;
   if (prev) {
     restorePanelFields(prev);
+    syncFAReportTypeButtons();
     toast('✓ Previous data loaded');
   }
 
@@ -1380,6 +1389,11 @@ function clearFAInspectionState() {
       else f.value = '';
     });
   });
+  // Reset report type to Annual
+  const rtInput = document.getElementById('report-type');
+  if (rtInput) rtInput.value = 'Annual';
+  document.getElementById('fa-rt-annual')?.classList.add('selected');
+  document.getElementById('fa-rt-semi')?.classList.remove('selected');
   // Restore On-Site equipment defaults
   const onsiteDefaults = ['Fire Alarm Control Panel','Initiating Devices','Power Supplies','Graphic Maps','Notification Appliance Devices'];
   onsiteDefaults.forEach((val, i) => {
@@ -2994,11 +3008,17 @@ function buildFACL(containerId, items, prefix) {
 function addFASubpanelRow() {
   faSubpanelCount++;
   const n = faSubpanelCount;
-  const iconBtns = (prefix) => `
+  const compBtn = (prefix) => `
     <div style="display:flex;gap:2px;">
-      <button class="pf-btn pass" style="padding:3px 7px;" onclick="setPFTable(this,'${prefix}-${n}','PASS')" title="Pass">✓</button>
-      <button class="pf-btn fail" style="padding:3px 7px;" onclick="setPFTable(this,'${prefix}-${n}','FAIL')" title="Fail">✗</button>
+      <button class="pf-btn pass" style="padding:3px 7px;" onclick="setSubpanelComp(this,${n},'${prefix}','PASS')" title="Pass">✓</button>
+      <button class="pf-btn fail" style="padding:3px 7px;" onclick="setSubpanelComp(this,${n},'${prefix}','FAIL')" title="Fail">✗</button>
       <input type="hidden" id="${prefix}-${n}">
+    </div>`;
+  const pfBtn = `
+    <div style="display:flex;gap:2px;">
+      <button class="pf-btn pass" style="padding:3px 7px;" onclick="setSubpanelPF(this,${n},'PASS')" title="Pass">✓</button>
+      <button class="pf-btn fail" style="padding:3px 7px;" onclick="setSubpanelPF(this,${n},'FAIL')" title="Fail">✗</button>
+      <input type="hidden" id="fa-sp-pf-${n}">
     </div>`;
   document.getElementById('fa-subpanel-tbody').insertAdjacentHTML('beforeend', `
     <tr id="fa-sp-row-${n}">
@@ -3006,11 +3026,19 @@ function addFASubpanelRow() {
       <td><input type="text" id="fa-sp-make-${n}"></td>
       <td><input type="text" id="fa-sp-circuit-${n}"></td>
       <td><input type="text" id="fa-sp-amps-${n}"></td>
-      <td>${iconBtns('fa-sp-lbatt')}</td>
-      <td>${iconBtns('fa-sp-rbatt')}</td>
-      <td>${iconBtns('fa-sp-spvsd')}</td>
-      <td>${iconBtns('fa-sp-pf')}</td>
-      <td><button class="del-btn" onclick="document.getElementById('fa-sp-row-${n}').remove()">✕</button></td>
+      <td>${compBtn('fa-sp-lbatt')}</td>
+      <td>${compBtn('fa-sp-rbatt')}</td>
+      <td>${compBtn('fa-sp-spvsd')}</td>
+      <td>${pfBtn}</td>
+      <td><button class="del-btn" onclick="removeSubpanelRow(${n})">✕</button></td>
+    </tr>
+    <tr id="fa-sp-defic-tr-${n}" style="display:none;">
+      <td colspan="9" style="padding:4px 8px 8px;background:#fff7ed;border-top:none;">
+        <div style="display:flex;gap:8px;align-items:center;">
+          <span style="font-size:.72rem;color:var(--amber);font-weight:700;white-space:nowrap;">⚠ Deficiency:</span>
+          <input type="text" id="fa-sp-defic-txt-${n}" style="flex:1;" placeholder="Describe the sub panel issue…" oninput="syncSubpanelDefic(${n})">
+        </div>
+      </td>
     </tr>`);
 }
 
@@ -3165,6 +3193,93 @@ function syncOnsiteDefic(n) {
   const eq    = document.getElementById('fa-onsite-eq-' + n)?.value || 'Equipment ' + n;
   const notes = document.getElementById('fa-onsite-notes-' + n)?.value || '';
   descEl.value = eq + (notes ? ' — ' + notes : '');
+}
+
+// ─── REPORT TYPE BUTTONS ──────────────────────────────────────────────────────
+function setFAReportType(val, btn) {
+  document.getElementById('report-type').value = val;
+  document.querySelectorAll('#fa-rt-annual, #fa-rt-semi').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+}
+function syncFAReportTypeButtons() {
+  const val = document.getElementById('report-type')?.value || 'Annual';
+  document.getElementById('fa-rt-annual')?.classList.toggle('selected', val !== 'Semi-Annual');
+  document.getElementById('fa-rt-semi')?.classList.toggle('selected', val === 'Semi-Annual');
+}
+
+// ─── SUB PANEL PASS/FAIL + DEFICIENCY ─────────────────────────────────────────
+function setSubpanelComp(btn, n, prefix, val) {
+  // Standard icon toggle
+  const group = btn.closest('.pf-group') || btn.parentElement;
+  group.querySelectorAll('.pf-btn').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+  const input = document.getElementById(prefix + '-' + n);
+  if (input) input.value = val;
+  // If any component fails, auto-set Pass/Fail to FAIL
+  if (val === 'FAIL') {
+    const pfInput = document.getElementById('fa-sp-pf-' + n);
+    if (pfInput && pfInput.value !== 'FAIL') {
+      const pfRow = document.getElementById('fa-sp-row-' + n);
+      const pfDiv = pfRow?.querySelectorAll('td')[7]?.querySelector('div');
+      if (pfDiv) {
+        pfDiv.querySelectorAll('.pf-btn').forEach(b => b.classList.remove('selected'));
+        pfDiv.querySelector('.pf-btn.fail')?.classList.add('selected');
+        pfInput.value = 'FAIL';
+      }
+      showSubpanelDeficRow(n);
+    }
+  }
+}
+
+function setSubpanelPF(btn, n, val) {
+  const pfInput = document.getElementById('fa-sp-pf-' + n);
+  if (!pfInput) return;
+  (btn.closest('.pf-group') || btn.parentElement).querySelectorAll('.pf-btn').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+  pfInput.value = val;
+  if (val === 'FAIL') showSubpanelDeficRow(n);
+  else hideSubpanelDeficRow(n);
+}
+
+function showSubpanelDeficRow(n) {
+  const tr = document.getElementById('fa-sp-defic-tr-' + n);
+  if (tr) tr.style.display = '';
+  if (!document.getElementById('fa-defic-sp-' + n)) {
+    faDeficCount++;
+    const count = faDeficCount;
+    const loc = document.getElementById('fa-sp-loc-' + n)?.value || 'Sub Panel ' + n;
+    document.getElementById('fa-defic-tbody').insertAdjacentHTML('beforeend', `
+      <tr id="fa-defic-sp-${n}">
+        <td style="text-align:center;font-weight:700;color:var(--slate);">${count}</td>
+        <td><input type="text" id="fa-defic-sp-desc-${n}" value="${escHtml(loc)} — Sub Panel Failure" placeholder="Describe deficiency…"></td>
+        <td><input type="text" id="fa-defic-sp-model-${n}"></td>
+        <td><button class="del-btn" onclick="removeSubpanelDeficRow(${n})">✕</button></td>
+      </tr>`);
+  }
+}
+
+function hideSubpanelDeficRow(n) {
+  const tr = document.getElementById('fa-sp-defic-tr-' + n);
+  if (tr) { tr.style.display = 'none'; const txt = document.getElementById('fa-sp-defic-txt-' + n); if (txt) txt.value = ''; }
+  removeSubpanelDeficRow(n);
+}
+
+function removeSubpanelDeficRow(n) {
+  document.getElementById('fa-defic-sp-' + n)?.remove();
+}
+
+function removeSubpanelRow(n) {
+  removeSubpanelDeficRow(n);
+  document.getElementById('fa-sp-row-' + n)?.remove();
+  document.getElementById('fa-sp-defic-tr-' + n)?.remove();
+}
+
+function syncSubpanelDefic(n) {
+  const descEl = document.getElementById('fa-defic-sp-desc-' + n);
+  if (!descEl) return;
+  const loc   = document.getElementById('fa-sp-loc-' + n)?.value || 'Sub Panel ' + n;
+  const notes = document.getElementById('fa-sp-defic-txt-' + n)?.value || '';
+  descEl.value = loc + (notes ? ' — ' + notes : ' — Sub Panel Failure');
 }
 
 function initFireAlarmPanel() {
