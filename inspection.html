@@ -935,7 +935,7 @@ body { font-family: 'DM Sans', sans-serif; background: var(--light); color: var(
       <div class="card-header"><span class="icon">🔍</span><span>Devices — Fire Detection (by Level / Floor / Location)</span></div>
       <div class="card-body" style="overflow-x:auto;">
         <table class="dyn-table">
-          <thead><tr><th style="width:60px;">Type</th><th>Location</th><th style="width:80px;">Scan ID</th><th style="width:80px;">Address</th><th style="width:60px;">Alarm</th><th style="width:70px;">Supervisory</th><th style="width:60px;">Note #</th><th style="width:30px;"></th></tr></thead>
+          <thead><tr><th style="width:60px;">Type</th><th>Location</th><th style="width:80px;">Scan ID</th><th style="width:80px;">Address</th><th style="width:60px;">Alarm</th><th style="width:70px;">Supervisory</th><th style="width:30px;"></th></tr></thead>
           <tbody id="fa-detection-tbody"></tbody>
         </table>
         <button class="add-row-btn" onclick="addFADetectionRow()">+ Add Device</button>
@@ -2571,7 +2571,7 @@ function setPFTable(btn, id, val) {
     if (note) note.textContent = '(manually set)';
   }
   // Detection row deficiency + summary
-  const detMatch = id.match(/^fa-det-(?:alarm|sup|note)-(\d+)$/);
+  const detMatch = id.match(/^fa-det-(?:alarm|sup)-(\d+)$/);
   if (detMatch) { checkDetectionDefic(parseInt(detMatch[1])); syncDeviceSummary(); }
   // Flow switch deficiency + summary
   const flowMatch = id.match(/^fa-flow-sup-(\d+)$/);
@@ -3005,10 +3005,13 @@ function setFAYNA(btn, noteId, type) {
   }
 }
 
+// Detection type dropdown excludes FS and TS (those are flow/tamper tables, not detection devices)
+const FA_DEVICE_KEYS_DETECTION = new Set(['FS','TS']);
 function buildFATypeOptions(defaultKey) {
-  return FA_DEVICES.map(d =>
-    `<option value="${d.key}"${d.key === defaultKey ? ' selected' : ''}>${d.key} — ${d.label}</option>`
-  ).join('');
+  return FA_DEVICES
+    .filter(d => !FA_DEVICE_KEYS_DETECTION.has(d.key))
+    .map(d => `<option value="${d.key}"${d.key === defaultKey ? ' selected' : ''}>${d.key} — ${d.label}</option>`)
+    .join('');
 }
 
 function buildFADeviceTable() {
@@ -3051,9 +3054,8 @@ function syncDeviceSummary() {
     const type  = document.getElementById('fa-det-type-' + n)?.value || '';
     const alarm = document.getElementById('fa-det-alarm-' + n)?.value || '';
     const sup   = document.getElementById('fa-det-sup-' + n)?.value || '';
-    const note  = document.getElementById('fa-det-note-' + n)?.value || '';
-    const anyFail = alarm === 'FAIL' || sup === 'FAIL' || note === 'FAIL';
-    const anyPass = alarm === 'PASS' || sup === 'PASS' || note === 'PASS';
+    const anyFail = alarm === 'FAIL' || sup === 'FAIL';
+    const anyPass = alarm === 'PASS' || sup === 'PASS';
     tally(type, anyFail ? 'FAIL' : anyPass ? 'PASS' : '');
   }
 
@@ -3190,11 +3192,10 @@ function addFADetectionRow() {
       <td><input type="text" id="fa-det-addr-${n}"></td>
       <td>${iconBtns2('fa-det-alarm')}</td>
       <td>${iconBtns2('fa-det-sup')}</td>
-      <td>${iconBtns2('fa-det-note')}</td>
       <td><button class="del-btn" onclick="removeDetectionRow(${n})">✕</button></td>
     </tr>
     <tr id="fa-det-defic-tr-${n}" style="display:none;">
-      <td colspan="8" style="padding:4px 8px 8px;background:#fff7ed;border-top:none;">
+      <td colspan="7" style="padding:4px 8px 8px;background:#fff7ed;border-top:none;">
         <div style="display:flex;gap:8px;align-items:center;">
           <span style="font-size:.72rem;color:var(--amber);font-weight:700;white-space:nowrap;">⚠ Deficiency:</span>
           <input type="text" id="fa-det-defic-txt-${n}" style="flex:1;" placeholder="Describe the device issue…" oninput="syncDetectionDefic(${n})">
@@ -3215,7 +3216,7 @@ function addFAFlowRow() {
     </div>`;
   document.getElementById('fa-flow-tbody').insertAdjacentHTML('beforeend', `
     <tr id="fa-flow-row-${n}">
-      <td><select id="fa-flow-type-${n}" onchange="syncDeviceSummary()">${buildFATypeOptions('FS')}</select></td>
+      <td><input type="text" id="fa-flow-type-${n}" value="FS"></td>
       <td><input type="text" id="fa-flow-loc-${n}"></td>
       <td><input type="text" id="fa-flow-scan-${n}"></td>
       <td><input type="text" id="fa-flow-addr-${n}"></td>
@@ -3245,7 +3246,7 @@ function addFATamperRow() {
     </div>`;
   document.getElementById('fa-tamper-tbody').insertAdjacentHTML('beforeend', `
     <tr id="fa-tamper-row-${n}">
-      <td><select id="fa-tamper-type-${n}" onchange="syncDeviceSummary()">${buildFATypeOptions('TS')}</select></td>
+      <td><input type="text" id="fa-tamper-type-${n}" value="TS"></td>
       <td><input type="text" id="fa-tamper-loc-${n}"></td>
       <td><input type="text" id="fa-tamper-scan-${n}"></td>
       <td><input type="text" id="fa-tamper-addr-${n}"></td>
@@ -3436,8 +3437,7 @@ function removeSubpanelRow(n) {
 function checkDetectionDefic(n) {
   const alarm = document.getElementById('fa-det-alarm-' + n)?.value;
   const sup   = document.getElementById('fa-det-sup-' + n)?.value;
-  const note  = document.getElementById('fa-det-note-' + n)?.value;
-  if (alarm === 'FAIL' || sup === 'FAIL' || note === 'FAIL') showDetectionDeficRow(n);
+  if (alarm === 'FAIL' || sup === 'FAIL') showDetectionDeficRow(n);
   else hideDetectionDeficRow(n);
 }
 function showDetectionDeficRow(n) {
