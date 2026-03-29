@@ -476,7 +476,10 @@ body { font-family: 'DM Sans', sans-serif; background: var(--light); color: var(
   </div>
   <!-- ── FIRE ALARM ACTIVE BANNER ── -->
   <div id="fa-active-banner" style="display:none;background:var(--fire);color:white;padding:10px 16px;border-radius:8px;margin-bottom:14px;font-weight:700;font-size:.9rem;">
-    🔔 Inspecting: Fire Alarm System (NFPA 72)
+    <div style="display:flex;align-items:center;gap:10px;">
+      <span style="flex:1;">🔔 Inspecting: Fire Alarm System (NFPA 72)</span>
+      <button onclick="saveDraft()" style="background:rgba(0,0,0,0.2);border:1px solid rgba(255,255,255,0.4);color:white;padding:4px 10px;border-radius:5px;cursor:pointer;font-size:0.72rem;font-weight:600;font-family:inherit;white-space:nowrap;">💾 Save Draft</button>
+    </div>
   </div>
 
   <!-- ══ STEP 1: PROPERTY ══ -->
@@ -1324,6 +1327,30 @@ function startFireAlarmInspection() {
   clearFAInspectionState();
   initFireAlarmPanel();
 
+  // Check for a saved draft first; offer resume if found
+  const draft = loadDraft();
+  if (draft) {
+    const saved = new Date(draft.savedAt);
+    const label = saved.toLocaleDateString() + ' ' + saved.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    if (confirm('A saved draft exists from ' + label + '.\n\nResume where you left off?')) {
+      restoreDraft(draft);
+      // Show the step they were on (or panel if unknown)
+      const resumeStep = draft.currentFAStep || 'panel';
+      currentFAStep = resumeStep;
+      const resumeEl = document.getElementById('step-fa-' + resumeStep);
+      if (resumeEl) resumeEl.style.display = 'block';
+      document.querySelectorAll('#fa-step-nav .step-tab').forEach(t => {
+        t.classList.remove('active', 'done');
+        if (t.dataset.fstep === 'job') t.classList.add('done');
+        else if (t.dataset.fstep === resumeStep) t.classList.add('active');
+      });
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    } else {
+      clearDraft();
+    }
+  }
+
   // Restore previous inspection data typed fields
   const prev = window._prevInspectionData;
   if (prev) {
@@ -1388,6 +1415,11 @@ function clearFAInspectionState() {
       if (f.tagName === 'SELECT') f.selectedIndex = 0;
       else f.value = '';
     });
+  });
+  // Remove dynamically-added static deficiency inputs
+  FA_STEP_ORDER.forEach(k => {
+    const el = document.getElementById('step-fa-' + k);
+    if (el) el.querySelectorAll('.fa-static-defic').forEach(d => d.remove());
   });
   // Reset report type to Annual
   const rtInput = document.getElementById('report-type');
@@ -2538,6 +2570,21 @@ function setPFTable(btn, id, val) {
     const note = document.getElementById('ext-override-note-' + n);
     if (note) note.textContent = '(manually set)';
   }
+  // Detection row deficiency
+  const detMatch = id.match(/^fa-det-(?:alarm|sup|note)-(\d+)$/);
+  if (detMatch) checkDetectionDefic(parseInt(detMatch[1]));
+  // Flow switch deficiency
+  const flowMatch = id.match(/^fa-flow-sup-(\d+)$/);
+  if (flowMatch) {
+    const n = parseInt(flowMatch[1]);
+    if (val === 'FAIL') showFlowDeficRow(n); else hideFlowDeficRow(n);
+  }
+  // Tamper switch deficiency
+  const tamperMatch = id.match(/^fa-tamper-sup-(\d+)$/);
+  if (tamperMatch) {
+    const n = parseInt(tamperMatch[1]);
+    if (val === 'FAIL') showTamperDeficRow(n); else hideTamperDeficRow(n);
+  }
 }
 
 // Auto-set the Overall result based on Seal/Pin and Label results
@@ -2892,6 +2939,25 @@ function setFAPF(btn) {
   const group = btn.closest('.pf-group');
   group.querySelectorAll('.pf-btn').forEach(b => b.classList.remove('selected'));
   btn.classList.add('selected');
+  // Show inline deficiency box on FAIL for static inspect-row items
+  const inspRow = btn.closest('.inspect-row');
+  if (!inspRow) return;
+  let deficDiv = inspRow.querySelector('.fa-static-defic');
+  if (btn.classList.contains('fail')) {
+    if (!deficDiv) {
+      deficDiv = document.createElement('div');
+      deficDiv.className = 'fa-static-defic';
+      deficDiv.style.cssText = 'display:flex;gap:8px;align-items:center;padding:6px 0 2px;';
+      deficDiv.innerHTML = '<span style="font-size:.72rem;color:var(--amber);font-weight:700;white-space:nowrap;">⚠ Deficiency:</span><input type="text" style="flex:1;" placeholder="Describe deficiency…">';
+      inspRow.appendChild(deficDiv);
+    } else {
+      deficDiv.style.display = 'flex';
+    }
+  } else if (deficDiv) {
+    deficDiv.style.display = 'none';
+    const inp = deficDiv.querySelector('input');
+    if (inp) inp.value = '';
+  }
 }
 
 // Set all pf-groups in a card to N/A except the Present group (first pf-group in first row)
@@ -3060,7 +3126,15 @@ function addFADetectionRow() {
       <td>${iconBtns2('fa-det-alarm')}</td>
       <td>${iconBtns2('fa-det-sup')}</td>
       <td>${iconBtns2('fa-det-note')}</td>
-      <td><button class="del-btn" onclick="document.getElementById('fa-det-row-${n}').remove()">✕</button></td>
+      <td><button class="del-btn" onclick="removeDetectionRow(${n})">✕</button></td>
+    </tr>
+    <tr id="fa-det-defic-tr-${n}" style="display:none;">
+      <td colspan="8" style="padding:4px 8px 8px;background:#fff7ed;border-top:none;">
+        <div style="display:flex;gap:8px;align-items:center;">
+          <span style="font-size:.72rem;color:var(--amber);font-weight:700;white-space:nowrap;">⚠ Deficiency:</span>
+          <input type="text" id="fa-det-defic-txt-${n}" style="flex:1;" placeholder="Describe the device issue…" oninput="syncDetectionDefic(${n})">
+        </div>
+      </td>
     </tr>`);
 }
 
@@ -3081,7 +3155,15 @@ function addFAFlowRow() {
       <td><input type="text" id="fa-flow-addr-${n}"></td>
       <td>${iconBtnsFlow}</td>
       <td><input type="number" id="fa-flow-secs-${n}" placeholder="sec"></td>
-      <td><button class="del-btn" onclick="document.getElementById('fa-flow-row-${n}').remove()">✕</button></td>
+      <td><button class="del-btn" onclick="removeFlowRow(${n})">✕</button></td>
+    </tr>
+    <tr id="fa-flow-defic-tr-${n}" style="display:none;">
+      <td colspan="7" style="padding:4px 8px 8px;background:#fff7ed;border-top:none;">
+        <div style="display:flex;gap:8px;align-items:center;">
+          <span style="font-size:.72rem;color:var(--amber);font-weight:700;white-space:nowrap;">⚠ Deficiency:</span>
+          <input type="text" id="fa-flow-defic-txt-${n}" style="flex:1;" placeholder="Describe the flow switch issue…" oninput="syncFlowDefic(${n})">
+        </div>
+      </td>
     </tr>`);
 }
 
@@ -3102,7 +3184,15 @@ function addFATamperRow() {
       <td><input type="text" id="fa-tamper-addr-${n}"></td>
       <td>${iconBtnsTs}</td>
       <td><input type="text" id="fa-tamper-notes-${n}"></td>
-      <td><button class="del-btn" onclick="document.getElementById('fa-tamper-row-${n}').remove()">✕</button></td>
+      <td><button class="del-btn" onclick="removeTamperRow(${n})">✕</button></td>
+    </tr>
+    <tr id="fa-tamper-defic-tr-${n}" style="display:none;">
+      <td colspan="7" style="padding:4px 8px 8px;background:#fff7ed;border-top:none;">
+        <div style="display:flex;gap:8px;align-items:center;">
+          <span style="font-size:.72rem;color:var(--amber);font-weight:700;white-space:nowrap;">⚠ Deficiency:</span>
+          <input type="text" id="fa-tamper-defic-txt-${n}" style="flex:1;" placeholder="Describe the tamper switch issue…" oninput="syncTamperDefic(${n})">
+        </div>
+      </td>
     </tr>`);
 }
 
@@ -3272,6 +3362,214 @@ function removeSubpanelRow(n) {
   removeSubpanelDeficRow(n);
   document.getElementById('fa-sp-row-' + n)?.remove();
   document.getElementById('fa-sp-defic-tr-' + n)?.remove();
+}
+
+// ─── DETECTION ROW DEFICIENCY ─────────────────────────────────────────────────
+function checkDetectionDefic(n) {
+  const alarm = document.getElementById('fa-det-alarm-' + n)?.value;
+  const sup   = document.getElementById('fa-det-sup-' + n)?.value;
+  const note  = document.getElementById('fa-det-note-' + n)?.value;
+  if (alarm === 'FAIL' || sup === 'FAIL' || note === 'FAIL') showDetectionDeficRow(n);
+  else hideDetectionDeficRow(n);
+}
+function showDetectionDeficRow(n) {
+  const tr = document.getElementById('fa-det-defic-tr-' + n);
+  if (tr) tr.style.display = '';
+  if (!document.getElementById('fa-defic-det-' + n)) {
+    faDeficCount++;
+    const count = faDeficCount;
+    const loc = document.getElementById('fa-det-loc-' + n)?.value || 'Device ' + n;
+    const type = document.getElementById('fa-det-type-' + n)?.value || '';
+    document.getElementById('fa-defic-tbody').insertAdjacentHTML('beforeend', `
+      <tr id="fa-defic-det-${n}">
+        <td style="text-align:center;font-weight:700;color:var(--slate);">${count}</td>
+        <td><input type="text" id="fa-defic-det-desc-${n}" value="${escHtml((type ? type + ' — ' : '') + loc)}" placeholder="Describe deficiency…"></td>
+        <td><input type="text" id="fa-defic-det-model-${n}"></td>
+        <td><button class="del-btn" onclick="removeDetectionDeficRow(${n})">✕</button></td>
+      </tr>`);
+  }
+}
+function hideDetectionDeficRow(n) {
+  const tr = document.getElementById('fa-det-defic-tr-' + n);
+  if (tr) { tr.style.display = 'none'; const txt = document.getElementById('fa-det-defic-txt-' + n); if (txt) txt.value = ''; }
+  removeDetectionDeficRow(n);
+}
+function removeDetectionDeficRow(n) { document.getElementById('fa-defic-det-' + n)?.remove(); }
+function removeDetectionRow(n) {
+  removeDetectionDeficRow(n);
+  document.getElementById('fa-det-row-' + n)?.remove();
+  document.getElementById('fa-det-defic-tr-' + n)?.remove();
+}
+function syncDetectionDefic(n) {
+  const descEl = document.getElementById('fa-defic-det-desc-' + n);
+  if (!descEl) return;
+  const loc   = document.getElementById('fa-det-loc-' + n)?.value || 'Device ' + n;
+  const type  = document.getElementById('fa-det-type-' + n)?.value || '';
+  const notes = document.getElementById('fa-det-defic-txt-' + n)?.value || '';
+  descEl.value = (type ? type + ' — ' : '') + loc + (notes ? ' — ' + notes : '');
+}
+
+// ─── FLOW SWITCH ROW DEFICIENCY ───────────────────────────────────────────────
+function showFlowDeficRow(n) {
+  const tr = document.getElementById('fa-flow-defic-tr-' + n);
+  if (tr) tr.style.display = '';
+  if (!document.getElementById('fa-defic-flow-' + n)) {
+    faDeficCount++;
+    const count = faDeficCount;
+    const loc = document.getElementById('fa-flow-loc-' + n)?.value || 'Flow Switch ' + n;
+    document.getElementById('fa-defic-tbody').insertAdjacentHTML('beforeend', `
+      <tr id="fa-defic-flow-${n}">
+        <td style="text-align:center;font-weight:700;color:var(--slate);">${count}</td>
+        <td><input type="text" id="fa-defic-flow-desc-${n}" value="${escHtml(loc)} — Flow Switch Failure" placeholder="Describe deficiency…"></td>
+        <td><input type="text" id="fa-defic-flow-model-${n}"></td>
+        <td><button class="del-btn" onclick="removeFlowDeficRow(${n})">✕</button></td>
+      </tr>`);
+  }
+}
+function hideFlowDeficRow(n) {
+  const tr = document.getElementById('fa-flow-defic-tr-' + n);
+  if (tr) { tr.style.display = 'none'; const txt = document.getElementById('fa-flow-defic-txt-' + n); if (txt) txt.value = ''; }
+  removeFlowDeficRow(n);
+}
+function removeFlowDeficRow(n) { document.getElementById('fa-defic-flow-' + n)?.remove(); }
+function removeFlowRow(n) {
+  removeFlowDeficRow(n);
+  document.getElementById('fa-flow-row-' + n)?.remove();
+  document.getElementById('fa-flow-defic-tr-' + n)?.remove();
+}
+function syncFlowDefic(n) {
+  const descEl = document.getElementById('fa-defic-flow-desc-' + n);
+  if (!descEl) return;
+  const loc   = document.getElementById('fa-flow-loc-' + n)?.value || 'Flow Switch ' + n;
+  const notes = document.getElementById('fa-flow-defic-txt-' + n)?.value || '';
+  descEl.value = loc + (notes ? ' — ' + notes : ' — Flow Switch Failure');
+}
+
+// ─── TAMPER SWITCH ROW DEFICIENCY ─────────────────────────────────────────────
+function showTamperDeficRow(n) {
+  const tr = document.getElementById('fa-tamper-defic-tr-' + n);
+  if (tr) tr.style.display = '';
+  if (!document.getElementById('fa-defic-tamper-' + n)) {
+    faDeficCount++;
+    const count = faDeficCount;
+    const loc = document.getElementById('fa-tamper-loc-' + n)?.value || 'Tamper Switch ' + n;
+    document.getElementById('fa-defic-tbody').insertAdjacentHTML('beforeend', `
+      <tr id="fa-defic-tamper-${n}">
+        <td style="text-align:center;font-weight:700;color:var(--slate);">${count}</td>
+        <td><input type="text" id="fa-defic-tamper-desc-${n}" value="${escHtml(loc)} — Tamper Switch Failure" placeholder="Describe deficiency…"></td>
+        <td><input type="text" id="fa-defic-tamper-model-${n}"></td>
+        <td><button class="del-btn" onclick="removeTamperDeficRow(${n})">✕</button></td>
+      </tr>`);
+  }
+}
+function hideTamperDeficRow(n) {
+  const tr = document.getElementById('fa-tamper-defic-tr-' + n);
+  if (tr) { tr.style.display = 'none'; const txt = document.getElementById('fa-tamper-defic-txt-' + n); if (txt) txt.value = ''; }
+  removeTamperDeficRow(n);
+}
+function removeTamperDeficRow(n) { document.getElementById('fa-defic-tamper-' + n)?.remove(); }
+function removeTamperRow(n) {
+  removeTamperDeficRow(n);
+  document.getElementById('fa-tamper-row-' + n)?.remove();
+  document.getElementById('fa-tamper-defic-tr-' + n)?.remove();
+}
+function syncTamperDefic(n) {
+  const descEl = document.getElementById('fa-defic-tamper-desc-' + n);
+  if (!descEl) return;
+  const loc   = document.getElementById('fa-tamper-loc-' + n)?.value || 'Tamper Switch ' + n;
+  const notes = document.getElementById('fa-tamper-defic-txt-' + n)?.value || '';
+  descEl.value = loc + (notes ? ' — ' + notes : ' — Tamper Switch Failure');
+}
+
+// ─── DRAFT SAVE / RESTORE ─────────────────────────────────────────────────────
+function draftKey() {
+  const propKey = (_currentPropertyAcct || document.getElementById('property-select')?.value || 'unknown').replace(/[^a-zA-Z0-9_-]/g, '_');
+  return 'flips_draft_' + propKey + '_' + (activeInspectionSystem || 'unknown');
+}
+
+function saveDraft() {
+  if (!activeInspectionSystem) return;
+  // Sync current input values into HTML attributes so innerHTML captures them
+  const faSteps = ['step-fa-panel','step-fa-devices','step-fa-aux','step-fa-defic'];
+  faSteps.forEach(stepId => {
+    const div = document.getElementById(stepId);
+    if (!div) return;
+    div.querySelectorAll('input:not([type=button])').forEach(inp => inp.setAttribute('value', inp.value));
+    div.querySelectorAll('textarea').forEach(ta => { ta.textContent = ta.value; });
+    div.querySelectorAll('select').forEach(sel => {
+      sel.querySelectorAll('option').forEach(opt => {
+        if (opt.value === sel.value) opt.setAttribute('selected', ''); else opt.removeAttribute('selected');
+      });
+    });
+  });
+  // Capture innerHTML of each FA step
+  const stepHTML = {};
+  faSteps.forEach(id => { stepHTML[id] = document.getElementById(id)?.innerHTML || ''; });
+  // Step-4 text fields (overall status, notes, customer sig fields)
+  const step4Fields = {};
+  ['overall-status-val','general-notes','cust-sig-name','cust-sig-title','cust-sig-date','sig-name'].forEach(id => {
+    step4Fields[id] = document.getElementById(id)?.value || '';
+  });
+  const draft = {
+    sysKey:      activeInspectionSystem,
+    savedAt:     new Date().toISOString(),
+    stepHTML,
+    step4Fields,
+    counters:    { faSubpanelCount, faDetectionCount, faFlowCount, faTamperCount, faBatteryCount, faDeficCount, faNoteCount },
+    overallStatus,
+    onsiteUnsat: Object.assign({}, _onsiteUnsat),
+    currentFAStep
+  };
+  try {
+    localStorage.setItem(draftKey(), JSON.stringify(draft));
+    toast('Draft saved');
+  } catch(e) {
+    toast('Save failed — storage full?');
+  }
+}
+
+function loadDraft() {
+  try { return JSON.parse(localStorage.getItem(draftKey())); } catch(e) { return null; }
+}
+
+function clearDraft() {
+  localStorage.removeItem(draftKey());
+}
+
+function restoreDraft(draft) {
+  // Restore counters
+  faSubpanelCount  = draft.counters?.faSubpanelCount  || 0;
+  faDetectionCount = draft.counters?.faDetectionCount || 0;
+  faFlowCount      = draft.counters?.faFlowCount      || 0;
+  faTamperCount    = draft.counters?.faTamperCount    || 0;
+  faBatteryCount   = draft.counters?.faBatteryCount   || 0;
+  faDeficCount     = draft.counters?.faDeficCount     || 0;
+  faNoteCount      = draft.counters?.faNoteCount      || 0;
+  // Restore innerHTML (includes button states, dynamic rows, field values via attributes)
+  Object.entries(draft.stepHTML || {}).forEach(([id, html]) => {
+    const el = document.getElementById(id);
+    if (el) el.innerHTML = html;
+  });
+  // Restore step-4 fields
+  Object.entries(draft.step4Fields || {}).forEach(([id, val]) => {
+    const el = document.getElementById(id);
+    if (el) el.value = val;
+  });
+  // Restore overall status variable and visual
+  if (draft.overallStatus) {
+    overallStatus = draft.overallStatus;
+    document.querySelectorAll('.ost-btn').forEach(b => {
+      if (b.textContent.includes(draft.overallStatus)) b.classList.add('selected');
+    });
+  }
+  // Restore _onsiteUnsat tracking
+  Object.assign(_onsiteUnsat, draft.onsiteUnsat || {});
+  // Rebuild item→panel map since innerHTML was replaced
+  buildItemPanelMap();
+  updateDeficiencySummary();
+  const saved = new Date(draft.savedAt);
+  const label = saved.toLocaleDateString() + ' ' + saved.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  toast('Draft restored — saved ' + label);
 }
 
 function syncSubpanelDefic(n) {
@@ -3824,6 +4122,7 @@ async function saveInspectionToDrive() {
 
     document.getElementById('pdf-status').textContent = `✓ Inspection data saved to Drive: ${fileName}`;
     toast('✓ Inspection saved to FLPS Software Inspection Data');
+    clearDraft(); // Remove draft now that inspection is fully saved
   } catch(e) {
     toast('✗ Save failed: ' + e.message);
     document.getElementById('pdf-status').textContent = '✗ Save error: ' + e.message;
