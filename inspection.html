@@ -501,6 +501,10 @@ body { font-family: 'DM Sans', sans-serif; background: var(--light); color: var(
             <div id="prop-loading" style="display:none;font-size:0.75rem;color:var(--slate);margin-top:3px;">Loading…</div>
           </div>
           <div class="field-group">
+            <label>Property Name</label>
+            <input type="text" id="property-name" placeholder="Auto-filled from selection">
+          </div>
+          <div class="field-group">
             <label>Client / Company</label>
             <input type="text" id="client-company">
           </div>
@@ -1602,6 +1606,19 @@ function onPropertySelect() {
   fill('client-company', 'management','client','company');
   fill('service-address', 'service address','address');
   fill('city-state-zip', 'city','zip');
+  // Parse city/state/zip from service address if no dedicated column in sheet
+  const cszEl = document.getElementById('city-state-zip');
+  const saEl  = document.getElementById('service-address');
+  if (cszEl && !cszEl.value.trim() && saEl?.value) {
+    const lines = saEl.value.split('\n').map(l => l.trim()).filter(Boolean);
+    if (lines.length >= 2) {
+      cszEl.value = lines[lines.length - 1];
+      saEl.value  = lines[0];
+    }
+  }
+  // Populate property name field from dropdown selection
+  const pnEl = document.getElementById('property-name');
+  if (pnEl) pnEl.value = propName || '';
   fill('property-contact-name', 'property manager','contact name');
   fill('property-contact-email', 'contact email','email','e-mail');
 
@@ -3415,7 +3432,7 @@ function showSubpanelDeficRow(n) {
     document.getElementById('fa-defic-tbody').insertAdjacentHTML('beforeend', `
       <tr id="fa-defic-sp-${n}">
         <td style="text-align:center;font-weight:700;color:var(--slate);">${count}</td>
-        <td><input type="text" id="fa-defic-sp-desc-${n}" value="${escHtml(loc)} — Sub Panel Failure" placeholder="Describe deficiency…"></td>
+        <td><input type="text" id="fa-defic-sp-desc-${n}" value="Sub Panel — ${escHtml(loc)}" placeholder="Describe deficiency…"></td>
         <td><button class="del-btn" onclick="removeSubpanelDeficRow(${n})">✕</button></td>
       </tr>`);
   }
@@ -3650,7 +3667,7 @@ function syncSubpanelDefic(n) {
   if (!descEl) return;
   const loc   = document.getElementById('fa-sp-loc-' + n)?.value || 'Sub Panel ' + n;
   const notes = document.getElementById('fa-sp-defic-txt-' + n)?.value || '';
-  descEl.value = loc + (notes ? ' — ' + notes : ' — Sub Panel Failure');
+  descEl.value = 'Sub Panel — ' + loc + (notes ? ': ' + notes : '');
 }
 
 function initFireAlarmPanel() {
@@ -4316,7 +4333,7 @@ function collectAllData() {
     if (el.id && el.type !== 'button') fieldData[el.id] = el.value;
   });
   // Also step-1 fields
-  ['client-company','service-address','city-state-zip','property-contact-name','property-contact-email',
+  ['property-name','client-company','service-address','city-state-zip','property-contact-name','property-contact-email',
    'insp-date','report-type','inspector-name','inspector-cert','company-name',
    'company-license','nfpa-ref','weather'].forEach(id => {
     fieldData[id] = v(id);
@@ -4378,7 +4395,7 @@ function collectAllData() {
   return {
     meta: { generatedAt: new Date().toISOString(), version: '3.0' },
     property: {
-      name:         document.getElementById('property-select')?.value || '',
+      name:         v('property-name') || document.getElementById('property-select')?.value || v('service-address') || '',
       acct:         _currentPropertyAcct,
       company:      v('client-company'),
       address:      v('service-address'),
@@ -5220,15 +5237,16 @@ async function buildPDFDoc() {
         deficRows.forEach((drow, idx) => {
           const ddesc = drow.querySelector('td:nth-child(2) input')?.value?.trim() || '';
           if (!ddesc) return;
-          checkPage(8);
-          setFill([255,236,236]); doc.rect(ML, y, usableW, 6.5, 'F');
-          setDraw([220,38,38]); doc.line(ML, y + 6.5, ML + usableW, y + 6.5);
+          const ddl = doc.splitTextToSize(ddesc, usableW - 12);
+          const rowH = Math.max(6.5, ddl.length * 4.5 + 2);
+          checkPage(rowH + 2);
+          setFill([255,236,236]); doc.rect(ML, y, usableW, rowH, 'F');
+          setDraw([220,38,38]); doc.line(ML, y + rowH, ML + usableW, y + rowH);
           setFont(FS.tiny,'bold'); setTxt([180,20,20]);
           doc.text(String(idx + 1), ML + 4, y + 4.5);
-          setFont(FS.small,'normal');
-          const ddl = doc.splitTextToSize(ddesc, usableW - 12);
-          doc.text(ddl[0], ML + 10, y + 4.5);
-          y += 7;
+          setFont(FS.small,'normal'); setTxt([30,30,30]);
+          doc.text(ddl, ML + 10, y + 4.5);
+          y += rowH + 0.5;
         });
         y += 2;
       }
@@ -5659,6 +5677,19 @@ async function buildEditablePDF() {
       const rows = document.getElementById(cardId)?.querySelectorAll('.inspect-row') || [];
       return rows[rowIdx]?.querySelectorAll('.pf-group')[grpIdx]?.querySelector('.pf-btn.selected')?.textContent?.trim() || '';
     };
+    // Returns [leftBoxVal, rightBoxVal] routing FAIL to the right box, PASS/other to the left
+    const pfBoxes = (cardId, rowIdx) => {
+      const rows = document.getElementById(cardId)?.querySelectorAll('.inspect-row') || [];
+      const grps = rows[rowIdx]?.querySelectorAll('.pf-group') || [];
+      const g0 = grps[0]?.querySelector('.pf-btn.selected')?.textContent?.trim() || '';
+      const g1 = grps.length >= 2 ? (grps[1]?.querySelector('.pf-btn.selected')?.textContent?.trim() || '') : null;
+      if (g1 !== null) {
+        // Two-group row (Present/Operational): left=present, right=operational
+        return [g0, g1];
+      }
+      // Single-group: PASS/YES/N/A → left, FAIL → right
+      return [g0 !== 'FAIL' ? g0 : '', g0 === 'FAIL' ? 'FAIL' : ''];
+    };
 
     // Collect device table rows
     const detRows=[], flowRows=[], tamperRows=[], spRows=[], batRows=[];
@@ -5918,7 +5949,7 @@ async function buildEditablePDF() {
       'AUDIBLE NOTIFICATION PRESENT? (TO INCLUDE BELLS, CHIMES, & HORNS & COMBOS)',
     ].forEach((lbl, i) => {
       checkPage(18);
-      const v1 = getPF('fa-av-card',i,0), v2 = getPF('fa-av-card',i,1);
+      const [v1, v2] = pfBoxes('fa-av-card', i);
       wrap(lbl,6.5,PW-84).forEach((l,li,arr) => page.drawText(l, { x:ML+2, y:ry(16)+(arr.length-1-li)*8+4, size:6.5, font:rFont, color:blk }));
       mkField(v1, ML+PW-80, ry(14)+1, 36, 12, false);
       mkField(v2, ML+PW-42, ry(14)+1, 36, 12, false);
@@ -5933,7 +5964,7 @@ async function buildEditablePDF() {
       'IF PRESENT - ALL DOOR RELEASE AND CLOSE AS INTENDED UPON ALARM ACTIVATION?',
     ].forEach((lbl, i) => {
       checkPage(18);
-      const v1 = getPF('fa-door-card',i,0), v2 = getPF('fa-door-card',i,1);
+      const [v1, v2] = pfBoxes('fa-door-card', i);
       wrap(lbl,6.5,PW-84).forEach((l,li,arr) => page.drawText(l, { x:ML+2, y:ry(16)+(arr.length-1-li)*8+4, size:6.5, font:rFont, color:blk }));
       mkField(v1, ML+PW-80, ry(14)+1, 36, 12, false);
       mkField(v2, ML+PW-42, ry(14)+1, 36, 12, false);
@@ -5944,7 +5975,7 @@ async function buildEditablePDF() {
     subHdr('HVAC CONTROL - ANNUAL ONLY');
     checkPage(18);
     {
-      const v1 = getPF('fa-hvac-card',0,0), v2 = getPF('fa-hvac-card',0,1);
+      const [v1, v2] = pfBoxes('fa-hvac-card', 0);
       page.drawText('HVAC SHUT DOWN PRESENT?', { x:ML+2, y:ry(16)+4, size:6.5, font:rFont, color:blk });
       mkField(v1, ML+PW-80, ry(14)+1, 36, 12, false);
       mkField(v2, ML+PW-42, ry(14)+1, 36, 12, false);
