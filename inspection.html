@@ -1343,7 +1343,6 @@ function startFireAlarmInspection() {
     const onStep = stepLabel[draft.currentFAStep] || draft.currentFAStep || 'Panel Info';
     if (confirm('A saved draft exists from ' + label + ' (last step: ' + onStep + ').\n\nResume where you left off?\n\nCancel to discard the draft and start fresh.')) {
       restoreDraft(draft);
-      // Show the step they were on (or panel if unknown)
       const resumeStep = draft.currentFAStep || 'panel';
       currentFAStep = resumeStep;
       const resumeEl = document.getElementById('step-fa-' + resumeStep);
@@ -1358,6 +1357,31 @@ function startFireAlarmInspection() {
     } else {
       clearDraft();
     }
+  } else if (accessToken) {
+    // localStorage was empty — check Drive for a backed-up draft
+    const key = draftKey();
+    loadDraftFromDrive(key).then(driveDraft => {
+      if (!driveDraft) return;
+      const saved = new Date(driveDraft.savedAt);
+      const label = saved.toLocaleDateString() + ' ' + saved.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      const stepLabel = { panel:'Panel Info', devices:'Devices', aux:'Aux Systems', defic:'Deficiency/Sign' };
+      const onStep = stepLabel[driveDraft.currentFAStep] || driveDraft.currentFAStep || 'Panel Info';
+      if (confirm('A draft backed up to Google Drive was found from ' + label + ' (last step: ' + onStep + ').\n\nLocal storage was empty — this was recovered from Drive.\n\nResume where you left off?')) {
+        // Restore to localStorage so subsequent saves work normally
+        try { localStorage.setItem(key, JSON.stringify(driveDraft)); } catch(_) {}
+        restoreDraft(driveDraft);
+        const resumeStep = driveDraft.currentFAStep || 'panel';
+        currentFAStep = resumeStep;
+        const resumeEl = document.getElementById('step-fa-' + resumeStep);
+        if (resumeEl) resumeEl.style.display = 'block';
+        document.querySelectorAll('#fa-step-nav .step-tab').forEach(t => {
+          t.classList.remove('active', 'done');
+          if (t.dataset.fstep === 'job') t.classList.add('done');
+          else if (t.dataset.fstep === resumeStep) t.classList.add('active');
+        });
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    }).catch(() => {});
   }
 
   // Restore previous inspection data typed fields + devices
@@ -3586,6 +3610,86 @@ function draftKey() {
   return 'flips_draft_' + propKey + '_' + (activeInspectionSystem || 'unknown');
 }
 
+// ─── DRIVE DRAFT BACKUP ───────────────────────────────────────────────────────
+// Saves draft to "FLPS Drafts" folder. Called in background after localStorage save.
+async function saveDraftToDrive(draft, key) {
+  if (!accessToken) return;
+  try {
+    const folderId = await findOrCreateFolder('FLPS Drafts', await getFlpsRootFolderId());
+    const q = `'${folderId}' in parents and appProperties has { key='flips_draft_key' and value='${key}' } and trashed=false`;
+    const listRes = await fetch(
+      `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q)}&supportsAllDrives=true&includeItemsFromAllDrives=true&fields=files(id)`,
+      { headers: { 'Authorization': 'Bearer ' + accessToken } }
+    );
+    const existingId = (await listRes.json()).files?.[0]?.id || null;
+    const propKey = key.replace('flips_draft_', '').replace(/_[^_]+$/, '');
+    const sysKey  = activeInspectionSystem || 'unknown';
+    const fileName = `FLPS_Draft_${propKey}_${sysKey}.json`;
+    const content  = JSON.stringify(draft, null, 2);
+    const uploaded = await driveUploadFile(fileName, 'application/json', content, folderId, existingId);
+    await fetch(`https://www.googleapis.com/drive/v3/files/${uploaded.id}?supportsAllDrives=true`, {
+      method: 'PATCH',
+      headers: { 'Authorization': 'Bearer ' + accessToken, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ appProperties: {
+        flips_draft_key:    key,
+        flips_draft_sys:    sysKey,
+        flips_draft_active: 'true',
+        flips_draft_saved:  draft.savedAt
+      }})
+    });
+    console.log('[Draft] Backed up to Drive:', fileName);
+  } catch(e) {
+    console.warn('[Draft] Drive backup failed:', e.message);
+  }
+}
+
+// Loads an active draft from Drive by key. Returns parsed draft or null.
+async function loadDraftFromDrive(key) {
+  if (!accessToken) return null;
+  try {
+    const folderId = await findOrCreateFolder('FLPS Drafts', await getFlpsRootFolderId());
+    const q = `'${folderId}' in parents and appProperties has { key='flips_draft_key' and value='${key}' } and appProperties has { key='flips_draft_active' and value='true' } and trashed=false`;
+    const listRes = await fetch(
+      `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q)}&supportsAllDrives=true&includeItemsFromAllDrives=true&fields=files(id,name)`,
+      { headers: { 'Authorization': 'Bearer ' + accessToken } }
+    );
+    const file = (await listRes.json()).files?.[0];
+    if (!file) return null;
+    const dlRes = await fetch(
+      `https://www.googleapis.com/drive/v3/files/${file.id}?alt=media&supportsAllDrives=true`,
+      { headers: { 'Authorization': 'Bearer ' + accessToken } }
+    );
+    if (!dlRes.ok) return null;
+    return await dlRes.json();
+  } catch(e) {
+    console.warn('[Draft] Drive load failed:', e.message);
+    return null;
+  }
+}
+
+// Marks a Drive draft as inactive (soft-delete — data stays indefinitely for recovery).
+async function clearDraftFromDrive(key) {
+  if (!accessToken) return;
+  try {
+    const folderId = await findOrCreateFolder('FLPS Drafts', await getFlpsRootFolderId());
+    const q = `'${folderId}' in parents and appProperties has { key='flips_draft_key' and value='${key}' } and trashed=false`;
+    const listRes = await fetch(
+      `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q)}&supportsAllDrives=true&includeItemsFromAllDrives=true&fields=files(id)`,
+      { headers: { 'Authorization': 'Bearer ' + accessToken } }
+    );
+    const fileId = (await listRes.json()).files?.[0]?.id;
+    if (!fileId) return;
+    await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?supportsAllDrives=true`, {
+      method: 'PATCH',
+      headers: { 'Authorization': 'Bearer ' + accessToken, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ appProperties: { flips_draft_active: 'false' } })
+    });
+    console.log('[Draft] Drive draft marked inactive');
+  } catch(e) {
+    console.warn('[Draft] Drive clear failed:', e.message);
+  }
+}
+
 function saveDraft() {
   if (!activeInspectionSystem) return;
   // Sync current input values into HTML attributes so innerHTML captures them
@@ -3609,22 +3713,41 @@ function saveDraft() {
   ['overall-status-val','general-notes','cust-sig-name','cust-sig-title','cust-sig-date','sig-name'].forEach(id => {
     step4Fields[id] = document.getElementById(id)?.value || '';
   });
+  // Notes tbody lives in step-4 (not in faSteps), capture separately
+  const notesHTML = document.getElementById('fa-notes-tbody')?.innerHTML || '';
+  // Photos (base64 dataURL + note text)
+  const photos = inspectionPhotos.map(p => ({ dataUrl: p.dataUrl, note: p.note }));
+  // Signature canvases → dataURL (only if drawn)
+  let sigData = null, custSigData = null;
+  try {
+    const sc = document.getElementById('sig-canvas');
+    if (sigHasData && sc) sigData = sc.toDataURL('image/png');
+    const cc = document.getElementById('cust-sig-canvas');
+    if (custSigHasData && cc) custSigData = cc.toDataURL('image/png');
+  } catch(_) {}
   const draft = {
     sysKey:      activeInspectionSystem,
     savedAt:     new Date().toISOString(),
     stepHTML,
     step4Fields,
+    notesHTML,
+    photos,
+    sigData,
+    custSigData,
     counters:    { faSubpanelCount, faDetectionCount, faFlowCount, faTamperCount, faBatteryCount, faDeficCount, faNoteCount },
     overallStatus,
     onsiteUnsat: Object.assign({}, _onsiteUnsat),
     currentFAStep
   };
+  const key = draftKey();
   try {
-    localStorage.setItem(draftKey(), JSON.stringify(draft));
+    localStorage.setItem(key, JSON.stringify(draft));
     toast('Draft saved');
   } catch(e) {
     toast('Save failed — storage full?');
   }
+  // Background Drive backup — does not block the UI
+  saveDraftToDrive(draft, key).catch(() => {});
 }
 
 function loadDraft() {
@@ -3632,7 +3755,9 @@ function loadDraft() {
 }
 
 function clearDraft() {
-  localStorage.removeItem(draftKey());
+  const key = draftKey();
+  localStorage.removeItem(key);
+  clearDraftFromDrive(key).catch(() => {});
 }
 
 function restoreDraft(draft) {
