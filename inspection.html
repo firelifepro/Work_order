@@ -1335,7 +1335,9 @@ function startFireAlarmInspection() {
   if (draft) {
     const saved = new Date(draft.savedAt);
     const label = saved.toLocaleDateString() + ' ' + saved.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    if (confirm('A saved draft exists from ' + label + '.\n\nResume where you left off?')) {
+    const stepLabel = { panel:'Panel Info', devices:'Devices', aux:'Aux Systems', defic:'Deficiency/Sign' };
+    const onStep = stepLabel[draft.currentFAStep] || draft.currentFAStep || 'Panel Info';
+    if (confirm('A saved draft exists from ' + label + ' (last step: ' + onStep + ').\n\nResume where you left off?\n\nCancel to discard the draft and start fresh.')) {
       restoreDraft(draft);
       // Show the step they were on (or panel if unknown)
       const resumeStep = draft.currentFAStep || 'panel';
@@ -5573,9 +5575,9 @@ async function buildEditablePDF() {
       page.drawRectangle({ x, y: fieldY, width: w, height: h, color: gold, borderColor: sky, borderWidth: 0.5 });
       const f = form.createTextField(fid());
       f.setText(String(val || ''));
-      f.setFontSize(8);
       if (multiline) f.enableMultiline();
-      f.addToPage(page, { x: x+1, y: fieldY+1, width: w-2, height: h-2 });
+      f.addToPage(page, { x: x+1, y: fieldY+1, width: w-2, height: h-2, font: rFont });
+      f.setFontSize(8);
     };
 
     // Draw a row of labeled fields and advance curY
@@ -5635,8 +5637,8 @@ async function buildEditablePDF() {
           page.drawRectangle({ x, y: ry(cellH), width: h.w, height: cellH, color: gold, borderColor: sky, borderWidth: 0.3 });
           const f = form.createTextField(fid());
           f.setText(String(row[i]||''));
+          f.addToPage(page, { x: x+1, y: ry(cellH)+1, width: h.w-2, height: cellH-2, font: rFont });
           f.setFontSize(7);
-          f.addToPage(page, { x: x+1, y: ry(cellH)+1, width: h.w-2, height: cellH-2 });
           x += h.w;
         });
         curY += cellH + 1;
@@ -5964,13 +5966,15 @@ async function buildEditablePDF() {
     page.drawRectangle({ x:ML, y:ry(sigH), width:sigW, height:sigH, color:lgray, borderColor:navy, borderWidth:0.5 });
     page.drawText('INSPECTOR SIGNATURE:', { x:ML+3, y:ry(sigH)+sigH-8, size:7, font:hFont, color:navy });
     const sf = form.createTextField(fid());
-    sf.setText(data.signature?.name||''); sf.setFontSize(9);
-    sf.addToPage(page, { x:ML+2, y:ry(sigH)+2, width:sigW-4, height:sigH-12 });
+    sf.setText(data.signature?.name||'');
+    sf.addToPage(page, { x:ML+2, y:ry(sigH)+2, width:sigW-4, height:sigH-12, font: rFont });
+    sf.setFontSize(9);
     page.drawRectangle({ x:ML+PW/2+10, y:ry(sigH), width:sigW, height:sigH, color:lgray, borderColor:navy, borderWidth:0.5 });
     page.drawText('CLIENT SIGNATURE:', { x:ML+PW/2+13, y:ry(sigH)+sigH-8, size:7, font:hFont, color:navy });
     const cf = form.createTextField(fid());
-    cf.setText(''); cf.setFontSize(9);
-    cf.addToPage(page, { x:ML+PW/2+12, y:ry(sigH)+2, width:sigW-4, height:sigH-12 });
+    cf.setText('');
+    cf.addToPage(page, { x:ML+PW/2+12, y:ry(sigH)+2, width:sigW-4, height:sigH-12, font: rFont });
+    cf.setFontSize(9);
     curY += sigH + 4;
     dataRow([
       { label:'INSPECTOR DATE', val: data.signature?.date || data.inspection?.date || '', w: PW/2 },
@@ -6109,6 +6113,17 @@ async function saveAndDownload() {
     setStatus2(`✓ Downloaded: ${filename}`, 'var(--green)');
     setStatus2('Upload to thecomplianceengine.com to complete reporting.', 'var(--slate)');
     toast('✓ Report saved & downloaded!');
+
+    // ── 7. Offer draft discard if a draft exists ───────────────────────────────
+    if (loadDraft()) {
+      if (statusEl) {
+        statusEl.insertAdjacentHTML('beforeend', `
+          <div style="margin-top:8px;padding:8px 10px;background:#fef3c7;border:1px solid #f59e0b;border-radius:6px;font-size:0.78rem;color:#92400e;display:flex;align-items:center;gap:10px;">
+            <span>💾 A saved draft exists for this inspection.</span>
+            <button onclick="clearDraft();this.closest('div').innerHTML='<span style=color:var(--green)>✓ Draft discarded</span>';" style="background:#f59e0b;color:white;border:none;border-radius:4px;padding:3px 10px;cursor:pointer;font-size:0.75rem;font-weight:600;font-family:inherit;">Discard Draft</button>
+          </div>`);
+      }
+    }
 
   } catch(e) {
     setStatus2('✗ Error: ' + e.message, 'var(--red)');
