@@ -5692,27 +5692,93 @@ async function buildEditablePDF() {
 
     // ── PAGE 1: Header + Property + NFPA ─────────────────────────────────────
     addPage();
-    page.drawRectangle({ x: ML, y: ry(34), width: PW, height: 34, color: navy });
-    page.drawText('FIRE ALARM INSPECTION REPORT', { x: ML+PW/2-96, y: ty(34,12), size: 14, font: hFont, color: white });
-    curY += 36;
 
-    dataRow([
-      { label: 'REPORT TYPE',          val: data.inspection?.reportType || '', w: PW/4 },
-      { label: 'DATE PERFORMED',        val: data.inspection?.date || '',       w: PW/4 },
-      { label: 'INSPECTOR',             val: data.inspection?.inspectorName || '', w: PW/4 },
-      { label: 'COMPANY',               val: data.inspection?.companyName || '', w: PW/4 },
-    ]);
-    gap(4);
+    // Load logo from favicon
+    let logoImg = null;
+    try {
+      const faviconEl = document.querySelector('link[rel="icon"]');
+      if (faviconEl?.href) {
+        const resp = await fetch(faviconEl.href);
+        const ab = await resp.arrayBuffer();
+        logoImg = await pdfDoc.embedPng(ab);
+      }
+    } catch(_) {}
+
+    // Red title banner
+    const FIRE_RED = rgb(0.72, 0.08, 0.08);
+    const titleH = 22;
+    page.drawRectangle({ x: ML, y: ry(titleH), width: PW, height: titleH, color: FIRE_RED });
+    page.drawText('FIRE ALARM INSPECTION REPORT', { x: ML+PW/2-97, y: ty(titleH,7), size: 13, font: hFont, color: white });
+    curY += titleH + 1;
+
+    // Info block: left=logo+company (315pt), right=report type+fields (225pt)
+    const iH = 88;
+    const divX = ML + 315;
+    const rcW = ML + PW - divX;
+
+    // Left background
+    page.drawRectangle({ x: ML, y: ry(iH), width: 313, height: iH, color: lgray, borderColor: sky, borderWidth: 0.5 });
+
+    // Logo
+    if (logoImg) {
+      const dims = logoImg.scaleToFit(55, 55);
+      page.drawImage(logoImg, { x: ML+4, y: ry(iH)+(iH-dims.height)/2, width: dims.width, height: dims.height });
+    }
+
+    // Company info text
+    const compX = ML + 63;
+    const compInfo = [
+      { t: 'Fire Life Protection System, Inc.', sz: 8.5, f: hFont },
+      { t: '8201 Shaffer Parkway Suit B.',        sz: 7.5, f: rFont },
+      { t: 'Littleton, CO 80127',                sz: 7.5, f: rFont },
+      { t: 'Cell: (303) 726-8847  |  Office: (720) 974-1570', sz: 7, f: rFont },
+      { t: 'Alan.antonio@firelifeprotectionsystems.com', sz: 7, f: rFont },
+    ];
+    let clY = ry(iH) + iH - 10;
+    compInfo.forEach(l => { page.drawText(l.t, { x: compX, y: clY, size: l.sz, font: l.f, color: navy }); clY -= l.sz + 4; });
+
+    // Right column: ANNUAL/SEMI-ANNUAL/QUARTERLY
+    const rtCur = (data.inspection?.reportType || '').toUpperCase();
+    const rtBoxH = 15;
+    const rtBW = rcW / 3;
+    ['ANNUAL','SEMI-ANNUAL','QUARTERLY'].forEach((t, i) => {
+      const sel = rtCur === t || (t === 'SEMI-ANNUAL' && (rtCur === 'SEMI ANNUAL' || rtCur.includes('SEMI')));
+      const bx = divX + i * rtBW;
+      page.drawRectangle({ x: bx, y: ry(iH)+iH-rtBoxH, width: rtBW-1, height: rtBoxH, color: sel ? rgb(1,0.85,0) : white, borderColor: sky, borderWidth: 0.5 });
+      page.drawText(t, { x: bx+3, y: ry(iH)+iH-rtBoxH+5, size: 6, font: hFont, color: sel ? rgb(0.4,0.25,0) : navy });
+    });
+
+    // Right column: job info fields
+    const jFields = [
+      ['JOB NUMBER', ''],
+      ['PO NUMBER (IF ANY)', ''],
+      ['DATE PERFORMED', data.inspection?.date || ''],
+      ['INSPECTOR(S) INITIALS', data.inspection?.inspectorName || ''],
+    ];
+    let jY = ry(iH) + iH - rtBoxH - 3;
+    jFields.forEach(([lbl, val]) => {
+      jY -= 7;
+      page.drawText(lbl, { x: divX+2, y: jY, size: 5.5, font: hFont, color: navy });
+      jY -= 10;
+      page.drawRectangle({ x: divX, y: jY, width: rcW, height: 10, color: gold, borderColor: sky, borderWidth: 0.3 });
+      const jf = form.createTextField(fid());
+      jf.setText(val); jf.addToPage(page, { x: divX+1, y: jY+1, width: rcW-2, height: 8, font: rFont }); jf.setFontSize(7);
+      jY -= 2;
+    });
+
+    curY += iH + 4;
+
+    // Property + contact info
     dataRow([{ label: 'BUILDING/PROPERTY NAME', val: data.property?.name || '', w: PW }]);
     dataRow([
-      { label: 'SERVICE ADDRESS',  val: data.property?.address || '', w: PW*0.6 },
+      { label: 'SERVICE ADDRESS',    val: data.property?.address || '',     w: PW*0.6 },
       { label: 'CITY / STATE / ZIP', val: data.property?.cityStateZip || '', w: PW*0.4 },
     ]);
     gap(6);
     subHdr('SITE CONTACT INFORMATION');
     dataRow([
-      { label: 'PRIMARY CONTACT NAME',  val: data.property?.contact || '', w: PW/2 },
-      { label: 'COMPANY',               val: data.property?.company || '', w: PW/2 },
+      { label: 'PRIMARY CONTACT NAME',  val: data.property?.contact || '',      w: PW/2 },
+      { label: 'COMPANY',               val: data.property?.company || '',       w: PW/2 },
     ]);
     dataRow([{ label: 'PRIMARY CONTACT EMAIL', val: data.property?.contactEmail || '', w: PW }]);
     gap(8);
