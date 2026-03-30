@@ -5895,8 +5895,16 @@ async function buildEditablePDF() {
     // ── PAGE 3: Device Testing Summary + On-Site Notes ────────────────────────
     addPage();
     secHdr('DEVICE/SIGNAL TESTING SUMMARY');
+    const PDF_FA_DEVICES = [
+      ['Smoke Detector','SD'],['Combo Smoke/CO2/Other','CBO'],['Heat Detector','HD'],
+      ['Manual Pull Station','PS'],['Duct Detector','DD'],['Beam Detector','BD'],
+      ['CO2 Detector','CO'],['Wet Flow Switch','FS'],['Dry Pressure Switch','PRS'],
+      ['Tamper Switch','TS'],['Low Air Switch','LA'],['High Air Switch','HA'],
+      ['Power Supply','PWR'],['Batteries','BAT'],['Annunciator','ANN'],
+      ['Elevator Recall Bank','ELV'],['Phone Jack','PJ'],['Fire Phone','FP'],['Other (Specify)',''],
+    ];
     const sumData = {};
-    FA_DEVICES.forEach((d, i) => {
+    PDF_FA_DEVICES.forEach((d, i) => {
       const id = 'fa-dev-' + i;
       sumData[d[1]] = {
         total:   document.getElementById(id+'-total')?.value || '',
@@ -5914,15 +5922,7 @@ async function buildEditablePDF() {
       {label:'PASS #',w:40},{label:'FAIL #',w:40},{label:'PASS %',w:40},{label:'FAIL %',w:40},
       {label:'NT',w:30},{label:'NF',w:30},{label:'NOTES',w:130},
     ]; // 540
-    const FA_DEVICES = [
-      ['Smoke Detector','SD'],['Combo Smoke/CO2/Other','CBO'],['Heat Detector','HD'],
-      ['Manual Pull Station','PS'],['Duct Detector','DD'],['Beam Detector','BD'],
-      ['CO2 Detector','CO'],['Wet Flow Switch','FS'],['Dry Pressure Switch','PRS'],
-      ['Tamper Switch','TS'],['Low Air Switch','LA'],['High Air Switch','HA'],
-      ['Power Supply','PWR'],['Batteries','BAT'],['Annunciator','ANN'],
-      ['Elevator Recall Bank','ELV'],['Phone Jack','PJ'],['Fire Phone','FP'],['Other (Specify)',''],
-    ];
-    table(sumCols, FA_DEVICES.map(([name,key]) => {
+    table(sumCols, PDF_FA_DEVICES.map(([name,key]) => {
       const d = sumData[key] || {};
       return [name,key,d.total||'',d.passN||'',d.failN||'',d.passPct||'',d.failPct||'',d.nt||'',d.nf||'',d.notes||''];
     }), 13);
