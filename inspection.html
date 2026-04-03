@@ -3788,6 +3788,31 @@ function restoreDraft(draft) {
   }
   // Restore _onsiteUnsat tracking
   Object.assign(_onsiteUnsat, draft.onsiteUnsat || {});
+  // Restore general notes tbody (lives in step-4, outside faSteps)
+  if (draft.notesHTML !== undefined) {
+    const el = document.getElementById('fa-notes-tbody');
+    if (el) el.innerHTML = draft.notesHTML;
+  }
+  // Restore photos
+  if (draft.photos?.length) {
+    inspectionPhotos.length = 0;
+    draft.photos.forEach(p => inspectionPhotos.push({ dataUrl: p.dataUrl, note: p.note || '' }));
+    renderPhotoGrid();
+  }
+  // Restore inspector signature canvas
+  if (draft.sigData) {
+    initSig();
+    const img = new Image();
+    img.onload = () => { if (sigCtx) { sigCtx.drawImage(img, 0, 0); sigHasData = true; } };
+    img.src = draft.sigData;
+  }
+  // Restore customer signature canvas
+  if (draft.custSigData) {
+    initCustSig();
+    const img = new Image();
+    img.onload = () => { if (custSigCtx) { custSigCtx.drawImage(img, 0, 0); custSigHasData = true; } };
+    img.src = draft.custSigData;
+  }
   // Rebuild item→panel map since innerHTML was replaced
   buildItemPanelMap();
   updateDeficiencySummary();
