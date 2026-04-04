@@ -3816,8 +3816,12 @@ function saveDraft() {
   ['overall-status-val','general-notes','cust-sig-name','cust-sig-title','cust-sig-date','sig-name'].forEach(id => {
     step4Fields[id] = document.getElementById(id)?.value || '';
   });
-  // Notes tbody lives in step-4 (not in faSteps), capture separately
-  const notesHTML = document.getElementById('fa-notes-tbody')?.innerHTML || '';
+  // Notes tbody lives in step-4 (not in faSteps) — sync input values before capturing innerHTML
+  const notesTbodyEl = document.getElementById('fa-notes-tbody');
+  if (notesTbodyEl) {
+    notesTbodyEl.querySelectorAll('input:not([type=button])').forEach(inp => inp.setAttribute('value', inp.value));
+  }
+  const notesHTML = notesTbodyEl?.innerHTML || '';
   // Photos (base64 dataURL + note text)
   const photos = inspectionPhotos.map(p => ({ dataUrl: p.dataUrl, note: p.note }));
   // Signature canvases → dataURL (only if drawn)
