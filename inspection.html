@@ -6528,10 +6528,12 @@ async function buildEditablePDFBytes() {
         page.drawRectangle({ x: px+2, y: ry(photoH)+photoH-14, width: 40, height: 12, color: rgb(0,0,0) });
         page.drawText('Photo ' + (i+1), { x: px+4, y: ry(photoH)+photoH-7, size: 7, font: hFont, color: white });
         // Note below photo
-        const noteLines = wrap(photo.note || 'No note', 7, photoW);
-        noteLines.forEach((l, li) => {
-          page.drawText(l, { x: px, y: ry(photoH) - 10 - li * 9, size: 7, font: rFont, color: blk });
-        });
+        if (photo.note) {
+          const noteLines = wrap(photo.note, 7, photoW);
+          noteLines.forEach((l, li) => {
+            page.drawText(l, { x: px, y: ry(photoH) - 10 - li * 9, size: 7, font: rFont, color: blk });
+          });
+        }
         col++;
         if (col >= 2) { col = 0; curY += photoH + 22; }
       }
