@@ -5929,11 +5929,11 @@ async function buildEditablePDF() {
     const dv = (id) => document.getElementById(id)?.value?.trim() || '';
     const fd = data.fieldData || {};
     const getYNA = (el) => {
-      if (!el) return '';
+      if (!el) return 'N/A';
       if (el.querySelector('.yna-btn.y.selected'))  return 'Y';
       if (el.querySelector('.yna-btn.n.selected'))  return 'N';
       if (el.querySelector('.yna-btn.na.selected')) return 'N/A';
-      return '';
+      return 'N/A';
     };
     const getPF = (cardId, rowIdx, grpIdx) => {
       const rows = document.getElementById(cardId)?.querySelectorAll('.inspect-row') || [];
@@ -6014,12 +6014,15 @@ async function buildEditablePDF() {
         const img = new Image();
         img.onload = () => {
           // SVG viewBox 0 0 400 600; shield+flame spans roughly top 440 units
-          const res = 200; // render at 200×200 for crisp embedding
+          // Crop source region x=30 y=0 w=340 h=440 (aspect 340:440 ≈ 17:22)
+          const srcX = 30, srcY = 0, srcW = 340, srcH = 440;
+          const scale = 2; // 2× for crispness
           const canvas = document.createElement('canvas');
-          canvas.width = res; canvas.height = res;
+          canvas.width  = Math.round(srcW * scale);
+          canvas.height = Math.round(srcH * scale);
           const ctx = canvas.getContext('2d');
-          // Crop: source region (x=35, y=35, w=330, h=410) → square canvas
-          ctx.drawImage(img, 35, 35, 330, 410, 0, 0, res, res);
+          // Draw SVG at full viewBox size (400×600) then crop via drawImage coordinates
+          ctx.drawImage(img, srcX, srcY, srcW, srcH, 0, 0, canvas.width, canvas.height);
           URL.revokeObjectURL(svgUrl);
           const dataUrl = canvas.toDataURL('image/png');
           const b64 = dataUrl.split(',')[1];
@@ -6033,7 +6036,7 @@ async function buildEditablePDF() {
 
     // Draw logo (transparent PNG — no background square needed)
     if (logoImg) {
-      const logoS = 60;
+      const logoS = 80;
       const dims  = logoImg.scaleToFit(logoS, logoS);
       page.drawImage(logoImg, {
         x: ML + 2,
