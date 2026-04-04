@@ -735,7 +735,7 @@ body { font-family: 'DM Sans', sans-serif; background: var(--light); color: var(
       </div>
     </div>
 
-    <div class="card">
+    <div class="card" id="fa-notes-card">
       <div class="card-header"><span class="icon">📝</span><span>General Notes &amp; Site Observations</span></div>
       <div class="card-body">
         <table class="dyn-table">
@@ -743,6 +743,17 @@ body { font-family: 'DM Sans', sans-serif; background: var(--light); color: var(
           <tbody id="fa-notes-tbody"></tbody>
         </table>
         <button class="add-row-btn" onclick="addFANoteRow()">+ Add Note</button>
+      </div>
+    </div>
+
+    <div class="card" id="sp-notes-card" style="display:none;">
+      <div class="card-header"><span class="icon">📝</span><span>General Notes &amp; Site Observations</span></div>
+      <div class="card-body">
+        <table class="dyn-table">
+          <thead><tr><th style="width:32px;">#</th><th>Note / Observation</th><th style="width:32px;"></th></tr></thead>
+          <tbody id="sp-notes-tbody"></tbody>
+        </table>
+        <button class="add-row-btn" onclick="addSPNoteRow()">+ Add Note</button>
       </div>
     </div>
 
@@ -1493,17 +1504,6 @@ body { font-family: 'DM Sans', sans-serif; background: var(--light); color: var(
       </div>
     </div>
 
-    <div class="card">
-      <div class="card-header"><span class="icon">📝</span><span>General Notes &amp; Site Observations</span></div>
-      <div class="card-body">
-        <table class="dyn-table">
-          <thead><tr><th style="width:32px;">#</th><th>Note / Observation</th><th style="width:32px;"></th></tr></thead>
-          <tbody id="sp-notes-tbody"></tbody>
-        </table>
-        <button class="add-row-btn" onclick="addSPNoteRow()">+ Add Note</button>
-      </div>
-    </div>
-
     <div class="btn-row">
       <button class="btn-secondary" onclick="goSPStep('drain')">← Drain Test</button>
       <button class="btn-primary" onclick="goSPStep('sign')">Next: Sign &amp; Export →</button>
@@ -1639,6 +1639,8 @@ function goFAStep(key) {
   // Show target — 'sign' reuses #step-4
   if (key === 'sign') {
     document.getElementById('step-4').style.display = 'block';
+    document.getElementById('fa-notes-card').style.display = 'block';
+    document.getElementById('sp-notes-card').style.display = 'none';
 
     const todayStr = todayMT();
     if (!document.getElementById('sig-date').value) document.getElementById('sig-date').value = todayStr;
@@ -1717,7 +1719,7 @@ function startFireAlarmInspection() {
 
 function _resumeFromDraft(draft) {
   restoreDraft(draft);
-  const resumeStep = draft.currentFAStep || 'panel';
+  const resumeStep = 'panel';
   currentFAStep = resumeStep;
   const resumeEl = document.getElementById('step-fa-' + resumeStep);
   if (resumeEl) resumeEl.style.display = 'block';
@@ -1783,6 +1785,8 @@ function goSPStep(key) {
 
   if (key === 'sign') {
     document.getElementById('step-4').style.display = 'block';
+    document.getElementById('fa-notes-card').style.display = 'none';
+    document.getElementById('sp-notes-card').style.display = 'block';
     const todayStr = todayMT();
     if (!document.getElementById('sig-date').value) document.getElementById('sig-date').value = todayStr;
     if (!document.getElementById('cust-sig-date').value) document.getElementById('cust-sig-date').value = todayStr;
@@ -1834,12 +1838,25 @@ function startSprinklerInspection() {
 function _continueSprinklerStart() {
   const prev = window._prevInspectionData;
   if (prev) {
-    // Restore config text fields only — skip hidden inputs (button groups) and pass/fail states
+    // Restore config text fields only — skip hidden inputs (button groups), number inputs, and pass/fail states
     Object.entries(prev.fieldData || {}).forEach(([elId, val]) => {
       const el = document.getElementById(elId);
-      if (!el || el.type === 'button' || el.type === 'hidden') return;
+      if (!el || el.type === 'button' || el.type === 'hidden' || el.type === 'number') return;
+      if (/^sp-dr-/.test(elId)) return; // drain fields handled separately below
       el.value = val;
     });
+    // Restore drain row locations from previous inspection (PSI values left blank)
+    let maxDrainN = 0;
+    const drainLocMap = {};
+    Object.entries(prev.fieldData || {}).forEach(([id, val]) => {
+      const m = id.match(/^sp-dr-loc-(\d+)$/);
+      if (m) { const n = parseInt(m[1]); if (n > maxDrainN) maxDrainN = n; drainLocMap[n] = val || ''; }
+    });
+    if (maxDrainN > 0) {
+      document.getElementById('sp-drain-tbody').innerHTML = '';
+      spDrainCount = 0;
+      for (let i = 1; i <= maxDrainN; i++) addSPDrainRow(drainLocMap[i] || '');
+    }
     // Note: pfStates intentionally NOT restored — new inspections start with blank selections
     toast('✓ Previous config loaded');
   }
@@ -1912,11 +1929,11 @@ function restoreSPDraft(draft) {
   });
   if (draft.spDeficHTML) { const el = document.getElementById('sp-defic-tbody'); if (el) el.innerHTML = draft.spDeficHTML; }
   if (draft.spNotesHTML) { const el = document.getElementById('sp-notes-tbody'); if (el) el.innerHTML = draft.spNotesHTML; }
-  if (draft.photos) { inspectionPhotos = draft.photos.map(p => ({...p})); renderPhotoGrid(); }
+  if (draft.photos) { inspectionPhotos.length = 0; draft.photos.forEach(p => inspectionPhotos.push({...p})); renderPhotoGrid(); }
   if (draft.sigData) { const sc = document.getElementById('sig-canvas'); if (sc) { const ctx = sc.getContext('2d'); const img = new Image(); img.onload = () => { ctx.drawImage(img,0,0); sigHasData = true; }; img.src = draft.sigData; } }
   if (draft.custSigData) { const cc = document.getElementById('cust-sig-canvas'); if (cc) { const ctx = cc.getContext('2d'); const img = new Image(); img.onload = () => { ctx.drawImage(img,0,0); custSigHasData = true; }; img.src = draft.custSigData; } }
   updateSPDeficiencySummary();
-  const resumeStep = draft.currentSPStep || 'overview';
+  const resumeStep = 'overview';
   currentSPStep = resumeStep;
   const resumeEl = document.getElementById('step-sp-' + resumeStep);
   if (resumeEl) resumeEl.style.display = 'block';
