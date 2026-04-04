@@ -483,6 +483,38 @@ body { font-family: 'DM Sans', sans-serif; background: var(--light); color: var(
     </div>
   </div>
 
+  <!-- ── SPRINKLER STEP NAV ── -->
+  <div id="sp-step-nav" style="display:none;">
+    <div class="step-tab done" data-sstep="property" onclick="exitSprinklerInspection('property')">
+      <span class="step-num">1</span><span class="step-check">✓</span>Property
+    </div>
+    <div class="step-tab done" data-sstep="systems" onclick="exitSprinklerInspection()">
+      <span class="step-num">2</span><span class="step-check">✓</span>Systems
+    </div>
+    <div class="step-tab active" data-sstep="overview" onclick="goSPStep('overview')">
+      <span class="step-num">3</span><span class="step-check">✓</span>Overview
+    </div>
+    <div class="step-tab" data-sstep="inspection" onclick="goSPStep('inspection')">
+      <span class="step-num">4</span><span class="step-check">✓</span>Inspection
+    </div>
+    <div class="step-tab" data-sstep="drain" onclick="goSPStep('drain')">
+      <span class="step-num">5</span><span class="step-check">✓</span>Drain Test
+    </div>
+    <div class="step-tab" data-sstep="defic" onclick="goSPStep('defic')">
+      <span class="step-num">6</span><span class="step-check">✓</span>Deficiencies
+    </div>
+    <div class="step-tab" data-sstep="sign" onclick="goSPStep('sign')">
+      <span class="step-num">7</span><span class="step-check">✓</span>Sign &amp; Export
+    </div>
+  </div>
+  <!-- ── SPRINKLER ACTIVE BANNER ── -->
+  <div id="sp-active-banner" style="display:none;background:#0369a1;color:white;padding:10px 16px;border-radius:8px;margin-bottom:14px;font-weight:700;font-size:.9rem;">
+    <div style="display:flex;align-items:center;gap:10px;">
+      <span style="flex:1;">💧 Inspecting: Sprinkler System (NFPA 25)</span>
+      <button onclick="saveDraft()" style="background:rgba(0,0,0,0.2);border:1px solid rgba(255,255,255,0.4);color:white;padding:4px 10px;border-radius:5px;cursor:pointer;font-size:0.72rem;font-weight:600;font-family:inherit;white-space:nowrap;">💾 Save Draft</button>
+    </div>
+  </div>
+
   <!-- ══ STEP 1: PROPERTY ══ -->
   <div id="step-1">
     <div class="card">
@@ -1191,6 +1223,292 @@ body { font-family: 'DM Sans', sans-serif; background: var(--light); color: var(
     </div>
   </div>
 
+
+  <!-- ══ SPRINKLER STEP 1: OVERVIEW ══ -->
+  <div id="step-sp-overview" style="display:none;">
+
+    <div class="card">
+      <div class="card-header"><span class="icon">📋</span><span>Report Type</span></div>
+      <div class="card-body">
+        <div class="overall-status-group">
+          <button class="ost-btn annual selected" id="sp-rt-annual" onclick="setSPReportType('Annual',this)">Annual<br><small style="font-weight:400;font-size:.7rem;">Full annual inspection</small></button>
+          <button class="ost-btn semi" id="sp-rt-semi" onclick="setSPReportType('Semi-Annual',this)">Semi Annual<br><small style="font-weight:400;font-size:.7rem;">6-month inspection</small></button>
+          <button class="ost-btn" id="sp-rt-quarterly" onclick="setSPReportType('Quarterly',this)">Quarterly<br><small style="font-weight:400;font-size:.7rem;">3-month inspection</small></button>
+        </div>
+        <input type="hidden" id="sp-report-type" value="Annual">
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><span class="icon">💧</span><span>Sprinkler System Configuration</span></div>
+      <div class="card-body">
+        <div class="data-row cols-3">
+          <div class="data-field"><label>System Type</label>
+            <select id="sp-type"><option>Wet Pipe</option><option>Dry Pipe</option><option>Pre-Action</option><option>Deluge</option><option>Foam-Water</option><option>Glycol</option><option>Nitrogen-Filled</option></select>
+          </div>
+          <div class="data-field"><label>Manufacturer / Make</label><input type="text" id="sp-mfr"></div>
+          <div class="data-field"><label>Year Installed</label><input type="number" id="sp-year"></div>
+        </div>
+        <div class="data-row cols-3">
+          <div class="data-field"><label>Total # of Sprinkler Heads</label><input type="number" id="sp-heads"></div>
+          <div class="data-field"><label>Coverage Area (sq ft)</label><input type="number" id="sp-coverage"></div>
+          <div class="data-field"><label>Hazard Classification</label><input type="text" id="sp-hazard"></div>
+        </div>
+        <div class="data-row cols-3">
+          <div class="data-field"><label>Water Supply Source</label><input type="text" id="sp-water-src"></div>
+          <div class="data-field"><label>Static Pressure (PSI)</label><input type="number" id="sp-static-psi"></div>
+          <div class="data-field"><label>Residual Pressure (PSI)</label><input type="number" id="sp-residual-psi"></div>
+        </div>
+        <div class="data-row cols-2">
+          <div class="data-field"><label>Onsite Sprinkler Head Types / Models</label><input type="text" id="sp-head-types"></div>
+          <div class="data-field"><label>Job Number</label><input type="text" id="sp-job-num"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><span class="icon">📊</span><span>Existing Sprinkler Systems Overview</span></div>
+      <div class="card-body" style="overflow-x:auto;">
+        <table class="dyn-table">
+          <thead><tr><th>Question</th><th style="width:55px;">Y/N/NA</th><th style="width:40px;">#</th><th style="width:70px;">Inspecting?</th><th>Locations / Notes</th></tr></thead>
+          <tbody>
+            <tr><td>Wet System(s) Present?</td><td><select id="sp-ov-wet-yn"><option value="">—</option><option>Y</option><option>N</option><option>N/A</option></select></td><td><input type="number" id="sp-ov-wet-cnt"></td><td><select id="sp-ov-wet-insp"><option value="">—</option><option>Y</option><option>N</option></select></td><td><input type="text" id="sp-ov-wet-loc"></td></tr>
+            <tr><td>Dry System(s) Present?</td><td><select id="sp-ov-dry-yn"><option value="">—</option><option>Y</option><option>N</option><option>N/A</option></select></td><td><input type="number" id="sp-ov-dry-cnt"></td><td><select id="sp-ov-dry-insp"><option value="">—</option><option>Y</option><option>N</option></select></td><td><input type="text" id="sp-ov-dry-loc"></td></tr>
+            <tr><td>Fire Pump(s) Present?</td><td><select id="sp-ov-pump-yn"><option value="">—</option><option>Y</option><option>N</option><option>N/A</option></select></td><td><input type="number" id="sp-ov-pump-cnt"></td><td><select id="sp-ov-pump-insp"><option value="">—</option><option>Y</option><option>N</option></select></td><td><input type="text" id="sp-ov-pump-loc"></td></tr>
+            <tr><td>Test Header(s) Present?</td><td><select id="sp-ov-hdr-yn"><option value="">—</option><option>Y</option><option>N</option><option>N/A</option></select></td><td><input type="number" id="sp-ov-hdr-cnt"></td><td><select id="sp-ov-hdr-insp"><option value="">—</option><option>Y</option><option>N</option></select></td><td><input type="text" id="sp-ov-hdr-loc"></td></tr>
+            <tr><td>FDC Present?</td><td><select id="sp-ov-fdc-yn"><option value="">—</option><option>Y</option><option>N</option><option>N/A</option></select></td><td><input type="number" id="sp-ov-fdc-cnt"></td><td><select id="sp-ov-fdc-insp"><option value="">—</option><option>Y</option><option>N</option></select></td><td><input type="text" id="sp-ov-fdc-loc"></td></tr>
+            <tr><td>PRV Valve(s) Present?</td><td><select id="sp-ov-prv-yn"><option value="">—</option><option>Y</option><option>N</option><option>N/A</option></select></td><td><input type="number" id="sp-ov-prv-cnt"></td><td><select id="sp-ov-prv-insp"><option value="">—</option><option>Y</option><option>N</option></select></td><td><input type="text" id="sp-ov-prv-loc"></td></tr>
+            <tr><td>Antifreeze System(s) Present?</td><td><select id="sp-ov-af-yn"><option value="">—</option><option>Y</option><option>N</option><option>N/A</option></select></td><td><input type="number" id="sp-ov-af-cnt"></td><td><select id="sp-ov-af-insp"><option value="">—</option><option>Y</option><option>N</option></select></td><td><input type="text" id="sp-ov-af-loc"></td></tr>
+            <tr><td>Standpipe(s) Present?</td><td><select id="sp-ov-standp-yn"><option value="">—</option><option>Y</option><option>N</option><option>N/A</option></select></td><td><input type="number" id="sp-ov-standp-cnt"></td><td><select id="sp-ov-standp-insp"><option value="">—</option><option>Y</option><option>N</option></select></td><td><input type="text" id="sp-ov-standp-loc"></td></tr>
+            <tr><td>Deluge Valve(s) Present?</td><td><select id="sp-ov-del-yn"><option value="">—</option><option>Y</option><option>N</option><option>N/A</option></select></td><td><input type="number" id="sp-ov-del-cnt"></td><td><select id="sp-ov-del-insp"><option value="">—</option><option>Y</option><option>N</option></select></td><td><input type="text" id="sp-ov-del-loc"></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><span class="icon">📅</span><span>3 &amp; 5 Year — Previous Inspection Year (If Applicable)</span></div>
+      <div class="card-body" style="overflow-x:auto;">
+        <table class="dyn-table">
+          <thead><tr><th>Service</th><th style="width:70px;">Applicable?</th><th style="width:90px;">Last Year Performed</th><th style="width:80px;">Next Year Due</th><th style="width:70px;">Inspecting Now?</th><th>Location / Notes</th></tr></thead>
+          <tbody>
+            <tr><td>Dry Valve (3 Year Full Trip)</td><td><select id="sp-35-dv-app"><option value="">—</option><option>Y</option><option>N</option><option>N/A</option></select></td><td><input type="text" id="sp-35-dv-last"></td><td><input type="text" id="sp-35-dv-next"></td><td><select id="sp-35-dv-insp"><option value="">—</option><option>Y</option><option>N</option></select></td><td><input type="text" id="sp-35-dv-loc"></td></tr>
+            <tr><td>Roof Top Flow (5 Year)</td><td><select id="sp-35-rt-app"><option value="">—</option><option>Y</option><option>N</option><option>N/A</option></select></td><td><input type="text" id="sp-35-rt-last"></td><td><input type="text" id="sp-35-rt-next"></td><td><select id="sp-35-rt-insp"><option value="">—</option><option>Y</option><option>N</option></select></td><td><input type="text" id="sp-35-rt-loc"></td></tr>
+            <tr><td>FDC Hydrostatic (5 Year)</td><td><select id="sp-35-fdc-app"><option value="">—</option><option>Y</option><option>N</option><option>N/A</option></select></td><td><input type="text" id="sp-35-fdc-last"></td><td><input type="text" id="sp-35-fdc-next"></td><td><select id="sp-35-fdc-insp"><option value="">—</option><option>Y</option><option>N</option></select></td><td><input type="text" id="sp-35-fdc-loc"></td></tr>
+            <tr><td>Internal Piping (5 Year)</td><td><select id="sp-35-ip-app"><option value="">—</option><option>Y</option><option>N</option><option>N/A</option></select></td><td><input type="text" id="sp-35-ip-last"></td><td><input type="text" id="sp-35-ip-next"></td><td><select id="sp-35-ip-insp"><option value="">—</option><option>Y</option><option>N</option></select></td><td><input type="text" id="sp-35-ip-loc"></td></tr>
+            <tr><td>Standpipe (5 Year)</td><td><select id="sp-35-standp-app"><option value="">—</option><option>Y</option><option>N</option><option>N/A</option></select></td><td><input type="text" id="sp-35-standp-last"></td><td><input type="text" id="sp-35-standp-next"></td><td><select id="sp-35-standp-insp"><option value="">—</option><option>Y</option><option>N</option></select></td><td><input type="text" id="sp-35-standp-loc"></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn-secondary" onclick="exitSprinklerInspection()">← Systems</button>
+      <button class="btn-primary" onclick="goSPStep('inspection')">Next: Inspection →</button>
+    </div>
+  </div>
+
+  <!-- ══ SPRINKLER STEP 2: INSPECTION ══ -->
+  <div id="step-sp-inspection" style="display:none;">
+
+    <div class="card">
+      <div class="card-header"><span class="icon">🔍</span><span>Pre-Inspection General Questions</span></div>
+      <div class="card-body">
+        <table class="dyn-table">
+          <thead><tr><th>Question</th><th style="width:55px;">Y</th><th style="width:55px;">N</th><th style="width:70px;">Unknown</th></tr></thead>
+          <tbody>
+            <tr><td>Is the building occupied?</td><td><select id="sp-pre-occupied"><option value="">—</option><option>Y</option><option>N</option><option>Unknown</option></select></td><td></td><td></td></tr>
+            <tr><td>Has the occupancy classification and hazard or contents remained the same since last inspection?</td><td><select id="sp-pre-occ-same"><option value="">—</option><option>Y</option><option>N</option><option>Unknown</option></select></td><td></td><td></td></tr>
+            <tr><td>All fire protection systems in service?</td><td><select id="sp-pre-in-svc"><option value="">—</option><option>Y</option><option>N</option><option>Unknown</option></select></td><td></td><td></td></tr>
+            <tr><td>Has the system remained in service without modification since the last inspection?</td><td><select id="sp-pre-no-mod"><option value="">—</option><option>Y</option><option>N</option><option>Unknown</option></select></td><td></td><td></td></tr>
+            <tr><td>Was the system free of actuation of devices or alarms since the last inspection?</td><td><select id="sp-pre-no-alarm"><option value="">—</option><option>Y</option><option>N</option><option>Unknown</option></select></td><td></td><td></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><span class="icon">🔗</span><span>Pre-Inspection Fire Dept Connections</span></div>
+      <div class="card-body">
+        <div class="inspect-row" id="row-sp-fdc-visible" data-val=""><div class="inspect-row-top"><div class="inspect-label">FDC connections visible and accessible?</div><div class="pf-group"><button class="pf-btn pass" onclick="setSPPF(this,'sp-fdc-visible','PASS')">PASS</button><button class="pf-btn fail" onclick="setSPPF(this,'sp-fdc-visible','FAIL')">FAIL</button><button class="pf-btn na" onclick="setSPPF(this,'sp-fdc-visible','N/A')">N/A</button></div></div><div class="deficiency-row" id="sp-defic-row-sp-fdc-visible"><input type="text" id="sp-defic-note-sp-fdc-visible" placeholder="Describe deficiency…"></div></div>
+        <div class="inspect-row" id="row-sp-fdc-couplings" data-val=""><div class="inspect-row-top"><div class="inspect-label">Couplings/swivels in good condition?</div><div class="pf-group"><button class="pf-btn pass" onclick="setSPPF(this,'sp-fdc-couplings','PASS')">PASS</button><button class="pf-btn fail" onclick="setSPPF(this,'sp-fdc-couplings','FAIL')">FAIL</button><button class="pf-btn na" onclick="setSPPF(this,'sp-fdc-couplings','N/A')">N/A</button></div></div><div class="deficiency-row" id="sp-defic-row-sp-fdc-couplings"><input type="text" id="sp-defic-note-sp-fdc-couplings" placeholder="Describe deficiency…"></div></div>
+        <div class="inspect-row" id="row-sp-fdc-caps" data-val=""><div class="inspect-row-top"><div class="inspect-label">FDC plugs/caps in place and undamaged?</div><div class="pf-group"><button class="pf-btn pass" onclick="setSPPF(this,'sp-fdc-caps','PASS')">PASS</button><button class="pf-btn fail" onclick="setSPPF(this,'sp-fdc-caps','FAIL')">FAIL</button><button class="pf-btn na" onclick="setSPPF(this,'sp-fdc-caps','N/A')">N/A</button></div></div><div class="deficiency-row" id="sp-defic-row-sp-fdc-caps"><input type="text" id="sp-defic-note-sp-fdc-caps" placeholder="Describe deficiency…"></div></div>
+        <div class="inspect-row" id="row-sp-fdc-gaskets" data-val=""><div class="inspect-row-top"><div class="inspect-label">FDC gaskets in place and undamaged?</div><div class="pf-group"><button class="pf-btn pass" onclick="setSPPF(this,'sp-fdc-gaskets','PASS')">PASS</button><button class="pf-btn fail" onclick="setSPPF(this,'sp-fdc-gaskets','FAIL')">FAIL</button><button class="pf-btn na" onclick="setSPPF(this,'sp-fdc-gaskets','N/A')">N/A</button></div></div><div class="deficiency-row" id="sp-defic-row-sp-fdc-gaskets"><input type="text" id="sp-defic-note-sp-fdc-gaskets" placeholder="Describe deficiency…"></div></div>
+        <div class="inspect-row" id="row-sp-fdc-sign" data-val=""><div class="inspect-row-top"><div class="inspect-label">FDC identification sign(s) in place?</div><div class="pf-group"><button class="pf-btn pass" onclick="setSPPF(this,'sp-fdc-sign','PASS')">PASS</button><button class="pf-btn fail" onclick="setSPPF(this,'sp-fdc-sign','FAIL')">FAIL</button><button class="pf-btn na" onclick="setSPPF(this,'sp-fdc-sign','N/A')">N/A</button></div></div><div class="deficiency-row" id="sp-defic-row-sp-fdc-sign"><input type="text" id="sp-defic-note-sp-fdc-sign" placeholder="Describe deficiency…"></div></div>
+        <div class="inspect-row" id="row-sp-fdc-check" data-val=""><div class="inspect-row-top"><div class="inspect-label">Check valves not leaking?</div><div class="pf-group"><button class="pf-btn pass" onclick="setSPPF(this,'sp-fdc-check','PASS')">PASS</button><button class="pf-btn fail" onclick="setSPPF(this,'sp-fdc-check','FAIL')">FAIL</button><button class="pf-btn na" onclick="setSPPF(this,'sp-fdc-check','N/A')">N/A</button></div></div><div class="deficiency-row" id="sp-defic-row-sp-fdc-check"><input type="text" id="sp-defic-note-sp-fdc-check" placeholder="Describe deficiency…"></div></div>
+        <div class="inspect-row" id="row-sp-fdc-drain" data-val=""><div class="inspect-row-top"><div class="inspect-label">Automatic drain valve in place and operating?</div><div class="pf-group"><button class="pf-btn pass" onclick="setSPPF(this,'sp-fdc-drain','PASS')">PASS</button><button class="pf-btn fail" onclick="setSPPF(this,'sp-fdc-drain','FAIL')">FAIL</button><button class="pf-btn na" onclick="setSPPF(this,'sp-fdc-drain','N/A')">N/A</button></div></div><div class="deficiency-row" id="sp-defic-row-sp-fdc-drain"><input type="text" id="sp-defic-note-sp-fdc-drain" placeholder="Describe deficiency…"></div></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><span class="icon">🔧</span><span>Valves / Gages</span></div>
+      <div class="card-body">
+        <div class="inspect-row" id="row-sp-cv-supervised" data-val=""><div class="inspect-row-top"><div class="inspect-label">Control valves supervised/chained?</div><div class="pf-group"><button class="pf-btn pass" onclick="setSPPF(this,'sp-cv-supervised','PASS')">PASS</button><button class="pf-btn fail" onclick="setSPPF(this,'sp-cv-supervised','FAIL')">FAIL</button><button class="pf-btn na" onclick="setSPPF(this,'sp-cv-supervised','N/A')">N/A</button></div></div><div class="deficiency-row" id="sp-defic-row-sp-cv-supervised"><input type="text" id="sp-defic-note-sp-cv-supervised" placeholder="Describe deficiency…"></div></div>
+        <div class="inspect-row" id="row-sp-bfv-position" data-val=""><div class="inspect-row-top"><div class="inspect-label">Backflow valves in correct position?</div><div class="pf-group"><button class="pf-btn pass" onclick="setSPPF(this,'sp-bfv-position','PASS')">PASS</button><button class="pf-btn fail" onclick="setSPPF(this,'sp-bfv-position','FAIL')">FAIL</button><button class="pf-btn na" onclick="setSPPF(this,'sp-bfv-position','N/A')">N/A</button></div></div><div class="deficiency-row" id="sp-defic-row-sp-bfv-position"><input type="text" id="sp-defic-note-sp-bfv-position" placeholder="Describe deficiency…"></div></div>
+        <div class="inspect-row" id="row-sp-bfv-sealed" data-val=""><div class="inspect-row-top"><div class="inspect-label">Backflow valves sealed, locked or supervised and accessible?</div><div class="pf-group"><button class="pf-btn pass" onclick="setSPPF(this,'sp-bfv-sealed','PASS')">PASS</button><button class="pf-btn fail" onclick="setSPPF(this,'sp-bfv-sealed','FAIL')">FAIL</button><button class="pf-btn na" onclick="setSPPF(this,'sp-bfv-sealed','N/A')">N/A</button></div></div><div class="deficiency-row" id="sp-defic-row-sp-bfv-sealed"><input type="text" id="sp-defic-note-sp-bfv-sealed" placeholder="Describe deficiency…"></div></div>
+        <div class="inspect-row" id="row-sp-bfv-leaks" data-val=""><div class="inspect-row-top"><div class="inspect-label">Backflow valves free of leaks?</div><div class="pf-group"><button class="pf-btn pass" onclick="setSPPF(this,'sp-bfv-leaks','PASS')">PASS</button><button class="pf-btn fail" onclick="setSPPF(this,'sp-bfv-leaks','FAIL')">FAIL</button><button class="pf-btn na" onclick="setSPPF(this,'sp-bfv-leaks','N/A')">N/A</button></div></div><div class="deficiency-row" id="sp-defic-row-sp-bfv-leaks"><input type="text" id="sp-defic-note-sp-bfv-leaks" placeholder="Describe deficiency…"></div></div>
+        <div class="inspect-row" id="row-sp-bfv-test" data-val=""><div class="inspect-row-top"><div class="inspect-label">Backflow valve devices passed test?</div><div class="pf-group"><button class="pf-btn pass" onclick="setSPPF(this,'sp-bfv-test','PASS')">PASS</button><button class="pf-btn fail" onclick="setSPPF(this,'sp-bfv-test','FAIL')">FAIL</button><button class="pf-btn na" onclick="setSPPF(this,'sp-bfv-test','N/A')">N/A</button></div></div><div class="deficiency-row" id="sp-defic-row-sp-bfv-test"><input type="text" id="sp-defic-note-sp-bfv-test" placeholder="Describe deficiency…"></div></div>
+        <div class="inspect-row" id="row-sp-gauges-cond" data-val=""><div class="inspect-row-top"><div class="inspect-label">Gauges good condition / within age?</div><div class="pf-group"><button class="pf-btn pass" onclick="setSPPF(this,'sp-gauges-cond','PASS')">PASS</button><button class="pf-btn fail" onclick="setSPPF(this,'sp-gauges-cond','FAIL')">FAIL</button><button class="pf-btn na" onclick="setSPPF(this,'sp-gauges-cond','N/A')">N/A</button></div></div><div class="deficiency-row" id="sp-defic-row-sp-gauges-cond"><input type="text" id="sp-defic-note-sp-gauges-cond" placeholder="Describe deficiency…"></div></div>
+        <div class="inspect-row" id="row-sp-gauges-pressure" data-val=""><div class="inspect-row-top"><div class="inspect-label">Gauges showing normal pressure?</div><div class="pf-group"><button class="pf-btn pass" onclick="setSPPF(this,'sp-gauges-pressure','PASS')">PASS</button><button class="pf-btn fail" onclick="setSPPF(this,'sp-gauges-pressure','FAIL')">FAIL</button><button class="pf-btn na" onclick="setSPPF(this,'sp-gauges-pressure','N/A')">N/A</button></div></div><div class="deficiency-row" id="sp-defic-row-sp-gauges-pressure"><input type="text" id="sp-defic-note-sp-gauges-pressure" placeholder="Describe deficiency…"></div></div>
+        <div class="inspect-row" id="row-sp-prv-open" data-val=""><div class="inspect-row-top"><div class="inspect-label">PRV valves open position / not leaking?</div><div class="pf-group"><button class="pf-btn pass" onclick="setSPPF(this,'sp-prv-open','PASS')">PASS</button><button class="pf-btn fail" onclick="setSPPF(this,'sp-prv-open','FAIL')">FAIL</button><button class="pf-btn na" onclick="setSPPF(this,'sp-prv-open','N/A')">N/A</button></div></div><div class="deficiency-row" id="sp-defic-row-sp-prv-open"><input type="text" id="sp-defic-note-sp-prv-open" placeholder="Describe deficiency…"></div></div>
+        <div class="inspect-row" id="row-sp-prv-handles" data-val=""><div class="inspect-row-top"><div class="inspect-label">PRV valve handles in good condition?</div><div class="pf-group"><button class="pf-btn pass" onclick="setSPPF(this,'sp-prv-handles','PASS')">PASS</button><button class="pf-btn fail" onclick="setSPPF(this,'sp-prv-handles','FAIL')">FAIL</button><button class="pf-btn na" onclick="setSPPF(this,'sp-prv-handles','N/A')">N/A</button></div></div><div class="deficiency-row" id="sp-defic-row-sp-prv-handles"><input type="text" id="sp-defic-note-sp-prv-handles" placeholder="Describe deficiency…"></div></div>
+        <div class="inspect-row" id="row-sp-nameplate" data-val=""><div class="inspect-row-top"><div class="inspect-label">Hydraulic nameplate securely attached to riser and legible?</div><div class="pf-group"><button class="pf-btn pass" onclick="setSPPF(this,'sp-nameplate','PASS')">PASS</button><button class="pf-btn fail" onclick="setSPPF(this,'sp-nameplate','FAIL')">FAIL</button><button class="pf-btn na" onclick="setSPPF(this,'sp-nameplate','N/A')">N/A</button></div></div><div class="deficiency-row" id="sp-defic-row-sp-nameplate"><input type="text" id="sp-defic-note-sp-nameplate" placeholder="Describe deficiency…"></div></div>
+        <div class="inspect-row" id="row-sp-signage" data-val=""><div class="inspect-row-top"><div class="inspect-label">Devices, risers, rooms have signage?</div><div class="pf-group"><button class="pf-btn pass" onclick="setSPPF(this,'sp-signage','PASS')">PASS</button><button class="pf-btn fail" onclick="setSPPF(this,'sp-signage','FAIL')">FAIL</button><button class="pf-btn na" onclick="setSPPF(this,'sp-signage','N/A')">N/A</button></div></div><div class="deficiency-row" id="sp-defic-row-sp-signage"><input type="text" id="sp-defic-note-sp-signage" placeholder="Describe deficiency…"></div></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><span class="icon">🪝</span><span>Visible Pipe</span></div>
+      <div class="card-body">
+        <div class="inspect-row" id="row-sp-pipe-cond" data-val=""><div class="inspect-row-top"><div class="inspect-label">Good condition / no external corrosion?</div><div class="pf-group"><button class="pf-btn pass" onclick="setSPPF(this,'sp-pipe-cond','PASS')">PASS</button><button class="pf-btn fail" onclick="setSPPF(this,'sp-pipe-cond','FAIL')">FAIL</button><button class="pf-btn na" onclick="setSPPF(this,'sp-pipe-cond','N/A')">N/A</button></div></div><div class="deficiency-row" id="sp-defic-row-sp-pipe-cond"><input type="text" id="sp-defic-note-sp-pipe-cond" placeholder="Describe deficiency…"></div></div>
+        <div class="inspect-row" id="row-sp-pipe-damage" data-val=""><div class="inspect-row-top"><div class="inspect-label">Free of mechanical damage / not leaking?</div><div class="pf-group"><button class="pf-btn pass" onclick="setSPPF(this,'sp-pipe-damage','PASS')">PASS</button><button class="pf-btn fail" onclick="setSPPF(this,'sp-pipe-damage','FAIL')">FAIL</button><button class="pf-btn na" onclick="setSPPF(this,'sp-pipe-damage','N/A')">N/A</button></div></div><div class="deficiency-row" id="sp-defic-row-sp-pipe-damage"><input type="text" id="sp-defic-note-sp-pipe-damage" placeholder="Describe deficiency…"></div></div>
+        <div class="inspect-row" id="row-sp-pipe-aligned" data-val=""><div class="inspect-row-top"><div class="inspect-label">Properly aligned / no external loads?</div><div class="pf-group"><button class="pf-btn pass" onclick="setSPPF(this,'sp-pipe-aligned','PASS')">PASS</button><button class="pf-btn fail" onclick="setSPPF(this,'sp-pipe-aligned','FAIL')">FAIL</button><button class="pf-btn na" onclick="setSPPF(this,'sp-pipe-aligned','N/A')">N/A</button></div></div><div class="deficiency-row" id="sp-defic-row-sp-pipe-aligned"><input type="text" id="sp-defic-note-sp-pipe-aligned" placeholder="Describe deficiency…"></div></div>
+        <div class="inspect-row" id="row-sp-hangers-cond" data-val=""><div class="inspect-row-top"><div class="inspect-label">Visible hangers/braces not damaged?</div><div class="pf-group"><button class="pf-btn pass" onclick="setSPPF(this,'sp-hangers-cond','PASS')">PASS</button><button class="pf-btn fail" onclick="setSPPF(this,'sp-hangers-cond','FAIL')">FAIL</button><button class="pf-btn na" onclick="setSPPF(this,'sp-hangers-cond','N/A')">N/A</button></div></div><div class="deficiency-row" id="sp-defic-row-sp-hangers-cond"><input type="text" id="sp-defic-note-sp-hangers-cond" placeholder="Describe deficiency…"></div></div>
+        <div class="inspect-row" id="row-sp-pipe-heat" data-val=""><div class="inspect-row-top"><div class="inspect-label">Adequate heat in areas with wet piping?</div><div class="pf-group"><button class="pf-btn pass" onclick="setSPPF(this,'sp-pipe-heat','PASS')">PASS</button><button class="pf-btn fail" onclick="setSPPF(this,'sp-pipe-heat','FAIL')">FAIL</button><button class="pf-btn na" onclick="setSPPF(this,'sp-pipe-heat','N/A')">N/A</button></div></div><div class="deficiency-row" id="sp-defic-row-sp-pipe-heat"><input type="text" id="sp-defic-note-sp-pipe-heat" placeholder="Describe deficiency…"></div></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><span class="icon">🌊</span><span>Sprinkler Heads / Components</span></div>
+      <div class="card-body">
+        <div class="inspect-row" id="row-sp-head-box" data-val=""><div class="inspect-row-top"><div class="inspect-label">Spare head box present?</div><div class="pf-group"><button class="pf-btn pass" onclick="setSPPF(this,'sp-head-box','PASS')">PASS</button><button class="pf-btn fail" onclick="setSPPF(this,'sp-head-box','FAIL')">FAIL</button><button class="pf-btn na" onclick="setSPPF(this,'sp-head-box','N/A')">N/A</button></div></div><div class="deficiency-row" id="sp-defic-row-sp-head-box"><input type="text" id="sp-defic-note-sp-head-box" placeholder="Describe deficiency…"></div></div>
+        <div class="inspect-row" id="row-sp-head-wrench" data-val=""><div class="inspect-row-top"><div class="inspect-label">Head wrench with spare sprinklers?</div><div class="pf-group"><button class="pf-btn pass" onclick="setSPPF(this,'sp-head-wrench','PASS')">PASS</button><button class="pf-btn fail" onclick="setSPPF(this,'sp-head-wrench','FAIL')">FAIL</button><button class="pf-btn na" onclick="setSPPF(this,'sp-head-wrench','N/A')">N/A</button></div></div><div class="deficiency-row" id="sp-defic-row-sp-head-wrench"><input type="text" id="sp-defic-note-sp-head-wrench" placeholder="Describe deficiency…"></div></div>
+        <div class="inspect-row" id="row-sp-head-count-ok" data-val=""><div class="inspect-row-top"><div class="inspect-label">Proper number of sprinklers in head box?</div><div class="pf-group"><button class="pf-btn pass" onclick="setSPPF(this,'sp-head-count-ok','PASS')">PASS</button><button class="pf-btn fail" onclick="setSPPF(this,'sp-head-count-ok','FAIL')">FAIL</button><button class="pf-btn na" onclick="setSPPF(this,'sp-head-count-ok','N/A')">N/A</button></div></div><div class="deficiency-row" id="sp-defic-row-sp-head-count-ok"><input type="text" id="sp-defic-note-sp-head-count-ok" placeholder="Describe deficiency…"></div></div>
+        <div class="inspect-row" id="row-sp-heads-corrosion" data-val=""><div class="inspect-row-top"><div class="inspect-label">Free of corrosion and damage?</div><div class="pf-group"><button class="pf-btn pass" onclick="setSPPF(this,'sp-heads-corrosion','PASS')">PASS</button><button class="pf-btn fail" onclick="setSPPF(this,'sp-heads-corrosion','FAIL')">FAIL</button><button class="pf-btn na" onclick="setSPPF(this,'sp-heads-corrosion','N/A')">N/A</button></div></div><div class="deficiency-row" id="sp-defic-row-sp-heads-corrosion"><input type="text" id="sp-defic-note-sp-heads-corrosion" placeholder="Describe deficiency…"></div></div>
+        <div class="inspect-row" id="row-sp-heads-obstruction" data-val=""><div class="inspect-row-top"><div class="inspect-label">Free of obstruction to spray pattern?</div><div class="pf-group"><button class="pf-btn pass" onclick="setSPPF(this,'sp-heads-obstruction','PASS')">PASS</button><button class="pf-btn fail" onclick="setSPPF(this,'sp-heads-obstruction','FAIL')">FAIL</button><button class="pf-btn na" onclick="setSPPF(this,'sp-heads-obstruction','N/A')">N/A</button></div></div><div class="deficiency-row" id="sp-defic-row-sp-heads-obstruction"><input type="text" id="sp-defic-note-sp-heads-obstruction" placeholder="Describe deficiency…"></div></div>
+        <div class="inspect-row" id="row-sp-heads-paint" data-val=""><div class="inspect-row-top"><div class="inspect-label">Free of foreign materials including paint?</div><div class="pf-group"><button class="pf-btn pass" onclick="setSPPF(this,'sp-heads-paint','PASS')">PASS</button><button class="pf-btn fail" onclick="setSPPF(this,'sp-heads-paint','FAIL')">FAIL</button><button class="pf-btn na" onclick="setSPPF(this,'sp-heads-paint','N/A')">N/A</button></div></div><div class="deficiency-row" id="sp-defic-row-sp-heads-paint"><input type="text" id="sp-defic-note-sp-heads-paint" placeholder="Describe deficiency…"></div></div>
+        <div class="inspect-row" id="row-sp-heads-date" data-val=""><div class="inspect-row-top"><div class="inspect-label">Sprinklers in service dated 1920 or later?</div><div class="pf-group"><button class="pf-btn pass" onclick="setSPPF(this,'sp-heads-date','PASS')">PASS</button><button class="pf-btn fail" onclick="setSPPF(this,'sp-heads-date','FAIL')">FAIL</button><button class="pf-btn na" onclick="setSPPF(this,'sp-heads-date','N/A')">N/A</button></div></div><div class="deficiency-row" id="sp-defic-row-sp-heads-date"><input type="text" id="sp-defic-note-sp-heads-date" placeholder="Describe deficiency…"></div></div>
+        <div class="inspect-row" id="row-sp-heads-fast" data-val=""><div class="inspect-row-top"><div class="inspect-label">Fast response sprinklers 20+ years old — replaced or sample tested within last 15 years?</div><div class="pf-group"><button class="pf-btn pass" onclick="setSPPF(this,'sp-heads-fast','PASS')">PASS</button><button class="pf-btn fail" onclick="setSPPF(this,'sp-heads-fast','FAIL')">FAIL</button><button class="pf-btn na" onclick="setSPPF(this,'sp-heads-fast','N/A')">N/A</button></div></div><div class="deficiency-row" id="sp-defic-row-sp-heads-fast"><input type="text" id="sp-defic-note-sp-heads-fast" placeholder="Describe deficiency…"></div></div>
+        <div class="inspect-row" id="row-sp-heads-standard" data-val=""><div class="inspect-row-top"><div class="inspect-label">Standard response sprinklers 50+ years old — replaced or sample tested within last 15 years?</div><div class="pf-group"><button class="pf-btn pass" onclick="setSPPF(this,'sp-heads-standard','PASS')">PASS</button><button class="pf-btn fail" onclick="setSPPF(this,'sp-heads-standard','FAIL')">FAIL</button><button class="pf-btn na" onclick="setSPPF(this,'sp-heads-standard','N/A')">N/A</button></div></div><div class="deficiency-row" id="sp-defic-row-sp-heads-standard"><input type="text" id="sp-defic-note-sp-heads-standard" placeholder="Describe deficiency…"></div></div>
+        <div class="inspect-row" id="row-sp-dp-heads" data-val=""><div class="inspect-row-top"><div class="inspect-label">Dry-pendant sprinklers replaced/tested within 10 years?</div><div class="pf-group"><button class="pf-btn pass" onclick="setSPPF(this,'sp-dp-heads','PASS')">PASS</button><button class="pf-btn fail" onclick="setSPPF(this,'sp-dp-heads','FAIL')">FAIL</button><button class="pf-btn na" onclick="setSPPF(this,'sp-dp-heads','N/A')">N/A</button></div></div><div class="deficiency-row" id="sp-defic-row-sp-dp-heads"><input type="text" id="sp-defic-note-sp-dp-heads" placeholder="Describe deficiency…"></div></div>
+        <div class="inspect-row" id="row-sp-escutcheons" data-val=""><div class="inspect-row-top"><div class="inspect-label">All escutcheons in place / not damaged?</div><div class="pf-group"><button class="pf-btn pass" onclick="setSPPF(this,'sp-escutcheons','PASS')">PASS</button><button class="pf-btn fail" onclick="setSPPF(this,'sp-escutcheons','FAIL')">FAIL</button><button class="pf-btn na" onclick="setSPPF(this,'sp-escutcheons','N/A')">N/A</button></div></div><div class="deficiency-row" id="sp-defic-row-sp-escutcheons"><input type="text" id="sp-defic-note-sp-escutcheons" placeholder="Describe deficiency…"></div></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><span class="icon">💦</span><span>Waterflow Alarm</span></div>
+      <div class="card-body">
+        <div class="inspect-row" id="row-sp-waterflow" data-val=""><div class="inspect-row-top"><div class="inspect-label">Waterflow alarm test<small>Activates within 90 seconds via inspector test connection</small></div><div class="pf-group"><button class="pf-btn pass" onclick="setSPPF(this,'sp-waterflow','PASS')">PASS</button><button class="pf-btn fail" onclick="setSPPF(this,'sp-waterflow','FAIL')">FAIL</button><button class="pf-btn na" onclick="setSPPF(this,'sp-waterflow','N/A')">N/A</button></div></div><div class="deficiency-row" id="sp-defic-row-sp-waterflow"><input type="text" id="sp-defic-note-sp-waterflow" placeholder="Describe deficiency…"></div></div>
+        <div class="inspect-row" id="row-sp-waterflow-cs" data-val=""><div class="inspect-row-top"><div class="inspect-label">Central station transmission<small>CS received waterflow alarm</small></div><div class="pf-group"><button class="pf-btn pass" onclick="setSPPF(this,'sp-waterflow-cs','PASS')">PASS</button><button class="pf-btn fail" onclick="setSPPF(this,'sp-waterflow-cs','FAIL')">FAIL</button><button class="pf-btn na" onclick="setSPPF(this,'sp-waterflow-cs','N/A')">N/A</button></div></div><div class="deficiency-row" id="sp-defic-row-sp-waterflow-cs"><input type="text" id="sp-defic-note-sp-waterflow-cs" placeholder="Describe deficiency…"></div></div>
+        <div class="data-row cols-2" style="margin-top:8px;">
+          <div class="data-field"><label>Waterflow Response Time (sec)</label><input type="number" id="sp-wf-time"></div>
+          <div class="data-field"><label>Control Valve(s) Open &amp; Supervised</label>
+            <select id="sp-control-valve-status"><option value="">— Select —</option><option>PASS</option><option>FAIL</option><option>N/A</option></select>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><span class="icon">🔩</span><span>Main Drain Observations</span></div>
+      <div class="card-body">
+        <div class="inspect-row" id="row-sp-drain-flow" data-val=""><div class="inspect-row-top"><div class="inspect-label">Was flow observed?</div><div class="pf-group"><button class="pf-btn pass" onclick="setSPPF(this,'sp-drain-flow','PASS')">PASS</button><button class="pf-btn fail" onclick="setSPPF(this,'sp-drain-flow','FAIL')">FAIL</button><button class="pf-btn na" onclick="setSPPF(this,'sp-drain-flow','N/A')">N/A</button></div></div><div class="deficiency-row" id="sp-defic-row-sp-drain-flow"><input type="text" id="sp-defic-note-sp-drain-flow" placeholder="Describe deficiency…"></div></div>
+        <div class="inspect-row" id="row-sp-drain-comparable" data-val=""><div class="inspect-row-top"><div class="inspect-label">Results comparable to previous test?</div><div class="pf-group"><button class="pf-btn pass" onclick="setSPPF(this,'sp-drain-comparable','PASS')">PASS</button><button class="pf-btn fail" onclick="setSPPF(this,'sp-drain-comparable','FAIL')">FAIL</button><button class="pf-btn na" onclick="setSPPF(this,'sp-drain-comparable','N/A')">N/A</button></div></div><div class="deficiency-row" id="sp-defic-row-sp-drain-comparable"><input type="text" id="sp-defic-note-sp-drain-comparable" placeholder="Describe deficiency…"></div></div>
+        <div class="inspect-row" id="row-sp-drain-flowswitch" data-val=""><div class="inspect-row-top"><div class="inspect-label">Flow switch device alarm panel?</div><div class="pf-group"><button class="pf-btn pass" onclick="setSPPF(this,'sp-drain-flowswitch','PASS')">PASS</button><button class="pf-btn fail" onclick="setSPPF(this,'sp-drain-flowswitch','FAIL')">FAIL</button><button class="pf-btn na" onclick="setSPPF(this,'sp-drain-flowswitch','N/A')">N/A</button></div></div><div class="deficiency-row" id="sp-defic-row-sp-drain-flowswitch"><input type="text" id="sp-defic-note-sp-drain-flowswitch" placeholder="Describe deficiency…"></div></div>
+        <div class="inspect-row" id="row-sp-drain-obstruction" data-val=""><div class="inspect-row-top"><div class="inspect-label">No obstruction observed when flowing?</div><div class="pf-group"><button class="pf-btn pass" onclick="setSPPF(this,'sp-drain-obstruction','PASS')">PASS</button><button class="pf-btn fail" onclick="setSPPF(this,'sp-drain-obstruction','FAIL')">FAIL</button><button class="pf-btn na" onclick="setSPPF(this,'sp-drain-obstruction','N/A')">N/A</button></div></div><div class="deficiency-row" id="sp-defic-row-sp-drain-obstruction"><input type="text" id="sp-defic-note-sp-drain-obstruction" placeholder="Describe deficiency…"></div></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><span class="icon">❄️</span><span>Dry Pipe / Pre-Action (If Applicable)</span></div>
+      <div class="card-body">
+        <div class="inspect-row" id="row-sp-air-pressure" data-val=""><div class="inspect-row-top"><div class="inspect-label">Air/Nitrogen pressure<small>At set pressure — no excessive leakage</small></div><div class="pf-group"><button class="pf-btn pass" onclick="setSPPF(this,'sp-air-pressure','PASS')">PASS</button><button class="pf-btn fail" onclick="setSPPF(this,'sp-air-pressure','FAIL')">FAIL</button><button class="pf-btn na" onclick="setSPPF(this,'sp-air-pressure','N/A')">N/A</button></div></div><div class="deficiency-row" id="sp-defic-row-sp-air-pressure"><input type="text" id="sp-defic-note-sp-air-pressure" placeholder="Describe deficiency…"></div></div>
+        <div class="inspect-row" id="row-sp-dp-valve" data-val=""><div class="inspect-row-top"><div class="inspect-label">Dry pipe / deluge valve<small>No corrosion; priming water level correct</small></div><div class="pf-group"><button class="pf-btn pass" onclick="setSPPF(this,'sp-dp-valve','PASS')">PASS</button><button class="pf-btn fail" onclick="setSPPF(this,'sp-dp-valve','FAIL')">FAIL</button><button class="pf-btn na" onclick="setSPPF(this,'sp-dp-valve','N/A')">N/A</button></div></div><div class="deficiency-row" id="sp-defic-row-sp-dp-valve"><input type="text" id="sp-defic-note-sp-dp-valve" placeholder="Describe deficiency…"></div></div>
+        <div class="inspect-row" id="row-sp-low-air" data-val=""><div class="inspect-row-top"><div class="inspect-label">Low air alarm<small>Tested and transmitted to panel</small></div><div class="pf-group"><button class="pf-btn pass" onclick="setSPPF(this,'sp-low-air','PASS')">PASS</button><button class="pf-btn fail" onclick="setSPPF(this,'sp-low-air','FAIL')">FAIL</button><button class="pf-btn na" onclick="setSPPF(this,'sp-low-air','N/A')">N/A</button></div></div><div class="deficiency-row" id="sp-defic-row-sp-low-air"><input type="text" id="sp-defic-note-sp-low-air" placeholder="Describe deficiency…"></div></div>
+        <div class="inspect-row" id="row-sp-quick-open" data-val=""><div class="inspect-row-top"><div class="inspect-label">Quick opening device (if present)<small>Operational</small></div><div class="pf-group"><button class="pf-btn pass" onclick="setSPPF(this,'sp-quick-open','PASS')">PASS</button><button class="pf-btn fail" onclick="setSPPF(this,'sp-quick-open','FAIL')">FAIL</button><button class="pf-btn na" onclick="setSPPF(this,'sp-quick-open','N/A')">N/A</button></div></div><div class="deficiency-row" id="sp-defic-row-sp-quick-open"><input type="text" id="sp-defic-note-sp-quick-open" placeholder="Describe deficiency…"></div></div>
+        <div class="data-row cols-2" style="margin-top:8px;">
+          <div class="data-field"><label>Last Trip Test Date</label><input type="date" id="sp-trip-date"></div>
+          <div class="data-field"><label>Trip Pressure (PSI)</label><input type="number" id="sp-trip-psi"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><span class="icon">📆</span><span>5-Year Items (If Due)</span></div>
+      <div class="card-body">
+        <div class="inspect-row" id="row-sp-5yr-pipe" data-val=""><div class="inspect-row-top"><div class="inspect-label">5-Year internal pipe inspection<small>Obstruction investigation performed — NFPA 25 Ch. 13.4.2.1</small></div><div class="pf-group"><button class="pf-btn pass" onclick="setSPPF(this,'sp-5yr-pipe','PASS')">PASS</button><button class="pf-btn fail" onclick="setSPPF(this,'sp-5yr-pipe','FAIL')">FAIL</button><button class="pf-btn na" onclick="setSPPF(this,'sp-5yr-pipe','N/A')">N/A</button></div></div><div class="deficiency-row" id="sp-defic-row-sp-5yr-pipe"><input type="text" id="sp-defic-note-sp-5yr-pipe" placeholder="Describe deficiency…"></div></div>
+        <div class="inspect-row" id="row-sp-5yr-fdc" data-val=""><div class="inspect-row-top"><div class="inspect-label">FDC hydrostatic / forward flow test<small>200 PSI for 2 hrs or per standard — NFPA 25 Ch. 13.8.5</small></div><div class="pf-group"><button class="pf-btn pass" onclick="setSPPF(this,'sp-5yr-fdc','PASS')">PASS</button><button class="pf-btn fail" onclick="setSPPF(this,'sp-5yr-fdc','FAIL')">FAIL</button><button class="pf-btn na" onclick="setSPPF(this,'sp-5yr-fdc','N/A')">N/A</button></div></div><div class="deficiency-row" id="sp-defic-row-sp-5yr-fdc"><input type="text" id="sp-defic-note-sp-5yr-fdc" placeholder="Describe deficiency…"></div></div>
+        <div class="inspect-row" id="row-sp-gauges-5yr" data-val=""><div class="inspect-row-top"><div class="inspect-label">Gauge replacement / recalibration<small>All gauges replaced or tested within 5 years</small></div><div class="pf-group"><button class="pf-btn pass" onclick="setSPPF(this,'sp-gauges-5yr','PASS')">PASS</button><button class="pf-btn fail" onclick="setSPPF(this,'sp-gauges-5yr','FAIL')">FAIL</button><button class="pf-btn na" onclick="setSPPF(this,'sp-gauges-5yr','N/A')">N/A</button></div></div><div class="deficiency-row" id="sp-defic-row-sp-gauges-5yr"><input type="text" id="sp-defic-note-sp-gauges-5yr" placeholder="Describe deficiency…"></div></div>
+        <div class="data-row cols-1" style="margin-top:8px;">
+          <div class="data-field"><label>5-Year Items Next Due Date</label><input type="date" id="sp-5yr-due"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn-secondary" onclick="goSPStep('overview')">← Overview</button>
+      <button class="btn-primary" onclick="goSPStep('drain')">Next: Drain Test →</button>
+    </div>
+  </div>
+
+  <!-- ══ SPRINKLER STEP 3: MAIN DRAIN TEST ══ -->
+  <div id="step-sp-drain" style="display:none;">
+
+    <div class="card">
+      <div class="card-header"><span class="icon">📊</span><span>Main Drain Test Results</span></div>
+      <div class="card-body" style="overflow-x:auto;">
+        <table class="dyn-table">
+          <thead><tr><th style="width:32px;">#</th><th>System Location</th><th style="width:80px;">Static (PSI)</th><th style="width:80px;">Residual (PSI)</th><th style="width:80px;">Post (PSI)</th></tr></thead>
+          <tbody id="sp-drain-tbody">
+            <tr><td style="text-align:center;color:var(--slate);">1</td><td><input type="text" id="sp-dr-loc-1"></td><td><input type="number" id="sp-dr-static-1"></td><td><input type="number" id="sp-dr-resid-1"></td><td><input type="number" id="sp-dr-post-1"></td></tr>
+            <tr><td style="text-align:center;color:var(--slate);">2</td><td><input type="text" id="sp-dr-loc-2"></td><td><input type="number" id="sp-dr-static-2"></td><td><input type="number" id="sp-dr-resid-2"></td><td><input type="number" id="sp-dr-post-2"></td></tr>
+            <tr><td style="text-align:center;color:var(--slate);">3</td><td><input type="text" id="sp-dr-loc-3"></td><td><input type="number" id="sp-dr-static-3"></td><td><input type="number" id="sp-dr-resid-3"></td><td><input type="number" id="sp-dr-post-3"></td></tr>
+            <tr><td style="text-align:center;color:var(--slate);">4</td><td><input type="text" id="sp-dr-loc-4"></td><td><input type="number" id="sp-dr-static-4"></td><td><input type="number" id="sp-dr-resid-4"></td><td><input type="number" id="sp-dr-post-4"></td></tr>
+            <tr><td style="text-align:center;color:var(--slate);">5</td><td><input type="text" id="sp-dr-loc-5"></td><td><input type="number" id="sp-dr-static-5"></td><td><input type="number" id="sp-dr-resid-5"></td><td><input type="number" id="sp-dr-post-5"></td></tr>
+            <tr><td style="text-align:center;color:var(--slate);">6</td><td><input type="text" id="sp-dr-loc-6"></td><td><input type="number" id="sp-dr-static-6"></td><td><input type="number" id="sp-dr-resid-6"></td><td><input type="number" id="sp-dr-post-6"></td></tr>
+            <tr><td style="text-align:center;color:var(--slate);">7</td><td><input type="text" id="sp-dr-loc-7"></td><td><input type="number" id="sp-dr-static-7"></td><td><input type="number" id="sp-dr-resid-7"></td><td><input type="number" id="sp-dr-post-7"></td></tr>
+            <tr><td style="text-align:center;color:var(--slate);">8</td><td><input type="text" id="sp-dr-loc-8"></td><td><input type="number" id="sp-dr-static-8"></td><td><input type="number" id="sp-dr-resid-8"></td><td><input type="number" id="sp-dr-post-8"></td></tr>
+            <tr><td style="text-align:center;color:var(--slate);">9</td><td><input type="text" id="sp-dr-loc-9"></td><td><input type="number" id="sp-dr-static-9"></td><td><input type="number" id="sp-dr-resid-9"></td><td><input type="number" id="sp-dr-post-9"></td></tr>
+            <tr><td style="text-align:center;color:var(--slate);">10</td><td><input type="text" id="sp-dr-loc-10"></td><td><input type="number" id="sp-dr-static-10"></td><td><input type="number" id="sp-dr-resid-10"></td><td><input type="number" id="sp-dr-post-10"></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn-secondary" onclick="goSPStep('inspection')">← Inspection</button>
+      <button class="btn-primary" onclick="goSPStep('defic')">Next: Deficiencies →</button>
+    </div>
+  </div>
+
+  <!-- ══ SPRINKLER STEP 4: DEFICIENCIES ══ -->
+  <div id="step-sp-defic" style="display:none;">
+
+    <div id="sp-defic-summary" class="defic-summary">
+      <div class="defic-summary-hdr">
+        ⚠ Active Deficiencies — <span class="defic-count-pill" id="sp-defic-count-pill">0</span>
+        <span style="font-size:0.72rem;font-weight:400;opacity:0.85;margin-left:4px;">Click PASS on an item to clear it</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><span class="icon">⚠️</span><span>Deficiency List</span></div>
+      <div class="card-body">
+        <table class="dyn-table">
+          <thead><tr><th style="width:32px;">#</th><th>Deficiency</th><th style="width:32px;"></th></tr></thead>
+          <tbody id="sp-defic-tbody"></tbody>
+        </table>
+        <button class="add-row-btn" onclick="addSPDeficRow()">+ Add Deficiency</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><span class="icon">📝</span><span>General Notes &amp; Site Observations</span></div>
+      <div class="card-body">
+        <table class="dyn-table">
+          <thead><tr><th style="width:32px;">#</th><th>Note / Observation</th><th style="width:32px;"></th></tr></thead>
+          <tbody id="sp-notes-tbody"></tbody>
+        </table>
+        <button class="add-row-btn" onclick="addSPNoteRow()">+ Add Note</button>
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn-secondary" onclick="goSPStep('drain')">← Drain Test</button>
+      <button class="btn-primary" onclick="goSPStep('sign')">Next: Sign &amp; Export →</button>
+    </div>
+  </div>
+
 </div><!-- /app -->
 
 <div id="toast"></div>
@@ -1233,6 +1551,10 @@ let clientData  = {};
 let currentStep = 1;
 let currentFAStep = 'panel';
 const FA_STEP_ORDER = ['panel', 'devices', 'aux', 'defic'];  // 'sign' reuses #step-4
+const SP_STEP_ORDER = ['overview', 'inspection', 'drain', 'defic'];
+let currentSPStep = 'overview';
+let spDeficCount = 0;
+let spNoteCount = 0;
 let activeSystems = new Set();
 let activeInspectionSystem = null;
 let _propertyProfile = null;
@@ -1322,6 +1644,7 @@ function goFAStep(key) {
     updateDeficiencySummary();
     const faDeficRows = document.getElementById('fa-defic-tbody')?.querySelectorAll('tr').length || 0;
     if (faDeficRows > 0 && overallStatus === '') setOverallStatus('DEFICIENT');
+    else if (faDeficRows === 0 && overallStatus === '') setOverallStatus('COMPLIANT');
   } else {
     const target = document.getElementById('step-fa-' + key);
     if (target) target.style.display = 'block';
@@ -1444,6 +1767,175 @@ function exitFireAlarmInspection(target) {
   goStep(target === 'property' ? 1 : 2);
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// SPRINKLER MULTI-STEP NAVIGATION
+// ─────────────────────────────────────────────────────────────────────────────
+function goSPStep(key) {
+  saveDraft();
+  const ALL_SP_KEYS = [...SP_STEP_ORDER, 'sign'];
+  SP_STEP_ORDER.forEach(k => {
+    const el = document.getElementById('step-sp-' + k);
+    if (el) el.style.display = 'none';
+  });
+  document.getElementById('step-4').style.display = 'none';
+
+  if (key === 'sign') {
+    document.getElementById('step-4').style.display = 'block';
+    const todayStr = todayMT();
+    if (!document.getElementById('sig-date').value) document.getElementById('sig-date').value = todayStr;
+    if (!document.getElementById('cust-sig-date').value) document.getElementById('cust-sig-date').value = todayStr;
+    updateSPDeficiencySummary();
+    const spDeficRows = document.getElementById('sp-defic-tbody')?.querySelectorAll('tr').length || 0;
+    if (spDeficRows > 0 && overallStatus === '') setOverallStatus('DEFICIENT');
+    else if (spDeficRows === 0 && overallStatus === '') setOverallStatus('COMPLIANT');
+  } else {
+    const target = document.getElementById('step-sp-' + key);
+    if (target) target.style.display = 'block';
+    if (key === 'defic') updateSPDeficiencySummary();
+  }
+
+  document.querySelectorAll('#sp-step-nav .step-tab').forEach(t => {
+    t.classList.remove('active', 'done');
+    const sstep = t.dataset.sstep;
+    if (sstep === 'property' || sstep === 'systems') { t.classList.add('done'); return; }
+    if (sstep === key) t.classList.add('active');
+    else if (ALL_SP_KEYS.indexOf(sstep) < ALL_SP_KEYS.indexOf(key)) t.classList.add('done');
+  });
+  currentSPStep = key;
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function startSprinklerInspection() {
+  document.getElementById('step-nav').style.display = 'none';
+  document.getElementById('sp-step-nav').style.display = 'flex';
+  document.getElementById('sp-active-banner').style.display = 'block';
+  document.getElementById('step-2').style.display = 'none';
+  document.getElementById('step-3').style.display = 'none';
+  document.getElementById('step-4').style.display = 'none';
+  SP_STEP_ORDER.forEach(k => {
+    const el = document.getElementById('step-sp-' + k);
+    if (el) el.style.display = 'none';
+  });
+  clearSPInspectionState();
+
+  const draft = loadDraft();
+  if (draft && draft.sysKey === 'sprinkler') {
+    showDraftModal(draft, false,
+      () => { restoreSPDraft(draft); },
+      () => { clearDraft(); _continueSprinklerStart(); }
+    );
+    return;
+  }
+  _continueSprinklerStart();
+}
+
+function _continueSprinklerStart() {
+  const prev = window._prevInspectionData;
+  if (prev) {
+    Object.entries(prev.fieldData || {}).forEach(([elId, val]) => {
+      const el = document.getElementById(elId);
+      if (!el || el.type === 'button') return;
+      if (el.tagName === 'SELECT') el.value = val;
+      else el.value = val;
+    });
+    Object.entries(prev.pfStates || {}).forEach(([rowId, state]) => {
+      const row = document.getElementById(rowId);
+      if (!row || !state.val) return;
+      row.dataset.val = state.val;
+      row.querySelectorAll('.pf-btn').forEach(b => {
+        b.classList.toggle('selected', b.textContent.trim() === state.val);
+      });
+    });
+    toast('✓ Previous data loaded');
+  }
+  currentSPStep = 'overview';
+  document.getElementById('step-sp-overview').style.display = 'block';
+  document.querySelectorAll('#sp-step-nav .step-tab').forEach(t => {
+    t.classList.remove('active', 'done');
+    if (t.dataset.sstep === 'property' || t.dataset.sstep === 'systems') t.classList.add('done');
+    else if (t.dataset.sstep === 'overview') t.classList.add('active');
+  });
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function exitSprinklerInspection(target) {
+  SP_STEP_ORDER.forEach(k => {
+    const el = document.getElementById('step-sp-' + k);
+    if (el) el.style.display = 'none';
+  });
+  document.getElementById('step-4').style.display = 'none';
+  document.getElementById('sp-step-nav').style.display = 'none';
+  document.getElementById('sp-active-banner').style.display = 'none';
+  document.getElementById('step-nav').style.display = 'flex';
+  activeInspectionSystem = null;
+  syncMainNavDisabled();
+  goStep(target === 'property' ? 1 : 2);
+}
+
+function clearSPInspectionState() {
+  SP_STEP_ORDER.forEach(k => {
+    const el = document.getElementById('step-sp-' + k);
+    if (!el) return;
+    el.querySelectorAll('.pf-btn').forEach(b => b.classList.remove('selected'));
+    el.querySelectorAll('.inspect-row').forEach(r => { r.dataset.val = ''; delete r.dataset.spDeficId; });
+    el.querySelectorAll('input[type=text], input[type=date], input[type=number], textarea').forEach(f => { f.value = ''; });
+    el.querySelectorAll('select').forEach(s => { s.selectedIndex = 0; });
+    el.querySelectorAll('.deficiency-row').forEach(d => d.classList.remove('show'));
+    el.querySelectorAll('.deficiency-row input').forEach(i => { i.value = ''; });
+  });
+  ['sp-defic-tbody', 'sp-notes-tbody'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.innerHTML = '';
+  });
+  spDeficCount = 0;
+  spNoteCount = 0;
+  overallStatus = '';
+  document.querySelectorAll('.ost-btn').forEach(b => b.classList.remove('selected'));
+  document.getElementById('sp-report-type') && (document.getElementById('sp-report-type').value = 'Annual');
+  document.getElementById('sp-rt-annual')?.classList.add('selected');
+  document.getElementById('sp-rt-semi')?.classList.remove('selected');
+  document.getElementById('sp-rt-quarterly')?.classList.remove('selected');
+}
+
+function restoreSPDraft(draft) {
+  spDeficCount = draft.counters?.spDeficCount || 0;
+  spNoteCount  = draft.counters?.spNoteCount  || 0;
+  overallStatus = draft.overallStatus || '';
+  if (overallStatus) setOverallStatus(overallStatus);
+  Object.entries(draft.stepHTML || {}).forEach(([id, html]) => {
+    if (id.startsWith('step-sp-')) {
+      const el = document.getElementById(id);
+      if (el) el.innerHTML = html;
+    }
+  });
+  Object.entries(draft.step4Fields || {}).forEach(([id, val]) => {
+    const el = document.getElementById(id);
+    if (el) el.value = val;
+  });
+  if (draft.spDeficHTML) { const el = document.getElementById('sp-defic-tbody'); if (el) el.innerHTML = draft.spDeficHTML; }
+  if (draft.spNotesHTML) { const el = document.getElementById('sp-notes-tbody'); if (el) el.innerHTML = draft.spNotesHTML; }
+  if (draft.photos) { inspectionPhotos = draft.photos.map(p => ({...p})); renderPhotoGrid(); }
+  if (draft.sigData) { const sc = document.getElementById('sig-canvas'); if (sc) { const ctx = sc.getContext('2d'); const img = new Image(); img.onload = () => { ctx.drawImage(img,0,0); sigHasData = true; }; img.src = draft.sigData; } }
+  if (draft.custSigData) { const cc = document.getElementById('cust-sig-canvas'); if (cc) { const ctx = cc.getContext('2d'); const img = new Image(); img.onload = () => { ctx.drawImage(img,0,0); custSigHasData = true; }; img.src = draft.custSigData; } }
+  updateSPDeficiencySummary();
+  const resumeStep = draft.currentSPStep || 'overview';
+  currentSPStep = resumeStep;
+  const resumeEl = document.getElementById('step-sp-' + resumeStep);
+  if (resumeEl) resumeEl.style.display = 'block';
+  document.querySelectorAll('#sp-step-nav .step-tab').forEach(t => {
+    t.classList.remove('active', 'done');
+    if (t.dataset.sstep === 'property' || t.dataset.sstep === 'systems') t.classList.add('done');
+    else if (t.dataset.sstep === resumeStep) t.classList.add('active');
+  });
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function setSPReportType(val, btn) {
+  document.getElementById('sp-report-type').value = val;
+  document.querySelectorAll('#sp-rt-annual, #sp-rt-semi, #sp-rt-quarterly').forEach(b => b.classList.remove('selected'));
+  if (btn) btn.classList.add('selected');
+}
+
 function clearFAInspectionState() {
   // Clear all PF button selections in FA steps
   FA_STEP_ORDER.forEach(k => {
@@ -1492,6 +1984,8 @@ function clearFAInspectionState() {
 function goBackFromSign() {
   if (activeInspectionSystem === 'fire-alarm') {
     goFAStep('defic');
+  } else if (activeInspectionSystem === 'sprinkler') {
+    goSPStep('defic');
   } else {
     goStep(3);
   }
@@ -1889,9 +2383,13 @@ function buildInspectionForms() {
   if (!activeInspectionSystem) { toast('⚠ Select a system to inspect from the Start an Inspection section'); return; }
   saveBuildingConfig();
 
-  // Fire alarm uses static multi-step navigation instead of the dynamic panel approach
+  // Fire alarm and sprinkler use static multi-step navigation
   if (activeInspectionSystem === 'fire-alarm') {
     startFireAlarmInspection();
+    return;
+  }
+  if (activeInspectionSystem === 'sprinkler') {
+    startSprinklerInspection();
     return;
   }
 
@@ -3011,6 +3509,80 @@ const FA_SEV_OPTS = ['','Critical','High','Moderate','Low','Advisory'];
 let faSubpanelCount = 0, faDetectionCount = 0, faFlowCount = 0, faTamperCount = 0, faBatteryCount = 0;
 let faYNANoteCounter = 0, faDeficCount = 0, faNoteCount = 0;
 
+// ─── SPRINKLER PASS/FAIL + DEFICIENCY ────────────────────────────────────────
+function setSPPF(btn, rowId, val) {
+  const group = btn.closest('.pf-group');
+  group.querySelectorAll('.pf-btn').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+  const row = document.getElementById('row-' + rowId);
+  if (!row) return;
+  row.dataset.val = val;
+  const deficRow = document.getElementById('sp-defic-row-' + rowId);
+  if (val === 'FAIL') {
+    if (deficRow) deficRow.classList.add('show');
+    if (!row.dataset.spDeficId) {
+      spDeficCount++;
+      const deficId = 'sp-defic-pf-' + spDeficCount;
+      row.dataset.spDeficId = deficId;
+      const label = row.querySelector('.inspect-label')?.childNodes[0]?.textContent?.trim() || rowId;
+      document.getElementById('sp-defic-tbody').insertAdjacentHTML('beforeend', `
+        <tr id="${deficId}">
+          <td style="text-align:center;font-weight:700;color:var(--slate);">${spDeficCount}</td>
+          <td><input type="text" id="${deficId}-desc" value="${escHtml(label)}" placeholder="Describe deficiency…"></td>
+          <td><button class="del-btn" onclick="removeSPDefic('${deficId}','${rowId}')">✕</button></td>
+        </tr>`);
+      const noteInp  = document.getElementById('sp-defic-note-' + rowId);
+      const deficInp = document.getElementById(deficId + '-desc');
+      if (noteInp && deficInp) {
+        noteInp.addEventListener('input', () => {
+          deficInp.value = label + (noteInp.value ? ': ' + noteInp.value : '');
+        });
+      }
+    }
+  } else {
+    if (deficRow) { deficRow.classList.remove('show'); const ni = deficRow.querySelector('input'); if (ni) ni.value = ''; }
+    if (row.dataset.spDeficId) {
+      document.getElementById(row.dataset.spDeficId)?.remove();
+      delete row.dataset.spDeficId;
+    }
+  }
+  updateSPDeficiencySummary();
+}
+
+function removeSPDefic(deficId, rowId) {
+  document.getElementById(deficId)?.remove();
+  const row = document.getElementById('row-' + rowId);
+  if (row) delete row.dataset.spDeficId;
+  updateSPDeficiencySummary();
+}
+
+function updateSPDeficiencySummary() {
+  const count = document.getElementById('sp-defic-tbody')?.querySelectorAll('tr').length || 0;
+  const pill = document.getElementById('sp-defic-count-pill');
+  if (pill) pill.textContent = count;
+}
+
+function addSPDeficRow() {
+  spDeficCount++;
+  document.getElementById('sp-defic-tbody').insertAdjacentHTML('beforeend', `
+    <tr id="sp-defic-manual-${spDeficCount}">
+      <td style="text-align:center;font-weight:700;color:var(--slate);">${spDeficCount}</td>
+      <td><input type="text" placeholder="Describe deficiency…"></td>
+      <td><button class="del-btn" onclick="this.closest('tr').remove();updateSPDeficiencySummary()">✕</button></td>
+    </tr>`);
+  updateSPDeficiencySummary();
+}
+
+function addSPNoteRow() {
+  spNoteCount++;
+  document.getElementById('sp-notes-tbody').insertAdjacentHTML('beforeend', `
+    <tr id="sp-note-${spNoteCount}">
+      <td style="text-align:center;font-weight:700;color:var(--slate);">${spNoteCount}</td>
+      <td><input type="text" placeholder="Enter note or observation…"></td>
+      <td><button class="del-btn" onclick="this.closest('tr').remove()">✕</button></td>
+    </tr>`);
+}
+
 function setFAPF(btn) {
   const group = btn.closest('.pf-group');
   group.querySelectorAll('.pf-btn').forEach(b => b.classList.remove('selected'));
@@ -3857,8 +4429,9 @@ async function clearDraftFromDrive(key) {
 function saveDraft() {
   if (!activeInspectionSystem) return;
   // Sync current input values into HTML attributes so innerHTML captures them
-  const faSteps = ['step-fa-panel','step-fa-devices','step-fa-aux','step-fa-defic'];
-  faSteps.forEach(stepId => {
+  const allStepIds = ['step-fa-panel','step-fa-devices','step-fa-aux','step-fa-defic',
+                      'step-sp-overview','step-sp-inspection','step-sp-drain','step-sp-defic'];
+  allStepIds.forEach(stepId => {
     const div = document.getElementById(stepId);
     if (!div) return;
     div.querySelectorAll('input:not([type=button])').forEach(inp => inp.setAttribute('value', inp.value));
@@ -3869,20 +4442,27 @@ function saveDraft() {
       });
     });
   });
-  // Capture innerHTML of each FA step
+  // Capture innerHTML of each step
   const stepHTML = {};
-  faSteps.forEach(id => { stepHTML[id] = document.getElementById(id)?.innerHTML || ''; });
+  allStepIds.forEach(id => { stepHTML[id] = document.getElementById(id)?.innerHTML || ''; });
   // Step-4 text fields (overall status, notes, customer sig fields)
   const step4Fields = {};
   ['overall-status-val','general-notes','cust-sig-name','cust-sig-title','cust-sig-date','sig-name'].forEach(id => {
     step4Fields[id] = document.getElementById(id)?.value || '';
   });
-  // Notes tbody lives in step-4 (not in faSteps) — sync input values before capturing innerHTML
+  // FA notes tbody
   const notesTbodyEl = document.getElementById('fa-notes-tbody');
   if (notesTbodyEl) {
     notesTbodyEl.querySelectorAll('input:not([type=button])').forEach(inp => inp.setAttribute('value', inp.value));
   }
   const notesHTML = notesTbodyEl?.innerHTML || '';
+  // SP defic + notes tbody
+  const spDeficTbodyEl = document.getElementById('sp-defic-tbody');
+  if (spDeficTbodyEl) spDeficTbodyEl.querySelectorAll('input:not([type=button])').forEach(inp => inp.setAttribute('value', inp.value));
+  const spDeficHTML = spDeficTbodyEl?.innerHTML || '';
+  const spNotesTbodyEl = document.getElementById('sp-notes-tbody');
+  if (spNotesTbodyEl) spNotesTbodyEl.querySelectorAll('input:not([type=button])').forEach(inp => inp.setAttribute('value', inp.value));
+  const spNotesHTML = spNotesTbodyEl?.innerHTML || '';
   // Photos (base64 dataURL + note text)
   const photos = inspectionPhotos.map(p => ({ dataUrl: p.dataUrl, note: p.note }));
   // Signature canvases → dataURL (only if drawn)
@@ -3899,13 +4479,16 @@ function saveDraft() {
     stepHTML,
     step4Fields,
     notesHTML,
+    spDeficHTML,
+    spNotesHTML,
     photos,
     sigData,
     custSigData,
-    counters:    { faSubpanelCount, faDetectionCount, faFlowCount, faTamperCount, faBatteryCount, faDeficCount, faNoteCount },
+    counters:    { faSubpanelCount, faDetectionCount, faFlowCount, faTamperCount, faBatteryCount, faDeficCount, faNoteCount, spDeficCount, spNoteCount },
     overallStatus,
     onsiteUnsat: Object.assign({}, _onsiteUnsat),
-    currentFAStep
+    currentFAStep,
+    currentSPStep
   };
   const key = draftKey();
   try {
@@ -4679,7 +5262,11 @@ function collectAllData() {
   const fieldData = {};
   document.querySelectorAll(
     '#sys-forms input, #sys-forms select, #sys-forms textarea,' +
-    '#step-fa-panel input, #step-fa-panel select, #step-fa-panel textarea'
+    '#step-fa-panel input, #step-fa-panel select, #step-fa-panel textarea,' +
+    '#step-sp-overview input, #step-sp-overview select, #step-sp-overview textarea,' +
+    '#step-sp-inspection input, #step-sp-inspection select, #step-sp-inspection textarea,' +
+    '#step-sp-drain input, #step-sp-drain select,' +
+    '#step-sp-defic input, #step-sp-defic select, #step-sp-defic textarea'
   ).forEach(el => {
     if (el.id && el.type !== 'button') fieldData[el.id] = el.value;
   });
@@ -4720,6 +5307,13 @@ function collectAllData() {
   // For FA inspections, also collect deficiencies from the defic-tbody table
   if (activeInspectionSystem === 'fire-alarm') {
     document.querySelectorAll('#fa-defic-tbody tr').forEach(row => {
+      const desc = row.querySelector('td:nth-child(2) input')?.value?.trim();
+      if (desc) deficiencies.push({ item: desc, description: '' });
+    });
+  }
+  // For SP inspections, collect from sp-defic-tbody
+  if (activeInspectionSystem === 'sprinkler') {
+    document.querySelectorAll('#sp-defic-tbody tr').forEach(row => {
       const desc = row.querySelector('td:nth-child(2) input')?.value?.trim();
       if (desc) deficiencies.push({ item: desc, description: '' });
     });
@@ -5877,6 +6471,621 @@ function removePhoto(idx) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// SPRINKLER PDF
+// ─────────────────────────────────────────────────────────────────────────────
+async function buildSprinklerPDFBytes() {
+  if (!window.PDFLib) throw new Error('PDF library not loaded. Please refresh.');
+  const data = collectAllData();
+  const { PDFDocument, rgb, StandardFonts } = window.PDFLib;
+  const pdfDoc = await PDFDocument.create();
+  const form   = pdfDoc.getForm();
+  const hFont  = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+  const rFont  = await pdfDoc.embedFont(StandardFonts.Helvetica);
+
+  const W = 612, PH = 792, ML = 36, PW = 540, MT = 36, MB = 36;
+  let page, curY, _fid = 0;
+  const fid = () => 'sp_' + (++_fid);
+
+  const FIRE_RED = rgb(0.72, 0.08, 0.08);
+  const navy  = rgb(0.13, 0.21, 0.42);
+  const sky   = rgb(0.71, 0.80, 0.93);
+  const gold  = rgb(1.0,  1.0,  0.75);
+  const lgray = rgb(0.94, 0.94, 0.94);
+  const white = rgb(1, 1, 1);
+  const blk   = rgb(0, 0, 0);
+
+  const addPage = () => { page = pdfDoc.addPage([W, PH]); curY = MT; };
+  const ry = (h) => PH - curY - h;
+  const ty = (h, a = 3) => PH - curY - h + a;
+  const checkPage = (needed) => { if (curY + needed > PH - MB) addPage(); };
+
+  const wrap = (text, sz, maxW) => {
+    if (!text) return [''];
+    const words = String(text).split(' ');
+    const lines = []; let cur = '';
+    for (const w of words) {
+      const test = cur ? cur + ' ' + w : w;
+      if (rFont.widthOfTextAtSize(test, sz) > maxW && cur) { lines.push(cur); cur = w; }
+      else cur = test;
+    }
+    if (cur) lines.push(cur);
+    return lines.length ? lines : [''];
+  };
+
+  const secHdr = (title) => {
+    checkPage(18);
+    page.drawRectangle({ x: ML, y: ry(17), width: PW, height: 17, color: navy });
+    page.drawText(title, { x: ML+4, y: ty(17,5), size: 9, font: hFont, color: white });
+    curY += 18;
+  };
+  const subHdr = (title) => {
+    checkPage(14);
+    page.drawRectangle({ x: ML, y: ry(13), width: PW, height: 13, color: sky });
+    page.drawText(title, { x: ML+4, y: ty(13,4), size: 7.5, font: hFont, color: navy });
+    curY += 14;
+  };
+  const mkField = (val, x, fieldY, w, h, multiline) => {
+    page.drawRectangle({ x, y: fieldY, width: w, height: h, color: gold, borderColor: sky, borderWidth: 0.5 });
+    const f = form.createTextField(fid());
+    f.setText(String(val || ''));
+    if (multiline) f.enableMultiline();
+    f.addToPage(page, { x: x+1, y: fieldY+1, width: w-2, height: h-2, font: rFont });
+    f.setFontSize(8);
+  };
+  const dataRow = (cols, fh = 12, lh = 8, gap = 3) => {
+    checkPage(lh + fh + gap);
+    let x = ML;
+    cols.forEach(c => {
+      page.drawText((c.label||'')+':', { x: x+2, y: ty(lh, lh-3), size: 6, font: hFont, color: navy });
+      mkField(c.val, x, ry(lh+fh), c.w, fh, false);
+      x += c.w;
+    });
+    curY += lh + fh + gap;
+  };
+  const gap = (h) => { curY += h; };
+  const table = (hdrs, rows, cellH) => {
+    const drawHdr = () => {
+      checkPage(13);
+      let x = ML;
+      hdrs.forEach(h => {
+        page.drawRectangle({ x, y: ry(13), width: h.w, height: 13, color: navy });
+        page.drawText(wrap(h.label, 6, h.w-3)[0]||'', { x: x+2, y: ty(13,4), size: 6, font: hFont, color: white });
+        x += h.w;
+      });
+      curY += 14;
+    };
+    drawHdr();
+    rows.forEach(row => {
+      if (curY + cellH > PH - MB) { addPage(); drawHdr(); }
+      let x = ML;
+      hdrs.forEach((h, i) => {
+        page.drawRectangle({ x, y: ry(cellH), width: h.w, height: cellH, color: gold, borderColor: sky, borderWidth: 0.3 });
+        const f = form.createTextField(fid());
+        f.setText(String(row[i]||''));
+        f.addToPage(page, { x: x+1, y: ry(cellH)+1, width: h.w-2, height: cellH-2, font: rFont });
+        f.setFontSize(7);
+        x += h.w;
+      });
+      curY += cellH + 1;
+    });
+  };
+
+  const dv = (id) => document.getElementById(id)?.value?.trim() || '';
+  const fd = data.fieldData || {};
+  const spPF = (rowId) => {
+    const val = document.getElementById('row-' + rowId)?.dataset?.val || '';
+    return val;
+  };
+
+  // Inspection row helper for PDF (Y/N/NA columns)
+  const LW = 340, BW = 32, NW = PW - LW - BW*3;
+  const inspHdr = () => {
+    checkPage(13);
+    page.drawRectangle({ x: ML,         y: ry(13), width: LW,  height: 13, color: navy });
+    page.drawText('QUESTION', { x: ML+2, y: ty(13,4), size: 6, font: hFont, color: white });
+    page.drawRectangle({ x: ML+LW,      y: ry(13), width: BW,  height: 13, color: navy });
+    page.drawText('Y', { x: ML+LW+BW/2-3, y: ty(13,4), size: 7, font: hFont, color: white });
+    page.drawRectangle({ x: ML+LW+BW,   y: ry(13), width: BW,  height: 13, color: navy });
+    page.drawText('N', { x: ML+LW+BW*1.5-3, y: ty(13,4), size: 7, font: hFont, color: white });
+    page.drawRectangle({ x: ML+LW+BW*2, y: ry(13), width: BW,  height: 13, color: navy });
+    page.drawText('N/A', { x: ML+LW+BW*2.5-6, y: ty(13,4), size: 6, font: hFont, color: white });
+    page.drawRectangle({ x: ML+LW+BW*3, y: ry(13), width: NW,  height: 13, color: navy });
+    page.drawText('NOTES', { x: ML+LW+BW*3+2, y: ty(13,4), size: 6, font: hFont, color: white });
+    curY += 14;
+  };
+  const inspRow = (label, rowId) => {
+    const val = spPF(rowId);
+    const Y  = val === 'PASS' ? 'X' : '';
+    const N  = val === 'FAIL' ? 'X' : '';
+    const NA = val === 'N/A'  ? 'X' : '';
+    const noteVal = document.getElementById('sp-defic-note-' + rowId)?.value?.trim() || '';
+    const h = 13;
+    checkPage(h + 1);
+    page.drawRectangle({ x: ML,         y: ry(h), width: LW,  height: h, color: gold, borderColor: sky, borderWidth: 0.3 });
+    wrap(label, 6.5, LW - 4).forEach((ln, li) => {
+      page.drawText(ln, { x: ML+2, y: ry(h) + h - 6 - li*7, size: 6.5, font: rFont, color: blk });
+    });
+    page.drawRectangle({ x: ML+LW,      y: ry(h), width: BW,  height: h, color: gold, borderColor: sky, borderWidth: 0.3 });
+    if (Y)  page.drawText('X', { x: ML+LW+BW/2-3,    y: ry(h)+4, size: 8, font: hFont, color: blk });
+    page.drawRectangle({ x: ML+LW+BW,   y: ry(h), width: BW,  height: h, color: gold, borderColor: sky, borderWidth: 0.3 });
+    if (N)  page.drawText('X', { x: ML+LW+BW*1.5-3,  y: ry(h)+4, size: 8, font: hFont, color: blk });
+    page.drawRectangle({ x: ML+LW+BW*2, y: ry(h), width: BW,  height: h, color: gold, borderColor: sky, borderWidth: 0.3 });
+    if (NA) page.drawText('X', { x: ML+LW+BW*2.5-3,  y: ry(h)+4, size: 8, font: hFont, color: blk });
+    const nf = form.createTextField(fid());
+    nf.setText(noteVal);
+    page.drawRectangle({ x: ML+LW+BW*3, y: ry(h), width: NW,  height: h, color: gold, borderColor: sky, borderWidth: 0.3 });
+    nf.addToPage(page, { x: ML+LW+BW*3+1, y: ry(h)+1, width: NW-2, height: h-2, font: rFont });
+    nf.setFontSize(6);
+    curY += h + 1;
+  };
+
+  // ── PAGE 1: COVER ──────────────────────────────────────────────────────────
+  addPage();
+
+  // Red title banner
+  const titleH = 22;
+  page.drawRectangle({ x: 0, y: PH - titleH, width: W, height: titleH, color: FIRE_RED });
+  page.drawText('FIRE SPRINKLER INSPECTION REPORT', {
+    x: W/2 - hFont.widthOfTextAtSize('FIRE SPRINKLER INSPECTION REPORT', 14)/2,
+    y: PH - titleH + 5, size: 14, font: hFont, color: white
+  });
+  curY = titleH + 6;
+
+  // Logo + company block
+  const logoAreaH = 88;
+  const logoX = ML, logoW = 90;
+  const infoX = ML + logoW + 6, infoW = 160;
+  const rtX   = infoX + infoW + 6, rtW = PW - logoW - infoW - 18;
+
+  // Logo embed
+  try {
+    const svgText = await fetch('logo.svg').then(r => r.text());
+    const sizedSvg = svgText.replace('<svg ', '<svg width="400" height="600" ');
+    const svgBlob = new Blob([sizedSvg], { type: 'image/svg+xml' });
+    const url = URL.createObjectURL(svgBlob);
+    await new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = async () => {
+        const scale = 3;
+        const full = document.createElement('canvas');
+        full.width = 400 * scale; full.height = 600 * scale;
+        full.getContext('2d').drawImage(img, 0, 0, full.width, full.height);
+        const cropW = 400 * scale, cropH = 445 * scale;
+        const crop = document.createElement('canvas');
+        crop.width = cropW; crop.height = cropH;
+        crop.getContext('2d').drawImage(full, 0, 0, cropW, cropH, 0, 0, cropW, cropH);
+        const b64 = crop.toDataURL('image/png').split(',')[1];
+        const ab  = Uint8Array.from(atob(b64), c => c.charCodeAt(0)).buffer;
+        const logoImg = await pdfDoc.embedPng(ab);
+        const logoS = 70;
+        const logoDims = logoImg.scaleToFit(logoS, logoS);
+        page.drawImage(logoImg, { x: logoX, y: ry(logoAreaH) + (logoAreaH - logoDims.height)/2, width: logoDims.width, height: logoDims.height });
+        URL.revokeObjectURL(url);
+        resolve();
+      };
+      img.onerror = () => { URL.revokeObjectURL(url); resolve(); };
+      img.src = url;
+    });
+  } catch(_) {}
+
+  // Company info box
+  page.drawRectangle({ x: infoX, y: ry(logoAreaH), width: infoW, height: logoAreaH, color: lgray, borderColor: sky, borderWidth: 0.5 });
+  const compLines = [
+    { text: 'Alan Antonio, C.F.P.S. C.S.P.', bold: true, sz: 8 },
+    { text: 'Fire Protection Engineer', bold: false, sz: 7.5 },
+    { text: 'Chief Executive Officer', bold: false, sz: 7.5 },
+    { text: '', bold: false, sz: 4 },
+    { text: 'Fire Life Protection System, Inc.', bold: true, sz: 7.5 },
+    { text: '8201 Shaffer Parkway Suite B', bold: false, sz: 7 },
+    { text: 'Littleton, CO 80127', bold: false, sz: 7 },
+    { text: 'Cellular: (303) 726-8847', bold: false, sz: 7 },
+    { text: 'Office: (720) 974-1570', bold: false, sz: 7 },
+    { text: 'Alan.antonio@firelifeprotection', bold: false, sz: 6.5 },
+    { text: 'systems.com', bold: false, sz: 6.5 },
+  ];
+  let compY = ry(logoAreaH) + logoAreaH - 10;
+  compLines.forEach(cl => { page.drawText(cl.text, { x: infoX+4, y: compY, size: cl.sz, font: cl.bold ? hFont : rFont, color: blk }); compY -= cl.sz + 1.5; });
+
+  // Report type + job fields
+  const rtLineH = 13;
+  const rtTypes  = [['Annual', fd['sp-report-type'] === 'Annual'], ['Semi-Annual', fd['sp-report-type'] === 'Semi-Annual'], ['Quarterly', fd['sp-report-type'] === 'Quarterly']];
+  let rtY = ry(logoAreaH) + logoAreaH - rtLineH;
+  rtTypes.forEach(([label, checked]) => {
+    page.drawRectangle({ x: rtX, y: rtY, width: rtW, height: rtLineH, color: checked ? rgb(0.85,0.92,1) : gold, borderColor: sky, borderWidth: 0.4 });
+    page.drawText((checked ? '[X] ' : '[  ] ') + label.toUpperCase(), { x: rtX+4, y: rtY+4, size: 7, font: checked ? hFont : rFont, color: blk });
+    rtY -= rtLineH + 1;
+  });
+  const rtFields = [
+    { label: 'JOB NUMBER', val: fd['sp-job-num'] || '' },
+    { label: 'DATE PERFORMED', val: fd['insp-date'] || data.inspection?.date || '' },
+    { label: 'INSPECTOR(S) INITIALS', val: fd['inspector-name'] || data.inspection?.inspectorName || '' },
+  ];
+  rtFields.forEach(rf => {
+    page.drawRectangle({ x: rtX, y: rtY, width: rtW, height: rtLineH, color: gold, borderColor: sky, borderWidth: 0.4 });
+    page.drawText(rf.label + ':', { x: rtX+2, y: rtY+8, size: 5.5, font: hFont, color: navy });
+    page.drawText(rf.val, { x: rtX+2, y: rtY+2, size: 7, font: rFont, color: blk });
+    rtY -= rtLineH + 1;
+  });
+  curY += logoAreaH + 4;
+
+  // Property fields
+  dataRow([
+    { label: 'BUILDING/PROPERTY NAME', val: data.property?.name || '', w: PW }
+  ], 12, 8, 2);
+  dataRow([
+    { label: 'STREET, CITY, STATE, ZIP CODE', val: (data.property?.address || '') + (data.property?.cityStateZip ? ', ' + data.property.cityStateZip : ''), w: PW * 0.7 },
+    { label: 'JURISDICTION', val: fd['jurisdiction'] || '', w: PW * 0.3 }
+  ], 12, 8, 2);
+  gap(4);
+
+  // NFPA References — two columns
+  secHdr('NFPA REFERENCES AND PROCEDURE');
+  const nfpaLeft = [
+    'ANNUAL INSPECTIONS (PROPERTY SPECIFIC/IF APPLICABLE)',
+    '',
+    'WET SPRINKLER',
+    'NFPA 25 CHAPTER 5.2.1 THRU 5.4.1.5',
+    '',
+    'DRY VALVE PARTIAL',
+    'NFPA 25 CHAPTER 13.4.3.1.1 THRU 13.4.4.1.4',
+    '',
+    'ANTIFREEZE CHEMICAL',
+    'NFPA 25 CHAPTER 5.3.3 THRU 5.3.3.4',
+    '',
+    'DELUGE VALVE',
+    'NFPA 25 CHAPTER 13.4.5.2.2 THRU 13.4.5.2.8',
+    '',
+    'STANDPIPE ANNUAL/QUARTERLY',
+    'NFPA 25 CHAPTER 5.2.1 THRU 5.4.1.5',
+  ];
+  const nfpaRight = [
+    '3 & 5 YEAR INSPECTIONS (PROPERTY SPECIFIC/IF APPLICABLE)',
+    '',
+    'STANDPIPE HYDROSTATIC (5 YEAR)',
+    'NFPA 25 CHAPTER 6.3.2.1 THRU 6.3.2.2.1',
+    '',
+    'FIRE DEPARTMENT CONNECTION HYDROSTATIC (5 YEAR)',
+    'NFPA 25 CHAPTER 13.8.5 (FDC)',
+    '',
+    'PRESSURE REDUCING VALVE (5 YEAR)',
+    'NFPA 25 CHAPTER 13.5 THRU 13.5.3',
+    'NFPA 25 CHAPTER 13.4.5.2.2 THRU 13.4.5.2.8',
+    '',
+    'INTERNAL PIPING INSPECTION (5 YEAR)',
+    'NFPA 25 CHAPTER 13.4.2.1',
+  ];
+  const colW = PW / 2 - 2;
+  const nfpaStartY = curY;
+  const nfpaLineH = 8;
+  const maxLines = Math.max(nfpaLeft.length, nfpaRight.length);
+  checkPage(maxLines * nfpaLineH + 4);
+  page.drawRectangle({ x: ML,        y: ry(maxLines * nfpaLineH + 4), width: colW, height: maxLines * nfpaLineH + 4, color: lgray, borderColor: sky, borderWidth: 0.3 });
+  page.drawRectangle({ x: ML+colW+4, y: ry(maxLines * nfpaLineH + 4), width: colW, height: maxLines * nfpaLineH + 4, color: lgray, borderColor: sky, borderWidth: 0.3 });
+  nfpaLeft.forEach((ln, i) => {
+    const bold = !ln.startsWith('NFPA') && ln !== '';
+    page.drawText(ln, { x: ML+3, y: ry(maxLines * nfpaLineH + 4) + maxLines * nfpaLineH - i * nfpaLineH - 2, size: 6, font: bold ? hFont : rFont, color: blk });
+  });
+  nfpaRight.forEach((ln, i) => {
+    const bold = !ln.startsWith('NFPA') && ln !== '';
+    page.drawText(ln, { x: ML+colW+7, y: ry(maxLines * nfpaLineH + 4) + maxLines * nfpaLineH - i * nfpaLineH - 2, size: 6, font: bold ? hFont : rFont, color: blk });
+  });
+  curY += maxLines * nfpaLineH + 6;
+
+  // ── PAGE 2: SYSTEM OVERVIEW ─────────────────────────────────────────────────
+  addPage();
+  secHdr('SYSTEM CONFIGURATION');
+  dataRow([
+    { label: 'SYSTEM TYPE',          val: fd['sp-type']        || '', w: PW/3 },
+    { label: 'MANUFACTURER / MAKE',  val: fd['sp-mfr']         || '', w: PW/3 },
+    { label: 'YEAR INSTALLED',       val: fd['sp-year']        || '', w: PW/3 },
+  ]);
+  dataRow([
+    { label: '# SPRINKLER HEADS',    val: fd['sp-heads']       || '', w: PW/3 },
+    { label: 'COVERAGE AREA (SQ FT)',val: fd['sp-coverage']    || '', w: PW/3 },
+    { label: 'HAZARD CLASSIFICATION',val: fd['sp-hazard']      || '', w: PW/3 },
+  ]);
+  dataRow([
+    { label: 'WATER SUPPLY SOURCE',  val: fd['sp-water-src']   || '', w: PW/3 },
+    { label: 'STATIC PRESSURE (PSI)',val: fd['sp-static-psi']  || '', w: PW/3 },
+    { label: 'RESIDUAL PRESSURE (PSI)',val:fd['sp-residual-psi']|| '', w: PW/3 },
+  ]);
+  dataRow([
+    { label: 'HEAD TYPES / MODELS',  val: fd['sp-head-types']  || '', w: PW/2 },
+    { label: 'JOB NUMBER',           val: fd['sp-job-num']     || '', w: PW/2 },
+  ]);
+  gap(4);
+
+  secHdr('EXISTING SPRINKLER SYSTEMS OVERVIEW');
+  const ovRows = [
+    ['Wet System(s) Present?',       fd['sp-ov-wet-yn']||'',   fd['sp-ov-wet-cnt']||'',   fd['sp-ov-wet-insp']||'',   fd['sp-ov-wet-loc']||''],
+    ['Dry System(s) Present?',       fd['sp-ov-dry-yn']||'',   fd['sp-ov-dry-cnt']||'',   fd['sp-ov-dry-insp']||'',   fd['sp-ov-dry-loc']||''],
+    ['Fire Pump(s) Present?',        fd['sp-ov-pump-yn']||'',  fd['sp-ov-pump-cnt']||'',  fd['sp-ov-pump-insp']||'',  fd['sp-ov-pump-loc']||''],
+    ['Test Header(s) Present?',      fd['sp-ov-hdr-yn']||'',   fd['sp-ov-hdr-cnt']||'',   fd['sp-ov-hdr-insp']||'',   fd['sp-ov-hdr-loc']||''],
+    ['FDC Present?',                 fd['sp-ov-fdc-yn']||'',   fd['sp-ov-fdc-cnt']||'',   fd['sp-ov-fdc-insp']||'',   fd['sp-ov-fdc-loc']||''],
+    ['PRV Valve(s) Present?',        fd['sp-ov-prv-yn']||'',   fd['sp-ov-prv-cnt']||'',   fd['sp-ov-prv-insp']||'',   fd['sp-ov-prv-loc']||''],
+    ['Antifreeze System(s) Present?',fd['sp-ov-af-yn']||'',    fd['sp-ov-af-cnt']||'',    fd['sp-ov-af-insp']||'',    fd['sp-ov-af-loc']||''],
+    ['Standpipe(s) Present?',        fd['sp-ov-standp-yn']||'',fd['sp-ov-standp-cnt']||'',fd['sp-ov-standp-insp']||'',fd['sp-ov-standp-loc']||''],
+    ['Deluge Valve(s) Present?',     fd['sp-ov-del-yn']||'',   fd['sp-ov-del-cnt']||'',   fd['sp-ov-del-insp']||'',   fd['sp-ov-del-loc']||''],
+  ];
+  table(
+    [{label:'QUESTION',w:180},{label:'Y/N/NA',w:45},{label:'#',w:35},{label:'INSPECTING?',w:65},{label:'LOCATIONS/NOTES',w:PW-325}],
+    ovRows, 14
+  );
+  gap(4);
+
+  secHdr('3 & 5 YEAR — PREVIOUS INSPECTION YEAR (IF APPLICABLE)');
+  const y35Rows = [
+    ['Dry Valve (3 Year Full Trip)', fd['sp-35-dv-app']||'',    fd['sp-35-dv-last']||'',    fd['sp-35-dv-next']||'',    fd['sp-35-dv-insp']||'',    fd['sp-35-dv-loc']||''],
+    ['Roof Top Flow (5 Year)',       fd['sp-35-rt-app']||'',    fd['sp-35-rt-last']||'',    fd['sp-35-rt-next']||'',    fd['sp-35-rt-insp']||'',    fd['sp-35-rt-loc']||''],
+    ['FDC Hydrostatic (5 Year)',     fd['sp-35-fdc-app']||'',   fd['sp-35-fdc-last']||'',   fd['sp-35-fdc-next']||'',   fd['sp-35-fdc-insp']||'',   fd['sp-35-fdc-loc']||''],
+    ['Internal Piping (5 Year)',     fd['sp-35-ip-app']||'',    fd['sp-35-ip-last']||'',    fd['sp-35-ip-next']||'',    fd['sp-35-ip-insp']||'',    fd['sp-35-ip-loc']||''],
+    ['Standpipe (5 Year)',           fd['sp-35-standp-app']||'',fd['sp-35-standp-last']||'',fd['sp-35-standp-next']||'',fd['sp-35-standp-insp']||'',fd['sp-35-standp-loc']||''],
+  ];
+  table(
+    [{label:'SERVICE',w:155},{label:'APPLICABLE?',w:65},{label:'LAST YEAR',w:70},{label:'NEXT YEAR DUE',w:75},{label:'INSPECTING?',w:65},{label:'LOCATION/NOTES',w:PW-430}],
+    y35Rows, 14
+  );
+
+  // ── PAGE 3: PRE-INSPECTION + INSPECTION ITEMS ────────────────────────────────
+  addPage();
+  secHdr('PRE-INSPECTION GENERAL QUESTIONS');
+  const preQs = [
+    ['Is the building occupied?', fd['sp-pre-occupied']||''],
+    ['Has the occupancy classification and hazard or contents remained the same since last inspection?', fd['sp-pre-occ-same']||''],
+    ['All fire protection systems in service?', fd['sp-pre-in-svc']||''],
+    ['Has the system remained in service without modification since the last inspection?', fd['sp-pre-no-mod']||''],
+    ['Was the system free of actuation of devices or alarms since the last inspection?', fd['sp-pre-no-alarm']||''],
+  ];
+  table(
+    [{label:'QUESTION',w:340},{label:'Y',w:50},{label:'N',w:50},{label:'UNKNOWN',w:PW-440}],
+    preQs.map(([q,v]) => [q, v==='Y'?'X':'', v==='N'?'X':'', v==='Unknown'?'X':'']),
+    13
+  );
+  gap(4);
+
+  subHdr('FIRE DEPT CONNECTIONS');
+  inspHdr();
+  ['sp-fdc-visible','sp-fdc-couplings','sp-fdc-caps','sp-fdc-gaskets','sp-fdc-sign','sp-fdc-check','sp-fdc-drain'].forEach(id => {
+    const el = document.getElementById('row-' + id);
+    const lbl = el?.querySelector('.inspect-label')?.childNodes[0]?.textContent?.trim() || id;
+    inspRow(lbl, id);
+  });
+  gap(3);
+
+  subHdr('VALVES / GAGES');
+  inspHdr();
+  ['sp-cv-supervised','sp-bfv-position','sp-bfv-sealed','sp-bfv-leaks','sp-bfv-test','sp-gauges-cond','sp-gauges-pressure','sp-prv-open','sp-prv-handles','sp-nameplate','sp-signage'].forEach(id => {
+    const el = document.getElementById('row-' + id);
+    const lbl = el?.querySelector('.inspect-label')?.childNodes[0]?.textContent?.trim() || id;
+    inspRow(lbl, id);
+  });
+  gap(3);
+
+  subHdr('VISIBLE PIPE');
+  inspHdr();
+  ['sp-pipe-cond','sp-pipe-damage','sp-pipe-aligned','sp-hangers-cond','sp-pipe-heat'].forEach(id => {
+    const el = document.getElementById('row-' + id);
+    const lbl = el?.querySelector('.inspect-label')?.childNodes[0]?.textContent?.trim() || id;
+    inspRow(lbl, id);
+  });
+  gap(3);
+
+  subHdr('SPRINKLER HEADS / COMPONENTS');
+  inspHdr();
+  ['sp-head-box','sp-head-wrench','sp-head-count-ok','sp-heads-corrosion','sp-heads-obstruction','sp-heads-paint','sp-heads-date','sp-heads-fast','sp-heads-standard','sp-dp-heads','sp-escutcheons'].forEach(id => {
+    const el = document.getElementById('row-' + id);
+    const lbl = el?.querySelector('.inspect-label')?.childNodes[0]?.textContent?.trim() || id;
+    inspRow(lbl, id);
+  });
+  gap(3);
+
+  subHdr('WATERFLOW ALARM');
+  inspHdr();
+  ['sp-waterflow','sp-waterflow-cs'].forEach(id => {
+    const el = document.getElementById('row-' + id);
+    const lbl = el?.querySelector('.inspect-label')?.childNodes[0]?.textContent?.trim() || id;
+    inspRow(lbl, id);
+  });
+  dataRow([
+    { label: 'WATERFLOW RESPONSE TIME (SEC)', val: fd['sp-wf-time'] || '', w: PW/2 },
+    { label: 'CONTROL VALVE STATUS',           val: fd['sp-control-valve-status'] || '', w: PW/2 },
+  ]);
+  gap(3);
+
+  subHdr('MAIN DRAIN OBSERVATIONS');
+  inspHdr();
+  ['sp-drain-flow','sp-drain-comparable','sp-drain-flowswitch','sp-drain-obstruction'].forEach(id => {
+    const el = document.getElementById('row-' + id);
+    const lbl = el?.querySelector('.inspect-label')?.childNodes[0]?.textContent?.trim() || id;
+    inspRow(lbl, id);
+  });
+  gap(3);
+
+  subHdr('DRY PIPE / PRE-ACTION (IF APPLICABLE)');
+  inspHdr();
+  ['sp-air-pressure','sp-dp-valve','sp-low-air','sp-quick-open'].forEach(id => {
+    const el = document.getElementById('row-' + id);
+    const lbl = el?.querySelector('.inspect-label')?.childNodes[0]?.textContent?.trim() || id;
+    inspRow(lbl, id);
+  });
+  dataRow([
+    { label: 'LAST TRIP TEST DATE', val: fd['sp-trip-date'] || '', w: PW/2 },
+    { label: 'TRIP PRESSURE (PSI)', val: fd['sp-trip-psi']  || '', w: PW/2 },
+  ]);
+  gap(3);
+
+  subHdr('5-YEAR ITEMS (IF DUE)');
+  inspHdr();
+  ['sp-5yr-pipe','sp-5yr-fdc','sp-gauges-5yr'].forEach(id => {
+    const el = document.getElementById('row-' + id);
+    const lbl = el?.querySelector('.inspect-label')?.childNodes[0]?.textContent?.trim() || id;
+    inspRow(lbl, id);
+  });
+  dataRow([{ label: '5-YEAR ITEMS NEXT DUE DATE', val: fd['sp-5yr-due'] || '', w: PW }]);
+
+  // ── PAGE 4: MAIN DRAIN TEST RESULTS ─────────────────────────────────────────
+  addPage();
+  secHdr('MAIN DRAIN TEST RESULTS');
+  const drainRows = [];
+  for (let i = 1; i <= 10; i++) {
+    drainRows.push([
+      String(i),
+      fd['sp-dr-loc-' + i]    || '',
+      fd['sp-dr-static-' + i] || '',
+      fd['sp-dr-resid-' + i]  || '',
+      fd['sp-dr-post-' + i]   || '',
+    ]);
+  }
+  table(
+    [{label:'#',w:28},{label:'SYSTEM LOCATION',w:PW-268},{label:'STATIC (PSI)',w:80},{label:'RESIDUAL (PSI)',w:80},{label:'POST (PSI)',w:80}],
+    drainRows, 14
+  );
+  gap(6);
+
+  // Deficiency list
+  secHdr('WET SPRINKLER DEFICIENCY LIST');
+  const spDeficRows = [...(document.getElementById('sp-defic-tbody')?.querySelectorAll('tr') || [])];
+  if (spDeficRows.length === 0) {
+    checkPage(14);
+    page.drawRectangle({ x: ML, y: ry(13), width: PW, height: 13, color: gold, borderColor: sky, borderWidth: 0.3 });
+    page.drawText('No deficiencies noted.', { x: ML+4, y: ty(13,4), size: 8, font: rFont, color: blk });
+    curY += 14;
+  } else {
+    spDeficRows.forEach((tr, i) => {
+      const desc = tr.querySelector('td:nth-child(2) input')?.value?.trim() || '';
+      checkPage(14);
+      page.drawRectangle({ x: ML,    y: ry(13), width: 24,     height: 13, color: gold, borderColor: sky, borderWidth: 0.3 });
+      page.drawText(String(i+1), { x: ML+8, y: ty(13,4), size: 7, font: hFont, color: blk });
+      const nf = form.createTextField(fid());
+      nf.setText(desc);
+      page.drawRectangle({ x: ML+24, y: ry(13), width: PW-24, height: 13, color: gold, borderColor: sky, borderWidth: 0.3 });
+      nf.addToPage(page, { x: ML+25, y: ry(13)+1, width: PW-26, height: 11, font: rFont });
+      nf.setFontSize(7);
+      curY += 14;
+    });
+  }
+  gap(6);
+
+  // General notes
+  secHdr('GENERAL NOTES & SITE OBSERVATIONS');
+  const spNoteRows = [...(document.getElementById('sp-notes-tbody')?.querySelectorAll('tr') || [])];
+  if (spNoteRows.length === 0) {
+    checkPage(14);
+    page.drawRectangle({ x: ML, y: ry(13), width: PW, height: 13, color: gold, borderColor: sky, borderWidth: 0.3 });
+    page.drawText('No general notes.', { x: ML+4, y: ty(13,4), size: 8, font: rFont, color: blk });
+    curY += 14;
+  } else {
+    spNoteRows.forEach((tr, i) => {
+      const note = tr.querySelector('td:nth-child(2) input')?.value?.trim() || '';
+      checkPage(14);
+      page.drawRectangle({ x: ML,    y: ry(13), width: 24,     height: 13, color: gold, borderColor: sky, borderWidth: 0.3 });
+      page.drawText(String(i+1), { x: ML+8, y: ty(13,4), size: 7, font: hFont, color: blk });
+      const nf = form.createTextField(fid());
+      nf.setText(note);
+      page.drawRectangle({ x: ML+24, y: ry(13), width: PW-24, height: 13, color: gold, borderColor: sky, borderWidth: 0.3 });
+      nf.addToPage(page, { x: ML+25, y: ry(13)+1, width: PW-26, height: 11, font: rFont });
+      nf.setFontSize(7);
+      curY += 14;
+    });
+  }
+
+  // ── SIGNATURES ───────────────────────────────────────────────────────────────
+  checkPage(120);
+  gap(10);
+  secHdr('OVERALL STATUS & SIGNATURES');
+
+  // Overall status
+  const statusVal = data.overallStatus || '';
+  dataRow([{ label: 'OVERALL INSPECTION STATUS', val: statusVal, w: PW }]);
+  gap(6);
+
+  // Inspector signature
+  const sigH = 40;
+  const sigW = PW / 2 - 6;
+  page.drawText('INSPECTOR / OWNER SIGNATURE:', { x: ML, y: ty(sigH) + sigH + 2, size: 7, font: hFont, color: navy });
+  page.drawRectangle({ x: ML, y: ry(sigH), width: sigW, height: sigH, color: gold, borderColor: sky, borderWidth: 0.5 });
+  if (sigHasData) {
+    try {
+      const sc  = document.getElementById('sig-canvas');
+      const b64 = sc.toDataURL('image/png').split(',')[1];
+      const ab  = Uint8Array.from(atob(b64), c => c.charCodeAt(0)).buffer;
+      const sImg  = await pdfDoc.embedPng(ab);
+      const sDims = sImg.scaleToFit(sigW - 8, sigH - 8);
+      page.drawImage(sImg, { x: ML + 4, y: ry(sigH) + 4, width: sDims.width, height: sDims.height });
+    } catch(_) {}
+  } else {
+    const sf = form.createTextField(fid());
+    sf.setText('');
+    sf.addToPage(page, { x: ML+2, y: ry(sigH)+2, width: sigW-4, height: sigH-4, font: rFont });
+    sf.setFontSize(9);
+  }
+  // Client signature
+  page.drawText('CLIENT SIGNATURE:', { x: ML+PW/2+10, y: ty(sigH) + sigH + 2, size: 7, font: hFont, color: navy });
+  page.drawRectangle({ x: ML+PW/2+8, y: ry(sigH), width: sigW, height: sigH, color: gold, borderColor: sky, borderWidth: 0.5 });
+  if (custSigHasData) {
+    try {
+      const cc  = document.getElementById('cust-sig-canvas');
+      const b64 = cc.toDataURL('image/png').split(',')[1];
+      const ab  = Uint8Array.from(atob(b64), c => c.charCodeAt(0)).buffer;
+      const cImg  = await pdfDoc.embedPng(ab);
+      const cDims = cImg.scaleToFit(sigW - 8, sigH - 8);
+      page.drawImage(cImg, { x: ML+PW/2+12, y: ry(sigH) + 4, width: cDims.width, height: cDims.height });
+    } catch(_) {}
+  } else {
+    const cf = form.createTextField(fid());
+    cf.setText('');
+    cf.addToPage(page, { x: ML+PW/2+10, y: ry(sigH)+2, width: sigW-4, height: sigH-4, font: rFont });
+    cf.setFontSize(9);
+  }
+  curY += sigH + 4;
+  dataRow([
+    { label: 'INSPECTOR DATE', val: data.signature?.date || data.inspection?.date || '', w: PW/2 },
+    { label: 'CLIENT DATE',    val: fd['cust-sig-date'] || '', w: PW/2 },
+  ]);
+  dataRow([
+    { label: 'INSPECTOR PRINT NAME', val: fd['sig-name'] || data.inspection?.inspectorName || '', w: PW/2 },
+    { label: 'CLIENT PRINT NAME',    val: fd['cust-sig-name'] || '', w: PW/2 },
+  ]);
+
+  // Photos page
+  if (inspectionPhotos.length > 0) {
+    addPage();
+    secHdr('INSPECTION PHOTOS');
+    const photoW = Math.floor((PW - 10) / 2);
+    const photoH = 140;
+    let col = 0;
+    for (let i = 0; i < inspectionPhotos.length; i++) {
+      const photo = inspectionPhotos[i];
+      checkPage(photoH + 30);
+      const px = ML + col * (photoW + 10);
+      try {
+        const b64 = photo.dataUrl.split(',')[1];
+        const ab  = Uint8Array.from(atob(b64), c => c.charCodeAt(0)).buffer;
+        const img = photo.dataUrl.startsWith('data:image/png')
+          ? await pdfDoc.embedPng(ab) : await pdfDoc.embedJpg(ab);
+        const dims = img.scaleToFit(photoW, photoH);
+        page.drawImage(img, { x: px, y: ry(photoH) + (photoH - dims.height), width: dims.width, height: dims.height });
+      } catch(_) {
+        page.drawRectangle({ x: px, y: ry(photoH), width: photoW, height: photoH, color: lgray });
+      }
+      page.drawRectangle({ x: px+2, y: ry(photoH)+photoH-14, width: 40, height: 12, color: rgb(0,0,0) });
+      page.drawText('Photo ' + (i+1), { x: px+4, y: ry(photoH)+photoH-7, size: 7, font: hFont, color: white });
+      if (photo.note) {
+        const noteLines = wrap(photo.note, 7, photoW);
+        noteLines.forEach((l, li) => {
+          page.drawText(l, { x: px, y: ry(photoH) - 10 - li * 9, size: 7, font: rFont, color: blk });
+        });
+      }
+      col++;
+      if (col >= 2) { col = 0; curY += photoH + 22; }
+    }
+    if (col > 0) curY += photoH + 22;
+  }
+
+  return await pdfDoc.save();
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // PDF GENERATION — returns a Uint8Array of the PDF bytes
 // ─────────────────────────────────────────────────────────────────────────────
 async function buildEditablePDFBytes() {
@@ -6600,7 +7809,9 @@ async function saveAndDownload() {
   try {
     // ── 3. Build the PDF ───────────────────────────────────────────────────────
     setStatus2('Building PDF…', 'var(--slate)');
-    pdfBytes = await buildEditablePDFBytes();
+    pdfBytes = activeInspectionSystem === 'sprinkler'
+      ? await buildSprinklerPDFBytes()
+      : await buildEditablePDFBytes();
     const data = collectAllData();
     const propSlug = buildFileSlug(data);
     const dateSlug = data.inspection.date || todayMT();
