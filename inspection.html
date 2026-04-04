@@ -3015,7 +3015,6 @@ function setFAPF(btn) {
   const group = btn.closest('.pf-group');
   group.querySelectorAll('.pf-btn').forEach(b => b.classList.remove('selected'));
   btn.classList.add('selected');
-  // Show inline deficiency box on FAIL for static inspect-row items
   const inspRow = btn.closest('.inspect-row');
   if (!inspRow) return;
   let deficDiv = inspRow.querySelector('.fa-static-defic');
@@ -3029,11 +3028,43 @@ function setFAPF(btn) {
     } else {
       deficDiv.style.display = 'flex';
     }
-  } else if (deficDiv) {
-    deficDiv.style.display = 'none';
-    const inp = deficDiv.querySelector('input');
-    if (inp) inp.value = '';
+    // Add to deficiency list if not already tracked
+    if (!inspRow.dataset.pfDeficId) {
+      faDeficCount++;
+      const deficId = 'fa-defic-pf-' + faDeficCount;
+      inspRow.dataset.pfDeficId = deficId;
+      const label = inspRow.querySelector('.inspect-label')?.textContent?.trim() || 'Inspection Item';
+      document.getElementById('fa-defic-tbody').insertAdjacentHTML('beforeend', `
+        <tr id="${deficId}">
+          <td style="text-align:center;font-weight:700;color:var(--slate);">${faDeficCount}</td>
+          <td><input type="text" id="${deficId}-desc" value="${escHtml(label)}" placeholder="Describe deficiency…"></td>
+          <td><button class="del-btn" onclick="removeFAPFDefic('${deficId}')">✕</button></td>
+        </tr>`);
+      // Sync inline note → deficiency row description
+      const inlineInp = deficDiv.querySelector('input');
+      const deficInp  = document.getElementById(deficId + '-desc');
+      if (inlineInp && deficInp) {
+        inlineInp.addEventListener('input', () => {
+          deficInp.value = label + (inlineInp.value ? ': ' + inlineInp.value : '');
+        });
+      }
+    }
+  } else {
+    if (deficDiv) {
+      deficDiv.style.display = 'none';
+      const inp = deficDiv.querySelector('input');
+      if (inp) inp.value = '';
+    }
+    if (inspRow.dataset.pfDeficId) {
+      document.getElementById(inspRow.dataset.pfDeficId)?.remove();
+      delete inspRow.dataset.pfDeficId;
+    }
   }
+}
+function removeFAPFDefic(deficId) {
+  document.getElementById(deficId)?.remove();
+  const row = document.querySelector('[data-pf-defic-id="' + deficId + '"]');
+  if (row) delete row.dataset.pfDeficId;
 }
 
 // Set all pf-groups in a card to N/A except the Present group (first pf-group in first row)
@@ -3068,15 +3099,44 @@ function setFAYNA(btn, noteId, type) {
   btn.classList.add('selected');
   const noteRow = document.getElementById(noteId);
   if (!noteRow) return;
+  const inspRow = btn.closest('.inspect-row');
   if (type === 'N') {
     faYNANoteCounter++;
     noteRow.querySelector('.note-badge').textContent = 'Note #' + faYNANoteCounter;
     const inp = noteRow.querySelector('input');
     inp.classList.add('fail'); inp.placeholder = 'Describe issue…';
     noteRow.classList.add('show');
+    // Add to deficiency list if not already tracked
+    if (inspRow && !inspRow.dataset.ynaDeficId) {
+      faDeficCount++;
+      const deficId = 'fa-defic-yna-' + faDeficCount;
+      inspRow.dataset.ynaDeficId = deficId;
+      const label = inspRow.querySelector('.inspect-label')?.textContent?.trim() || 'Checklist Item';
+      document.getElementById('fa-defic-tbody').insertAdjacentHTML('beforeend', `
+        <tr id="${deficId}">
+          <td style="text-align:center;font-weight:700;color:var(--slate);">${faDeficCount}</td>
+          <td><input type="text" id="${deficId}-desc" value="${escHtml(label)}" placeholder="Describe deficiency…"></td>
+          <td><button class="del-btn" onclick="removeFAYNADefic('${deficId}')">✕</button></td>
+        </tr>`);
+      const deficInp = document.getElementById(deficId + '-desc');
+      if (inp && deficInp) {
+        inp.addEventListener('input', () => {
+          deficInp.value = label + (inp.value ? ': ' + inp.value : '');
+        });
+      }
+    }
   } else {
     noteRow.classList.remove('show');
+    if (inspRow && inspRow.dataset.ynaDeficId) {
+      document.getElementById(inspRow.dataset.ynaDeficId)?.remove();
+      delete inspRow.dataset.ynaDeficId;
+    }
   }
+}
+function removeFAYNADefic(deficId) {
+  document.getElementById(deficId)?.remove();
+  const row = document.querySelector('[data-yna-defic-id="' + deficId + '"]');
+  if (row) delete row.dataset.ynaDeficId;
 }
 
 // Detection type dropdown excludes FS and TS (those are flow/tamper tables, not detection devices)
@@ -3151,16 +3211,19 @@ function syncDeviceSummary() {
     );
   }
 
-  // Push counts into Device Testing Summary (only total/pass/fail — leave NT/NF alone)
+  // Push counts into Device Testing Summary; auto-fill NT = total − pass − fail
   FA_DEVICES.forEach((d, i) => {
     const c = counts[d.key] || { total: 0, pass: 0, fail: 0 };
     const id = `fa-dev-${i}`;
     const totalEl = document.getElementById(id + '-total');
     const passEl  = document.getElementById(id + '-pass');
     const failEl  = document.getElementById(id + '-fail');
+    const ntEl    = document.getElementById(id + '-nt');
     if (totalEl) totalEl.value = c.total > 0 ? c.total : '';
     if (passEl)  passEl.value  = c.pass  > 0 ? c.pass  : '';
     if (failEl)  failEl.value  = c.fail  > 0 ? c.fail  : '';
+    const nt = Math.max(0, c.total - c.pass - c.fail);
+    if (ntEl) ntEl.value = nt > 0 ? nt : '';
     calcFAPct(i);
   });
 }
@@ -6417,10 +6480,21 @@ async function buildEditablePDFBytes() {
     }
     page.drawRectangle({ x:ML+PW/2+10, y:ry(sigH), width:sigW, height:sigH, color:lgray, borderColor:navy, borderWidth:0.5 });
     page.drawText('CLIENT SIGNATURE:', { x:ML+PW/2+13, y:ry(sigH)+sigH-8, size:7, font:hFont, color:navy });
-    const cf = form.createTextField(fid());
-    cf.setText('');
-    cf.addToPage(page, { x:ML+PW/2+12, y:ry(sigH)+2, width:sigW-4, height:sigH-12, font: rFont });
-    cf.setFontSize(9);
+    if (custSigHasData) {
+      try {
+        const cc  = document.getElementById('cust-sig-canvas');
+        const b64 = cc.toDataURL('image/png').split(',')[1];
+        const ab  = Uint8Array.from(atob(b64), c => c.charCodeAt(0)).buffer;
+        const cImg  = await pdfDoc.embedPng(ab);
+        const cDims = cImg.scaleToFit(sigW - 8, sigH - 14);
+        page.drawImage(cImg, { x: ML+PW/2+14, y: ry(sigH) + 3, width: cDims.width, height: cDims.height });
+      } catch(_) {}
+    } else {
+      const cf = form.createTextField(fid());
+      cf.setText('');
+      cf.addToPage(page, { x:ML+PW/2+12, y:ry(sigH)+2, width:sigW-4, height:sigH-12, font: rFont });
+      cf.setFontSize(9);
+    }
     curY += sigH + 4;
     dataRow([
       { label:'INSPECTOR DATE', val: data.signature?.date || data.inspection?.date || '', w: PW/2 },
