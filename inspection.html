@@ -606,7 +606,7 @@ body { font-family: 'DM Sans', sans-serif; background: var(--light); color: var(
     </div>
 
     <div class="btn-row">
-      <button class="btn-primary" onclick="goStep(2)">Next: Systems →</button>
+      <button class="btn-primary" onclick="checkConnAndGoSystems()">Next: Systems →</button>
     </div>
   </div>
 
@@ -836,6 +836,9 @@ body { font-family: 'DM Sans', sans-serif; background: var(--light); color: var(
           <button class="btn-secondary" onclick="goBackFromSign()">← Back</button>
         </div>
         <div id="pdf-status" style="margin-top:10px;font-size:0.8rem;color:var(--green);line-height:1.6;"></div>
+        <div id="new-insp-btn-wrap" style="display:none;margin-top:14px;">
+          <button class="btn-primary" onclick="startNewInspection()" style="width:100%;">← Start New Inspection</button>
+        </div>
       </div>
     </div>
   </div>
@@ -843,7 +846,7 @@ body { font-family: 'DM Sans', sans-serif; background: var(--light); color: var(
   <!-- ══ FIRE ALARM: PREVIOUS DEFICIENCIES REVIEW (shown before panel when prev defics exist) ══ -->
   <div id="step-fa-prevdefic" style="display:none;">
     <div class="card" style="border-left:4px solid var(--amber);">
-      <div class="card-header" style="background:#fffbeb;"><span class="icon">⚠</span><span>Previous Inspection — Deficiencies to Review</span></div>
+      <div class="card-header" style="background:var(--amber);color:white;"><span class="icon">⚠</span><span>Previous Inspection — Deficiencies to Review</span></div>
       <div class="card-body">
         <p style="font-size:0.82rem;color:var(--slate);margin-bottom:12px;">The following deficiencies were recorded on the last inspection for this system. Review before starting the new inspection.</p>
         <table class="dyn-table" style="margin-bottom:0;">
@@ -1264,7 +1267,7 @@ body { font-family: 'DM Sans', sans-serif; background: var(--light); color: var(
   <!-- ══ SPRINKLER: PREVIOUS DEFICIENCIES REVIEW (shown before overview when prev defics exist) ══ -->
   <div id="step-sp-prevdefic" style="display:none;">
     <div class="card" style="border-left:4px solid var(--amber);">
-      <div class="card-header" style="background:#fffbeb;"><span class="icon">⚠</span><span>Previous Inspection — Deficiencies to Review</span></div>
+      <div class="card-header" style="background:var(--amber);color:white;"><span class="icon">⚠</span><span>Previous Inspection — Deficiencies to Review</span></div>
       <div class="card-body">
         <p style="font-size:0.82rem;color:var(--slate);margin-bottom:12px;">The following deficiencies were recorded on the last inspection for this system. Review before starting the new inspection.</p>
         <table class="dyn-table" style="margin-bottom:0;">
@@ -1663,6 +1666,13 @@ function goStep(n) {
   }
 }
 
+function checkConnAndGoSystems() {
+  if (!accessToken) {
+    toast('⚠ Not connected to Google Drive — data will not save to Drive. Connect in the top bar, or continue offline.');
+  }
+  goStep(2);
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // FIRE ALARM MULTI-STEP NAVIGATION
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1984,6 +1994,22 @@ function _continueSprinklerStart() {
       document.getElementById('sp-drain-tbody').innerHTML = '';
       spDrainCount = 0;
       for (let i = 1; i <= maxDrainN; i++) addSPDrainRow(drainLocMap[i] || '');
+    }
+    // Restore SP config number fields (System Configuration card persists across inspections)
+    ['sp-heads', 'sp-coverage', 'sp-static-psi', 'sp-residual-psi'].forEach(id => {
+      const el = document.getElementById(id);
+      const val = (prev.fieldData || {})[id];
+      if (el && val !== undefined && val !== '') el.value = val;
+    });
+    // Restore System Type button selections (multi-select, stored as comma-separated hidden input)
+    const spTypeVal = (prev.fieldData || {})['sp-type'] || '';
+    if (spTypeVal) {
+      const inp = document.getElementById('sp-type');
+      if (inp) inp.value = spTypeVal;
+      const types = spTypeVal.split(',').map(t => t.trim());
+      document.querySelectorAll('#sp-type-btns .pf-btn').forEach(btn => {
+        btn.classList.toggle('selected', types.includes(btn.textContent.trim()));
+      });
     }
     // Note: pfStates intentionally NOT restored — new inspections start with blank selections
     toast('✓ Previous config loaded');
@@ -7015,6 +7041,22 @@ async function buildSprinklerPDFBytes() {
   });
   curY += maxLines * nfpaLineH + 6;
 
+  // ── OVERALL STATUS — shown on page 1 (also rendered again at end of report) ──
+  {
+    const stH = 18;
+    const stVal = (data.overallStatus || '').toUpperCase();
+    const stColor = stVal === 'COMPLIANT' ? rgb(0.06, 0.50, 0.22) :
+                    stVal === 'DEFICIENT' ? rgb(0.76, 0.10, 0.10) :
+                    stVal === 'IMPAIRED'  ? rgb(0.75, 0.38, 0.00) :
+                                            rgb(0.38, 0.44, 0.54);
+    checkPage(stH + 4);
+    page.drawRectangle({ x: ML, y: ry(stH), width: PW, height: stH, color: stColor });
+    page.drawText('OVERALL SYSTEM STATUS', { x: ML + 8, y: ty(stH, 6), size: 6.5, font: hFont, color: white });
+    page.drawText(stVal || 'PENDING', { x: ML + 130, y: ty(stH, 6), size: 9.5, font: hFont, color: white });
+    curY += stH + 4;
+  }
+  gap(4);
+
   // ── PAGE 2: SYSTEM OVERVIEW ─────────────────────────────────────────────────
   addPage();
   secHdr('SYSTEM CONFIGURATION');
@@ -7991,6 +8033,24 @@ async function buildEditablePDFBytes() {
 
 // ─────────────────────────────────────────────────────────────────────────────
 // SAVE & DOWNLOAD  (combined: save JSON to Drive + save PDF to Drive + download)
+function startNewInspection() {
+  document.getElementById('pdf-status').innerHTML = '';
+  document.getElementById('new-insp-btn-wrap').style.display = 'none';
+  if (activeInspectionSystem === 'fire-alarm') {
+    exitFireAlarmInspection('property');
+  } else if (activeInspectionSystem === 'sprinkler') {
+    exitSprinklerInspection('property');
+  } else {
+    // Other system types (extinguisher, hood, etc.) use step-3/step-4 directly
+    document.getElementById('step-3').style.display = 'none';
+    document.getElementById('step-4').style.display = 'none';
+    document.getElementById('step-nav').style.display = 'flex';
+    activeInspectionSystem = null;
+    syncMainNavDisabled();
+    goStep(1);
+  }
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 async function saveAndDownload() {
   // ── 1. Signature check — BOTH drawn signature AND printed name required ───────
@@ -8029,6 +8089,7 @@ async function saveAndDownload() {
   const statusEl = document.getElementById('pdf-status');
   const setStatus2 = (msg, color) => { if (statusEl) { statusEl.innerHTML += `<div style="color:${color||'inherit'}">${msg}</div>`; } };
   if (statusEl) statusEl.innerHTML = '';
+  document.getElementById('new-insp-btn-wrap').style.display = 'none';
 
   let pdfBytes = null;
   let filename = '';
@@ -8115,6 +8176,7 @@ async function saveAndDownload() {
 
     // ── 7. Clear the draft — inspection is complete ────────────────────────────
     clearDraft();
+    document.getElementById('new-insp-btn-wrap').style.display = 'block';
 
   } catch(e) {
     setStatus2('✗ Error: ' + e.message, 'var(--red)');
