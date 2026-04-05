@@ -1412,11 +1412,9 @@ body { font-family: 'DM Sans', sans-serif; background: var(--light); color: var(
       <div class="card-body">
         <div class="inspect-row" id="row-sp-waterflow" data-val=""><div class="inspect-row-top"><div class="inspect-label">Waterflow alarm test<small>Activates within 90 seconds via inspector test connection</small></div><div class="pf-group"><button class="pf-btn pass" onclick="setSPPF(this,'sp-waterflow','PASS')">PASS</button><button class="pf-btn fail" onclick="setSPPF(this,'sp-waterflow','FAIL')">FAIL</button><button class="pf-btn na" onclick="setSPPF(this,'sp-waterflow','N/A')">N/A</button></div></div><div class="deficiency-row" id="sp-defic-row-sp-waterflow"><input type="text" id="sp-defic-note-sp-waterflow" placeholder="Describe deficiency…"></div></div>
         <div class="inspect-row" id="row-sp-waterflow-cs" data-val=""><div class="inspect-row-top"><div class="inspect-label">Central station transmission<small>CS received waterflow alarm</small></div><div class="pf-group"><button class="pf-btn pass" onclick="setSPPF(this,'sp-waterflow-cs','PASS')">PASS</button><button class="pf-btn fail" onclick="setSPPF(this,'sp-waterflow-cs','FAIL')">FAIL</button><button class="pf-btn na" onclick="setSPPF(this,'sp-waterflow-cs','N/A')">N/A</button></div></div><div class="deficiency-row" id="sp-defic-row-sp-waterflow-cs"><input type="text" id="sp-defic-note-sp-waterflow-cs" placeholder="Describe deficiency…"></div></div>
-        <div class="data-row cols-2" style="margin-top:8px;">
+        <div class="inspect-row" id="row-sp-wf-cv" data-val=""><div class="inspect-row-top"><div class="inspect-label">Control Valve(s) Open &amp; Supervised<small>All open; tamper switches operational</small></div><div class="pf-group"><button class="pf-btn pass" onclick="setSPPF(this,'sp-wf-cv','PASS')">PASS</button><button class="pf-btn fail" onclick="setSPPF(this,'sp-wf-cv','FAIL')">FAIL</button><button class="pf-btn na" onclick="setSPPF(this,'sp-wf-cv','N/A')">N/A</button></div></div><div class="deficiency-row" id="sp-defic-row-sp-wf-cv"><input type="text" id="sp-defic-note-sp-wf-cv" placeholder="Describe deficiency…"></div></div>
+        <div class="data-row cols-1" style="margin-top:8px;">
           <div class="data-field"><label>Waterflow Response Time (sec)</label><input type="number" id="sp-wf-time"></div>
-          <div class="data-field"><label>Control Valve(s) Open &amp; Supervised</label>
-            <select id="sp-control-valve-status"><option value="">— Select —</option><option>PASS</option><option>FAIL</option><option>N/A</option></select>
-          </div>
         </div>
       </div>
     </div>
@@ -1922,6 +1920,10 @@ function restoreSPDraft(draft) {
       const el = document.getElementById(id);
       if (el) el.innerHTML = html;
     }
+  });
+  // Remove any stale General Notes card that old drafts may have embedded in step-sp-defic
+  document.getElementById('step-sp-defic')?.querySelectorAll('.card').forEach(card => {
+    if (card.querySelector('[id^="sp-note"]')) card.remove();
   });
   Object.entries(draft.step4Fields || {}).forEach(([id, val]) => {
     const el = document.getElementById(id);
@@ -6938,14 +6940,13 @@ async function buildSprinklerPDFBytes() {
 
   subHdr('WATERFLOW ALARM');
   inspHdr();
-  ['sp-waterflow','sp-waterflow-cs'].forEach(id => {
+  ['sp-waterflow','sp-waterflow-cs','sp-wf-cv'].forEach(id => {
     const el = document.getElementById('row-' + id);
     const lbl = el?.querySelector('.inspect-label')?.childNodes[0]?.textContent?.trim() || id;
     inspRow(lbl, id);
   });
   dataRow([
-    { label: 'WATERFLOW RESPONSE TIME (SEC)', val: fd['sp-wf-time'] || '', w: PW/2 },
-    { label: 'CONTROL VALVE STATUS',           val: fd['sp-control-valve-status'] || '', w: PW/2 },
+    { label: 'WATERFLOW RESPONSE TIME (SEC)', val: fd['sp-wf-time'] || '', w: PW },
   ]);
   gap(3);
 
