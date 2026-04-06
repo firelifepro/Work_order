@@ -346,6 +346,29 @@ body { font-family: 'DM Sans', sans-serif; background: var(--light); color: var(
 .yna-btn.y.selected  { background: var(--pass-bg); box-shadow: 0 0 0 2px var(--pass-ring); }
 .yna-btn.n.selected  { background: var(--fail-bg); box-shadow: 0 0 0 2px var(--fail-ring); }
 .yna-btn.na.selected { background: var(--na-bg);   box-shadow: 0 0 0 2px var(--na-ring); }
+
+/* ── EXTINGUISHER STAT BOXES & SUMMARY TABLES ── */
+.stat-box{background:#f8fafc;border:1.5px solid var(--border);border-radius:8px;padding:10px 14px;display:flex;align-items:center;justify-content:space-between;}
+.stat-box .stat-label{font-size:.72rem;font-weight:700;color:var(--slate);text-transform:uppercase;letter-spacing:.05em;}
+.stat-box .stat-val{font-size:1.4rem;font-weight:700;color:var(--navy);}
+.sum-table{width:100%;border-collapse:collapse;font-size:.76rem;}
+.sum-table th{background:var(--navy3);color:white;padding:6px 8px;font-size:.64rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;text-align:center;}
+.sum-table th.left{text-align:left;}
+.sum-table td{padding:5px 6px;border-bottom:1px solid var(--border);border-right:1px solid var(--border);vertical-align:middle;text-align:center;}
+.sum-table td.row-label{text-align:left;font-weight:700;font-size:.76rem;background:#f8fafc;white-space:nowrap;}
+.sum-table td:last-child{border-right:none;}
+.sum-table tr:last-child td{border-bottom:none;}
+.sum-table input[type=number]{border:1px solid var(--border);border-radius:4px;padding:3px 6px;font-size:.78rem;font-family:inherit;width:60px;background:white;outline:none;text-align:center;}
+.sum-table input[type=text]{border:1px solid var(--border);border-radius:4px;padding:3px 6px;font-size:.78rem;font-family:inherit;width:100%;background:white;outline:none;}
+.sum-table input:focus{border-color:var(--blue);background:#eff6ff;}
+.qa-table{width:100%;border-collapse:collapse;font-size:.8rem;}
+.qa-table th{background:var(--navy3);color:white;padding:7px 9px;font-size:.68rem;font-weight:700;text-transform:uppercase;text-align:left;}
+.qa-table td{padding:7px 8px;border-bottom:1px solid var(--border);vertical-align:middle;}
+.qa-table tr:nth-child(even) td{background:#f8fafc;}
+.qa-table td.q-cell{font-size:.8rem;font-weight:500;}
+.qa-table select,.qa-table input[type=text]{border:1px solid var(--border);border-radius:4px;padding:4px 7px;font-size:.78rem;font-family:inherit;background:white;outline:none;}
+.qa-table select:focus,.qa-table input:focus{border-color:var(--blue);background:#eff6ff;}
+
 .cl-section-header { background: var(--navy3); color: white; padding: 8px 12px; font-size: .8rem; font-weight: 700; border-radius: 6px 6px 0 0; margin-bottom: 0; }
 .cl-block { border: 1.5px solid var(--navy3); border-radius: 0 0 8px 8px; overflow: hidden; margin-bottom: 14px; }
 .cl-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
@@ -456,6 +479,9 @@ body { font-family: 'DM Sans', sans-serif; background: var(--light); color: var(
     </div>
     <div class="step-tab" data-step="3" onclick="goStep(3)">
       <span class="step-num">3</span><span class="step-check">✓</span>Inspect
+    </div>
+    <div class="step-tab" id="step-nav-summary-tab" style="display:none;" onclick="goExtSummaryStep()">
+      <span class="step-num">S</span><span class="step-check">✓</span>Services Due
     </div>
     <div class="step-tab" id="step-nav-defic-tab" onclick="goGenericDeficStep()">
       <span class="step-num">D</span><span class="step-check">✓</span>Deficiencies
@@ -753,7 +779,7 @@ body { font-family: 'DM Sans', sans-serif; background: var(--light); color: var(
     <div id="sys-forms"></div>
     <div class="btn-row">
       <button class="btn-secondary" onclick="goStep(2)">← Systems</button>
-      <button class="btn-primary" onclick="goGenericDeficStep()">Next: Deficiencies →</button>
+      <button class="btn-primary" onclick="goInspNextStep()">Next: Deficiencies →</button>
     </div>
   </div>
 
@@ -773,6 +799,65 @@ body { font-family: 'DM Sans', sans-serif; background: var(--light); color: var(
     <div class="btn-row">
       <button class="btn-secondary" onclick="goStep(3)">← Inspect</button>
       <button class="btn-primary" onclick="goStep(4)">Next: Sign &amp; Export →</button>
+    </div>
+  </div>
+
+  <!-- ══ EXTINGUISHER SUMMARY SHEET ══ -->
+  <div id="step-ext-summary" style="display:none;">
+    <div class="card">
+      <div class="card-header"><span class="icon">📊</span><span>Services Due Now Summary</span></div>
+      <div class="card-body">
+        <div style="display:flex;align-items:center;gap:16px;margin-bottom:14px;">
+          <div class="stat-box" style="flex:0 0 auto;min-width:200px;">
+            <span class="stat-label">Total Extinguishers on Report</span>
+            <span class="stat-val" id="ext-sum-total">0</span>
+          </div>
+        </div>
+
+        <div class="sys-section" style="font-size:.7rem;font-weight:700;color:var(--blue);text-transform:uppercase;letter-spacing:.08em;margin:14px 0 8px;padding-bottom:4px;border-bottom:1.5px solid #bfdbfe;">Specific Services Due Now</div>
+        <div style="overflow-x:auto;">
+          <table class="sum-table" id="ext-svc-table">
+            <thead>
+              <tr>
+                <th class="left" style="width:130px;">Extinguisher Type</th>
+                <th>6-Year Maint</th>
+                <th>Hydrostatic</th>
+                <th>Recharge</th>
+                <th>New Unit</th>
+                <th style="min-width:140px;">Notes</th>
+              </tr>
+            </thead>
+            <tbody id="ext-svc-tbody"></tbody>
+          </table>
+        </div>
+
+        <div class="sys-section" style="font-size:.7rem;font-weight:700;color:var(--blue);text-transform:uppercase;letter-spacing:.08em;margin:14px 0 8px;padding-bottom:4px;border-bottom:1.5px solid #bfdbfe;">Units Not Found During This Inspection</div>
+        <div class="field-grid cols-3" style="gap:10px;">
+          <div class="field-group"><label>Cabinet Mallets Missing</label><input type="number" id="ext-nf-mallets" min="0" placeholder="0"></div>
+          <div class="field-group"><label>Location Signage Missing</label><input type="number" id="ext-nf-signage" min="0" placeholder="0"></div>
+          <div class="field-group"><label>Cabinet Glass (list size)</label><input type="text" id="ext-nf-glass" placeholder="e.g. 2× 4×8"></div>
+        </div>
+
+        <div class="sys-section" style="font-size:.7rem;font-weight:700;color:var(--blue);text-transform:uppercase;letter-spacing:.08em;margin:14px 0 8px;padding-bottom:4px;border-bottom:1.5px solid #bfdbfe;">Total Services Due Now</div>
+        <div class="field-grid" style="gap:10px;">
+          <div class="field-group"><label>Total Services Due (auto-calculated)</label><input type="number" id="ext-total-svc-due" min="0" placeholder="0" readonly style="background:#f8fafc;"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><span class="icon">✅</span><span>Inspection Verification Questions</span></div>
+      <div class="card-body">
+        <table class="qa-table">
+          <thead><tr><th>Question</th><th style="width:100px;">Answer</th><th style="width:60px;">#</th></tr></thead>
+          <tbody id="ext-qa-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn-secondary" onclick="goStep(3)">← Inspect</button>
+      <button class="btn-primary" onclick="goGenericDeficStep()">Next: Deficiencies →</button>
     </div>
   </div>
 
@@ -1701,9 +1786,11 @@ function goStep(n) {
   if (activeInspectionSystem && !['fire-alarm','sprinkler'].includes(activeInspectionSystem)) {
     saveDraft();
   }
-  // Always hide generic defic step when navigating numbered steps
+  // Always hide generic defic step and ext summary when navigating numbered steps
   const genDeficEl = document.getElementById('step-generic-defic');
   if (genDeficEl) genDeficEl.style.display = 'none';
+  const extSummaryEl = document.getElementById('step-ext-summary');
+  if (extSummaryEl) extSummaryEl.style.display = 'none';
   document.getElementById('step-' + currentStep).style.display = 'none';
   document.getElementById('step-' + n).style.display = 'block';
   document.querySelectorAll('#step-nav .step-tab').forEach(t => {
@@ -1718,6 +1805,9 @@ function goStep(n) {
     deficTab.classList.remove('active', 'done');
     if (n >= 4) deficTab.classList.add('done');
   }
+  // Summary tab: show only for extinguisher inspections
+  const summaryTabEl = document.getElementById('step-nav-summary-tab');
+  if (summaryTabEl) summaryTabEl.style.display = (activeInspectionSystem === 'extinguisher') ? '' : 'none';
   // Prevdefic tab: mark done when moving past it
   const prevDeficTab = document.getElementById('step-nav-prevdefic-tab');
   if (prevDeficTab && prevDeficTab.style.display !== 'none') {
@@ -2130,6 +2220,8 @@ function goGenericPrevDeficStep() {
   document.getElementById('step-3').style.display = 'none';
   document.getElementById('step-4').style.display = 'none';
   document.getElementById('step-generic-defic').style.display = 'none';
+  const extSumEl2 = document.getElementById('step-ext-summary');
+  if (extSumEl2) extSumEl2.style.display = 'none';
   document.getElementById('step-generic-prevdefic').style.display = 'block';
   const prevDeficTab = document.getElementById('step-nav-prevdefic-tab');
   document.querySelectorAll('#step-nav .step-tab[data-step]').forEach(t => t.classList.remove('active'));
@@ -2141,31 +2233,38 @@ function goGenericPrevDeficStep() {
 function goGenericDeficStep() {
   if (!activeInspectionSystem || ['fire-alarm','sprinkler'].includes(activeInspectionSystem)) return;
   saveDraft();
-  // Rebuild deficiency table from current FAIL rows in sys-forms
-  genericDeficCount = 0;
-  const tbody = document.getElementById('generic-defic-tbody');
-  if (tbody) {
-    tbody.innerHTML = '';
-    document.querySelectorAll('#sys-forms .inspect-row').forEach(row => {
-      if (row.dataset.val === 'FAIL') {
-        genericDeficCount++;
-        const itemId = row.id.replace('row-', '');
-        const label = row.querySelector('.inspect-label')?.childNodes[0]?.textContent?.trim() || itemId;
-        const noteVal = document.getElementById('defic-txt-' + itemId)?.value?.trim() || '';
-        const description = label + (noteVal ? ': ' + noteVal : '');
-        const rowId = 'generic-defic-' + genericDeficCount;
-        tbody.insertAdjacentHTML('beforeend', `
-          <tr id="${rowId}">
-            <td style="text-align:center;font-weight:700;color:var(--slate);">${genericDeficCount}</td>
-            <td><input type="text" id="${rowId}-desc" value="${escHtml(description)}" placeholder="Describe deficiency…"></td>
-            <td><button class="del-btn" onclick="this.closest('tr').remove()">✕</button></td>
-          </tr>`);
-      }
-    });
+
+  if (activeInspectionSystem !== 'extinguisher') {
+    // For non-extinguisher generic: rebuild from FAIL inspect-rows
+    genericDeficCount = 0;
+    const tbody = document.getElementById('generic-defic-tbody');
+    if (tbody) {
+      tbody.innerHTML = '';
+      document.querySelectorAll('#sys-forms .inspect-row').forEach(row => {
+        if (row.dataset.val === 'FAIL') {
+          genericDeficCount++;
+          const itemId = row.id.replace('row-', '');
+          const label = row.querySelector('.inspect-label')?.childNodes[0]?.textContent?.trim() || itemId;
+          const noteVal = document.getElementById('defic-txt-' + itemId)?.value?.trim() || '';
+          const description = label + (noteVal ? ': ' + noteVal : '');
+          const rowId = 'generic-defic-' + genericDeficCount;
+          tbody.insertAdjacentHTML('beforeend', `
+            <tr id="${rowId}">
+              <td style="text-align:center;font-weight:700;color:var(--slate);">${genericDeficCount}</td>
+              <td><input type="text" id="${rowId}-desc" value="${escHtml(description)}" placeholder="Describe deficiency…"></td>
+              <td><button class="del-btn" onclick="this.closest('tr').remove()">✕</button></td>
+            </tr>`);
+        }
+      });
+    }
   }
+  // For extinguisher: deficiencies already managed via FAIL buttons — don't rebuild
+
   // Show/hide
   document.getElementById('step-3').style.display = 'none';
   document.getElementById('step-4').style.display = 'none';
+  const extSummaryEl = document.getElementById('step-ext-summary');
+  if (extSummaryEl) extSummaryEl.style.display = 'none';
   document.getElementById('step-generic-defic').style.display = 'block';
   // Nav tab states
   document.querySelectorAll('#step-nav .step-tab[data-step]').forEach(t => {
@@ -2175,6 +2274,8 @@ function goGenericDeficStep() {
   });
   const deficTab = document.getElementById('step-nav-defic-tab');
   if (deficTab) { deficTab.classList.remove('done'); deficTab.classList.add('active'); }
+  const summaryTab = document.getElementById('step-nav-summary-tab');
+  if (summaryTab) summaryTab.classList.add('done');
   const prevDeficTab = document.getElementById('step-nav-prevdefic-tab');
   if (prevDeficTab && prevDeficTab.style.display !== 'none') prevDeficTab.classList.add('done');
   window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -2901,9 +3002,9 @@ function _buildFreshGenericInspection() {
     // Restore extinguisher rows
     if (prev.extinguishers && prev.extinguishers.length > 0) {
       const tbody = document.getElementById('ext-tbody');
-      if (tbody) { tbody.innerHTML = ''; extRowCount = 0; }
+      if (tbody) { tbody.innerHTML = ''; extUnitCount = 0; }
       prev.extinguishers.forEach(ext => {
-        addExtRow(ext.location, ext.type, ext.size, ext.mfrDate, ext.pressure);
+        addExtUnitRow(ext);
       });
     }
 
@@ -3536,32 +3637,54 @@ function buildHoodPanel() {
   return makePanel('hood', '🍳', 'Kitchen Hood Suppression (NFPA 17A)', body);
 }
 
+const EXT_TYPES = ['ABC','CO2','K Class','Water Cannon','Water Mist','Halon','Halotron','FE36','Foam','BC','Class D','Other'];
+const EXT_MOUNT_OPTS = [['','—'],['HK','HK – Hook'],['FK','FK – Fork'],['CAB','CAB – Cabinet'],['NM','NM – Not Mounted']];
+const EXT_SVC_TYPES = ['ABC-2.5LB','ABC-5LB','ABC-10LB','ABC-20LB','CO2','K Class','Water Cannon','Water Mist','Halon','Halotron','FE36','Foam','BC','Class D','Other'];
+const EXT_QA_QUESTIONS = [
+  'Visual examination performed on all units?',
+  'Monthly inspections or electronic monitoring is being conducted?',
+  'If applicable, all pressure gauges were in the correct range?',
+  'All units were the correct weight?',
+  'All units are visible and/or have correct signage?',
+  'All discharge hoses were inspected for blockage?',
+  'All units are mounted and/or in the correct location?',
+  'All internal maintenance and pressure testing is up to date on all units / or have been swapped out?',
+  'Up-to-date certification tags have been attached to all units?',
+];
+let extUnitCount = 0, extDeficCount = 0;
+
 function buildExtinguisherPanel() {
   const extTable = `
     <p style="font-size:0.78rem;color:var(--slate);margin-bottom:6px;">Log each extinguisher. Add rows for all units at this property.</p>
+    <div id="ext-unit-count-bar" style="display:flex;gap:10px;margin-bottom:12px;">
+      <div class="stat-box" style="flex:1;"><span class="stat-label">Total Units</span><span class="stat-val" id="ext-stat-total">0</span></div>
+      <div class="stat-box" style="flex:1;background:var(--pass-bg);border-color:var(--pass-ring);"><span class="stat-label" style="color:var(--green);">Pass</span><span class="stat-val" style="color:var(--green);" id="ext-stat-pass">0</span></div>
+      <div class="stat-box" style="flex:1;background:var(--fail-bg);border-color:var(--fail-ring);"><span class="stat-label" style="color:var(--red);">Fail</span><span class="stat-val" style="color:var(--red);" id="ext-stat-fail">0</span></div>
+    </div>
+    <div style="overflow-x:auto;">
     <table class="ext-table" id="ext-table">
       <thead>
         <tr>
           <th>#</th>
+          <th>FLR</th>
           <th>Location</th>
-          <th>Type / Class</th>
-          <th>Size / Rating</th>
-          <th>Last Mfr Date</th>
-          <th>Pressure</th>
-          <th>Seal/Pin</th>
-          <th>Label</th>
-          <th>Overall</th>
+          <th>Mount</th>
+          <th>Cabinet</th>
+          <th>MFG Year</th>
+          <th>Size</th>
+          <th>Type</th>
+          <th>Pass/Fail</th>
+          <th>Hydro Due</th>
+          <th>Recharge?</th>
+          <th>New Unit?</th>
+          <th>Note</th>
           <th></th>
         </tr>
       </thead>
       <tbody id="ext-tbody"></tbody>
     </table>
-    <button class="add-row-btn" onclick="addExtRow()">+ Add Extinguisher</button>
-    ${sectionDiv('Extinguisher Inspection Notes')}
-    ${makeRow('ext-mounted','All Extinguishers Properly Mounted','Height accessible; not obstructed')}
-    ${makeRow('ext-signage','Location Signage','Sign above each extinguisher visible')}
-    ${makeRow('ext-6yr','6-Year Maintenance (if due)','Internal examination per NFPA 10',{noNA:false})}
-    ${makeRow('ext-hydro','Hydrostatic Test (if due)','Per NFPA 10 test intervals',{noNA:false})}
+    </div>
+    <button class="add-row-btn" onclick="addExtUnitRow()">+ Add Extinguisher</button>
     <div class="field-group" style="margin-top:8px;">
       <label>Extinguisher General Notes</label>
       <textarea id="ext-notes" rows="2"></textarea>
@@ -3571,53 +3694,73 @@ function buildExtinguisherPanel() {
   setTimeout(() => {
     const tbody = document.getElementById('ext-tbody');
     if (tbody && tbody.rows.length === 0) {
-      addExtRow(); addExtRow();
+      addExtUnitRow(); addExtUnitRow();
     }
+    // Show/hide summary tab based on active system
+    const summaryTab = document.getElementById('step-nav-summary-tab');
+    if (summaryTab) summaryTab.style.display = '';
   }, 20);
   return panel;
 }
 
 let extRowCount = 0;
-function addExtRow(prefillLoc, prefillType, prefillSize, prefillMfr, prefillPsi) {
-  extRowCount++;
-  const n = extRowCount;
+
+function addExtUnitRow(prefill) {
+  extUnitCount++;
+  const n = extUnitCount;
+  const p = prefill || {};
+  const mountSel = EXT_MOUNT_OPTS.map(([v,l]) => `<option value="${v}"${v===p.mount?' selected':''}>${l}</option>`).join('');
+  const typeSel  = ['', ...EXT_TYPES].map(t => `<option value="${t}"${t===p.type?' selected':''}>${t||'—'}</option>`).join('');
+  const cabDisabled = p.mount === 'CAB' ? '' : 'disabled style="opacity:.4;"';
   const tbody = document.getElementById('ext-tbody');
   if (!tbody) return;
-  const tr = document.createElement('tr');
-  tr.id = 'ext-row-' + n;
-  const typeOptions = ['ABC Dry Chem','CO2','Water','Wet Chemical','Halon','Clean Agent','Class D','Class K'];
-  const typeOpts = typeOptions.map(t => `<option${t === (prefillType||'ABC Dry Chem') ? ' selected' : ''}>${t}</option>`).join('');
-  tr.innerHTML = `
-    <td style="text-align:center;font-weight:600;color:var(--slate);font-size:0.75rem;">${n}</td>
-    <td><input type="text" id="ext-loc-${n}" value="${(prefillLoc||'').replace(/"/g,'&quot;')}" placeholder="Room, Floor, Area"></td>
-    <td><select id="ext-type-${n}" style="min-width:80px;">${typeOpts}</select></td>
-    <td><input type="text" id="ext-size-${n}" value="${(prefillSize||'').replace(/"/g,'&quot;')}" placeholder="2.5 lb / 2A:10BC"></td>
-    <td><input type="month" id="ext-mfr-${n}" value="${prefillMfr||''}"></td>
-    <td><input type="text" id="ext-psi-${n}" value="${(prefillPsi||'').replace(/"/g,'&quot;')}" placeholder="In range?" style="width:65px;"></td>
-    <td>
-      <div class="pf-group">
-        <button class="pf-btn pass" onclick="setPFTable(this,'ext-seal-${n}','PASS')">✓</button>
-        <button class="pf-btn fail" onclick="setPFTable(this,'ext-seal-${n}','FAIL')">✗</button>
-      </div>
-      <input type="hidden" id="ext-seal-${n}">
-    </td>
-    <td>
-      <div class="pf-group">
-        <button class="pf-btn pass" onclick="setPFTable(this,'ext-label-${n}','PASS')">✓</button>
-        <button class="pf-btn fail" onclick="setPFTable(this,'ext-label-${n}','FAIL')">✗</button>
-      </div>
-      <input type="hidden" id="ext-label-${n}">
-    </td>
-    <td>
-      <div class="pf-group">
-        <button class="pf-btn pass" onclick="setPFTable(this,'ext-overall-${n}','PASS')" title="Override: PASS">PASS</button>
-        <button class="pf-btn fail" onclick="setPFTable(this,'ext-overall-${n}','FAIL')" title="Override: FAIL">FAIL</button>
-      </div>
-      <input type="hidden" id="ext-overall-${n}">
-      <div style="font-size:0.6rem;color:var(--slate);margin-top:2px;" id="ext-override-note-${n}"></div>
-    </td>
-    <td><button class="remove-row-btn" onclick="document.getElementById('ext-row-${n}').remove()">✕</button></td>`;
-  tbody.appendChild(tr);
+  tbody.insertAdjacentHTML('beforeend', `
+    <tr id="ext-unit-row-${n}">
+      <td style="text-align:center;font-weight:600;color:var(--slate);font-size:0.75rem;">${n}</td>
+      <td><input type="text" id="u-flr-${n}" value="${p.flr||''}" placeholder="1" style="width:36px;"></td>
+      <td><input type="text" id="u-loc-${n}" value="${(p.loc||'').replace(/"/g,'&quot;')}" placeholder="e.g. Lobby"></td>
+      <td><select id="u-mount-${n}" onchange="extToggleCab(${n})">${mountSel}</select></td>
+      <td><input type="text" id="u-cab-${n}" value="${(p.cab||'').replace(/"/g,'&quot;')}" placeholder="GLS,MLT,SGN" ${cabDisabled}></td>
+      <td><input type="number" id="u-mfg-${n}" value="${p.mfg||''}" placeholder="2019" min="1950" max="2099" style="width:58px;"></td>
+      <td><input type="text" id="u-size-${n}" value="${(p.size||'').replace(/"/g,'&quot;')}" placeholder="10 lb"></td>
+      <td><select id="u-type-${n}">${typeSel}</select></td>
+      <td>
+        <div class="pf-group">
+          <button class="pf-btn pass" onclick="setExtPF(this,${n},'PASS')">PASS</button>
+          <button class="pf-btn fail" onclick="setExtPF(this,${n},'FAIL')">FAIL</button>
+          <button class="pf-btn na" onclick="setExtPF(this,${n},'N/A')">N/A</button>
+        </div>
+        <input type="hidden" id="u-pf-${n}" value="${p.pf||''}">
+      </td>
+      <td><input type="number" id="u-hydro-${n}" value="${p.hydroDue||''}" placeholder="2030" min="1950" max="2099" style="width:58px;"></td>
+      <td>
+        <div class="pf-group" style="gap:2px;">
+          <button class="pf-btn pass" style="font-size:.65rem;padding:3px 5px;" onclick="setExtYN(this,${n},'recharge','Y')">Y</button>
+          <button class="pf-btn fail" style="font-size:.65rem;padding:3px 5px;" onclick="setExtYN(this,${n},'recharge','N')">N</button>
+          <button class="pf-btn na" style="font-size:.65rem;padding:3px 5px;" onclick="setExtYN(this,${n},'recharge','N/A')">N/A</button>
+        </div>
+        <input type="hidden" id="u-recharge-${n}" value="${p.recharge||''}">
+      </td>
+      <td>
+        <div class="pf-group" style="gap:2px;">
+          <button class="pf-btn pass" style="font-size:.65rem;padding:3px 5px;" onclick="setExtYN(this,${n},'newunit','Y')">Y</button>
+          <button class="pf-btn fail" style="font-size:.65rem;padding:3px 5px;" onclick="setExtYN(this,${n},'newunit','N')">N</button>
+          <button class="pf-btn na" style="font-size:.65rem;padding:3px 5px;" onclick="setExtYN(this,${n},'newunit','N/A')">N/A</button>
+        </div>
+        <input type="hidden" id="u-newunit-${n}" value="${p.newUnit||''}">
+      </td>
+      <td><button class="note-toggle-btn" onclick="toggleExtNote(${n})" title="Add note" style="background:none;border:1px solid var(--border);border-radius:5px;padding:2px 7px;cursor:pointer;font-size:.85rem;">📝</button></td>
+      <td><button class="del-btn" onclick="removeExtUnit(${n})">✕</button></td>
+    </tr>
+    <tr id="ext-note-row-${n}" style="display:none;">
+      <td colspan="14" style="padding:4px 8px;background:#fffbeb;border-bottom:1px solid var(--border);">
+        <input type="text" id="u-note-txt-${n}" value="${(p.noteTxt||'').replace(/"/g,'&quot;')}" placeholder="Note for Unit #${n}…" style="width:100%;border:1px solid var(--border);border-radius:4px;padding:5px 8px;font-size:.8rem;font-family:inherit;">
+      </td>
+    </tr>`);
+  // Restore button selected states
+  if (p.pf) _restoreExtBtns(n);
+  if (p.noteTxt) document.getElementById('ext-note-row-' + n).style.display = '';
+  updateExtStats();
 }
 
 function setPFTable(btn, id, val) {
@@ -3627,19 +3770,6 @@ function setPFTable(btn, id, val) {
   group.querySelectorAll('.pf-btn').forEach(b => b.classList.remove('selected'));
   btn.classList.add('selected');
 
-  // Auto-logic: if seal or label changed, update overall (unless user manually set overall)
-  if (id.startsWith('ext-seal-') || id.startsWith('ext-label-')) {
-    const n = id.replace('ext-seal-', '').replace('ext-label-', '');
-    autoSetExtOverall(n);
-  }
-  // Mark overall as manually set so auto-logic won't overwrite it
-  if (id.startsWith('ext-overall-')) {
-    const n = id.replace('ext-overall-', '');
-    const row = document.getElementById('ext-row-' + n);
-    if (row) row.dataset.manualOverall = 'true';
-    const note = document.getElementById('ext-override-note-' + n);
-    if (note) note.textContent = '(manually set)';
-  }
   // Detection row deficiency + summary
   const detMatch = id.match(/^fa-det-(?:alarm|sup)-(\d+)$/);
   if (detMatch) { checkDetectionDefic(parseInt(detMatch[1])); syncDeviceSummary(); }
@@ -3659,42 +3789,203 @@ function setPFTable(btn, id, val) {
   }
 }
 
-// Auto-set the Overall result based on Seal/Pin and Label results
-// Rules:
-//   - Either seal OR label = FAIL  →  overall = FAIL  (auto)
-//   - Both seal AND label = PASS   →  overall = PASS  (auto, if not manually overridden)
-//   - User can always click Overall to override
-function autoSetExtOverall(n) {
-  const row = document.getElementById('ext-row-' + n);
-  if (row?.dataset.manualOverall === 'true') return; // user set it, don't override
-
-  const sealVal  = document.getElementById('ext-seal-' + n)?.value  || '';
-  const labelVal = document.getElementById('ext-label-' + n)?.value || '';
-  if (!sealVal && !labelVal) return; // nothing set yet
-
-  let autoVal = '';
-  if (sealVal === 'FAIL' || labelVal === 'FAIL') {
-    autoVal = 'FAIL';
-  } else if (sealVal === 'PASS' && labelVal === 'PASS') {
-    autoVal = 'PASS';
-  }
-  if (!autoVal) return;
-
-  // Apply to the overall hidden input and button
-  const overallInput = document.getElementById('ext-overall-' + n);
-  if (overallInput) overallInput.value = autoVal;
-  const overallGroup = overallInput?.closest('td')?.querySelector('.pf-group');
-  if (overallGroup) {
-    overallGroup.querySelectorAll('.pf-btn').forEach(b => {
-      b.classList.toggle('selected',
-        (autoVal === 'PASS' && b.classList.contains('pass')) ||
-        (autoVal === 'FAIL' && b.classList.contains('fail'))
-      );
+function _restoreExtBtns(n) {
+  const pfVal = document.getElementById('u-pf-'+n)?.value || '';
+  if (pfVal) {
+    document.querySelector(`#ext-unit-row-${n} td:nth-child(9) .pf-group`)?.querySelectorAll('.pf-btn').forEach(b => {
+      b.classList.toggle('selected', b.textContent.trim() === pfVal);
     });
   }
-  // Clear the "(manually set)" note since this is auto
-  const note = document.getElementById('ext-override-note-' + n);
-  if (note) note.textContent = '';
+  const rVal = document.getElementById('u-recharge-'+n)?.value || '';
+  if (rVal) {
+    document.querySelectorAll(`#ext-unit-row-${n} td:nth-child(11) .pf-btn`).forEach(b => {
+      b.classList.toggle('selected', b.textContent.trim() === rVal);
+    });
+  }
+  const nuVal = document.getElementById('u-newunit-'+n)?.value || '';
+  if (nuVal) {
+    document.querySelectorAll(`#ext-unit-row-${n} td:nth-child(12) .pf-btn`).forEach(b => {
+      b.classList.toggle('selected', b.textContent.trim() === nuVal);
+    });
+  }
+}
+
+function setExtPF(btn, n, val) {
+  btn.closest('.pf-group').querySelectorAll('.pf-btn').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+  const inp = document.getElementById('u-pf-' + n);
+  if (inp) inp.value = val;
+
+  // Highlight row on fail
+  const row = document.getElementById('ext-unit-row-' + n);
+  if (row) {
+    row.style.background = val === 'FAIL' ? 'var(--fail-bg)' : val === 'PASS' ? 'var(--pass-bg)' : '';
+  }
+
+  // Create/remove deficiency
+  if (val === 'FAIL') {
+    if (!row?.dataset.deficId) {
+      extDeficCount++;
+      const deficId = 'ext-unit-defic-' + n;
+      row.dataset.deficId = deficId;
+      const loc = document.getElementById('u-loc-' + n)?.value?.trim() || '';
+      const type = document.getElementById('u-type-' + n)?.value?.trim() || '';
+      const desc = 'Unit #' + n + (loc ? ' – ' + loc : '') + (type ? ' (' + type + ')' : '') + ': Failed inspection';
+      const tbody = document.getElementById('generic-defic-tbody');
+      if (tbody) {
+        tbody.insertAdjacentHTML('beforeend', `
+          <tr id="${deficId}">
+            <td style="text-align:center;font-weight:700;color:var(--slate);">${extDeficCount}</td>
+            <td><input type="text" id="${deficId}-desc" value="${escHtml(desc)}" placeholder="Describe deficiency…"></td>
+            <td><button class="del-btn" onclick="removeExtUnitDefic('${deficId}',${n})">✕</button></td>
+          </tr>`);
+      }
+    }
+  } else {
+    if (row?.dataset.deficId) {
+      document.getElementById(row.dataset.deficId)?.remove();
+      delete row.dataset.deficId;
+    }
+  }
+
+  updateExtStats();
+}
+
+function removeExtUnitDefic(deficId, n) {
+  document.getElementById(deficId)?.remove();
+  const row = document.getElementById('ext-unit-row-' + n);
+  if (row) {
+    delete row.dataset.deficId;
+    row.style.background = '';
+    const hidden = document.getElementById('u-pf-' + n);
+    if (hidden) hidden.value = '';
+    row.querySelectorAll('td:nth-child(9) .pf-btn').forEach(b => b.classList.remove('selected'));
+  }
+  updateExtStats();
+}
+
+function setExtYN(btn, n, field, val) {
+  btn.closest('.pf-group').querySelectorAll('.pf-btn').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+  const inp = document.getElementById('u-' + field + '-' + n);
+  if (inp) inp.value = val;
+}
+
+function extToggleCab(n) {
+  const mount = document.getElementById('u-mount-' + n)?.value;
+  const cab = document.getElementById('u-cab-' + n);
+  if (!cab) return;
+  if (mount === 'CAB') { cab.disabled = false; cab.style.opacity = '1'; }
+  else { cab.disabled = true; cab.style.opacity = '.4'; cab.value = ''; }
+}
+
+function toggleExtNote(n) {
+  const noteRow = document.getElementById('ext-note-row-' + n);
+  if (!noteRow) return;
+  const isVisible = noteRow.style.display !== 'none';
+  noteRow.style.display = isVisible ? 'none' : '';
+  if (!isVisible) document.getElementById('u-note-txt-' + n)?.focus();
+}
+
+function removeExtUnit(n) {
+  const row = document.getElementById('ext-unit-row-' + n);
+  if (row?.dataset.deficId) document.getElementById(row.dataset.deficId)?.remove();
+  document.getElementById('ext-unit-row-' + n)?.remove();
+  document.getElementById('ext-note-row-' + n)?.remove();
+  updateExtStats();
+}
+
+function updateExtStats() {
+  let total = 0, pass = 0, fail = 0;
+  for (let i = 1; i <= extUnitCount; i++) {
+    if (!document.getElementById('ext-unit-row-' + i)) continue;
+    total++;
+    const pf = document.getElementById('u-pf-' + i)?.value || '';
+    if (pf === 'PASS') pass++;
+    if (pf === 'FAIL') fail++;
+  }
+  const te = document.getElementById('ext-stat-total'); if (te) te.textContent = total;
+  const pe = document.getElementById('ext-stat-pass');  if (pe) pe.textContent = pass;
+  const fe = document.getElementById('ext-stat-fail');  if (fe) fe.textContent = fail;
+  const st = document.getElementById('ext-sum-total');  if (st) st.textContent = total;
+}
+
+function goInspNextStep() {
+  if (activeInspectionSystem === 'extinguisher') {
+    goExtSummaryStep();
+  } else {
+    goGenericDeficStep();
+  }
+}
+
+function goExtSummaryStep() {
+  if (activeInspectionSystem !== 'extinguisher') return;
+  saveDraft();
+  updateExtStats();
+
+  // Build svc table if not yet built
+  if (!document.getElementById('ext-svc-tbody')?.children.length) {
+    buildExtSvcTable();
+    buildExtQATable();
+  }
+
+  document.getElementById('step-3').style.display = 'none';
+  document.getElementById('step-generic-defic').style.display = 'none';
+  document.getElementById('step-ext-summary').style.display = 'block';
+
+  // Nav
+  document.querySelectorAll('#step-nav .step-tab[data-step]').forEach(t => {
+    const s = parseInt(t.dataset.step);
+    t.classList.remove('active','done');
+    if (s <= 3) t.classList.add('done');
+  });
+  const summaryTab = document.getElementById('step-nav-summary-tab');
+  if (summaryTab) { summaryTab.classList.remove('done'); summaryTab.classList.add('active'); }
+  const deficTab = document.getElementById('step-nav-defic-tab');
+  if (deficTab) { deficTab.classList.remove('active','done'); }
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function buildExtSvcTable() {
+  const tbody = document.getElementById('ext-svc-tbody');
+  if (!tbody) return;
+  EXT_SVC_TYPES.forEach((type, i) => {
+    tbody.insertAdjacentHTML('beforeend', `
+      <tr>
+        <td class="row-label">${type}</td>
+        <td><input type="number" id="ext-svc-6yr-${i}" min="0" placeholder="0" oninput="calcExtTotalSvc()"></td>
+        <td><input type="number" id="ext-svc-hydro-${i}" min="0" placeholder="0" oninput="calcExtTotalSvc()"></td>
+        <td><input type="number" id="ext-svc-recharge-${i}" min="0" placeholder="0" oninput="calcExtTotalSvc()"></td>
+        <td><input type="number" id="ext-svc-newunit-${i}" min="0" placeholder="0" oninput="calcExtTotalSvc()"></td>
+        <td><input type="text" id="ext-svc-notes-${i}" style="width:100%;" placeholder="Notes…"></td>
+      </tr>`);
+  });
+}
+
+function buildExtQATable() {
+  const tbody = document.getElementById('ext-qa-tbody');
+  if (!tbody) return;
+  const ansOpts = ['','Yes','No','Partial','N/A'].map(o => `<option value="${o}">${o||'—'}</option>`).join('');
+  EXT_QA_QUESTIONS.forEach((q, i) => {
+    tbody.insertAdjacentHTML('beforeend', `
+      <tr>
+        <td class="q-cell">${q}</td>
+        <td><select id="ext-qa-ans-${i}">${ansOpts}</select></td>
+        <td><input type="text" id="ext-qa-num-${i}" placeholder="#" style="width:44px;"></td>
+      </tr>`);
+  });
+}
+
+function calcExtTotalSvc() {
+  let total = 0;
+  EXT_SVC_TYPES.forEach((_, i) => {
+    ['6yr','hydro','recharge','newunit'].forEach(col => {
+      const val = parseInt(document.getElementById(`ext-svc-${col}-${i}`)?.value || '0') || 0;
+      total += val;
+    });
+  });
+  const el = document.getElementById('ext-total-svc-due');
+  if (el) el.value = total || '';
 }
 
 function buildHydrantPanel() {
@@ -5100,7 +5391,7 @@ function saveDraft() {
     photos,
     sigData,
     custSigData,
-    counters:    { faSubpanelCount, faDetectionCount, faFlowCount, faTamperCount, faBatteryCount, faDeficCount, faNoteCount, spDeficCount, spNoteCount, spDrainCount, genericDeficCount },
+    counters:    { faSubpanelCount, faDetectionCount, faFlowCount, faTamperCount, faBatteryCount, faDeficCount, faNoteCount, spDeficCount, spNoteCount, spDrainCount, genericDeficCount, extUnitCount, extDeficCount },
     overallStatus,
     onsiteUnsat: Object.assign({}, _onsiteUnsat),
     currentFAStep,
@@ -5161,6 +5452,8 @@ function restoreDraft(draft) {
   // Restore _onsiteUnsat tracking
   Object.assign(_onsiteUnsat, draft.onsiteUnsat || {});
   genericDeficCount = draft.counters?.genericDeficCount || 0;
+  extUnitCount = draft.counters?.extUnitCount || 0;
+  extDeficCount = draft.counters?.extDeficCount || 0;
   // Restore general notes tbody (lives in step-4, outside faSteps)
   if (draft.notesHTML !== undefined) {
     const el = document.getElementById('fa-notes-tbody');
@@ -5975,21 +6268,43 @@ function collectAllData() {
 
   // Extinguishers
   const extinguishers = [];
-  for (let i = 1; i <= extRowCount; i++) {
-    if (document.getElementById('ext-row-' + i)) {
-      extinguishers.push({
-        rowNum: i,
-        location: v('ext-loc-' + i),
-        type:     (document.getElementById('ext-type-' + i)?.value || ''),
-        size:     v('ext-size-' + i),
-        mfrDate:  v('ext-mfr-' + i),
-        pressure: v('ext-psi-' + i),
-        seal:     v('ext-seal-' + i),
-        label:    v('ext-label-' + i),
-        overall:  v('ext-overall-' + i)
-      });
-    }
+  for (let i = 1; i <= extUnitCount; i++) {
+    if (!document.getElementById('ext-unit-row-' + i)) continue;
+    const noteTxt = document.getElementById('u-note-txt-' + i)?.value?.trim() || '';
+    extinguishers.push({
+      rowNum:   i,
+      flr:      document.getElementById('u-flr-' + i)?.value?.trim() || '',
+      location: document.getElementById('u-loc-' + i)?.value?.trim() || '',
+      mount:    document.getElementById('u-mount-' + i)?.value || '',
+      cab:      document.getElementById('u-cab-' + i)?.value?.trim() || '',
+      mfgYear:  document.getElementById('u-mfg-' + i)?.value?.trim() || '',
+      size:     document.getElementById('u-size-' + i)?.value?.trim() || '',
+      type:     document.getElementById('u-type-' + i)?.value || '',
+      pf:       document.getElementById('u-pf-' + i)?.value || '',
+      hydroDue: document.getElementById('u-hydro-' + i)?.value?.trim() || '',
+      recharge: document.getElementById('u-recharge-' + i)?.value || '',
+      newUnit:  document.getElementById('u-newunit-' + i)?.value || '',
+      noteTxt,
+    });
   }
+  // Extinguisher summary sheet data
+  const extSvcTable = typeof EXT_SVC_TYPES !== 'undefined' ? EXT_SVC_TYPES.map((type, i) => ({
+    type,
+    yr6:      document.getElementById('ext-svc-6yr-' + i)?.value || '',
+    hydro:    document.getElementById('ext-svc-hydro-' + i)?.value || '',
+    recharge: document.getElementById('ext-svc-recharge-' + i)?.value || '',
+    newunit:  document.getElementById('ext-svc-newunit-' + i)?.value || '',
+    notes:    document.getElementById('ext-svc-notes-' + i)?.value?.trim() || '',
+  })) : [];
+  const extQA = typeof EXT_QA_QUESTIONS !== 'undefined' ? EXT_QA_QUESTIONS.map((q, i) => ({
+    q,
+    ans: document.getElementById('ext-qa-ans-' + i)?.value || '',
+    num: document.getElementById('ext-qa-num-' + i)?.value?.trim() || '',
+  })) : [];
+  const extNfMallets  = document.getElementById('ext-nf-mallets')?.value || '';
+  const extNfSignage  = document.getElementById('ext-nf-signage')?.value || '';
+  const extNfGlass    = document.getElementById('ext-nf-glass')?.value?.trim() || '';
+  const extTotalSvcDue = document.getElementById('ext-total-svc-due')?.value || '';
 
   return {
     meta: { generatedAt: new Date().toISOString(), version: '3.0' },
@@ -6020,6 +6335,12 @@ function collectAllData() {
     pfStates,
     deficiencies,
     extinguishers,
+    extSvcTable,
+    extQA,
+    extNfMallets,
+    extNfSignage,
+    extNfGlass,
+    extTotalSvcDue,
     signature: { name: v('sig-name'), date: v('sig-date'), hasDrawnSig: sigHasData }
   };
 }
@@ -6092,9 +6413,9 @@ function restoreExtinguishers(extData) {
   // Clear the default empty rows first
   const tbody = document.getElementById('ext-tbody');
   if (tbody) tbody.innerHTML = '';
-  extRowCount = 0;
+  extUnitCount = 0;
   extData.forEach(ext => {
-    addExtRow(ext.location, ext.type, ext.size, ext.mfrDate, ext.pressure, ext.seal, ext.label, ext.overall);
+    addExtUnitRow(ext);
   });
 }
 
@@ -7348,16 +7669,19 @@ async function buildExtinguisherPDFBytes() {
   secHdr('EXTINGUISHER UNIT INVENTORY');
 
   const extCols = [
-    { label: '#',          w: 22  },
-    { label: 'LOCATION',   w: 108 },
-    { label: 'TYPE',       w: 80  },
-    { label: 'SIZE',       w: 56  },
-    { label: 'MFR DATE',   w: 52  },
-    { label: 'PRESSURE',   w: 50  },
-    { label: 'SEAL/PIN',   w: 42  },
-    { label: 'LABEL',      w: 42  },
-    { label: 'PASS/FAIL',  w: 40  },
-    { label: 'NOTES',      w: 48  },
+    { label: '#',         w: 20  },
+    { label: 'FLR',       w: 22  },
+    { label: 'LOCATION',  w: 85  },
+    { label: 'MOUNT',     w: 40  },
+    { label: 'CABINET',   w: 48  },
+    { label: 'MFG YR',    w: 38  },
+    { label: 'SIZE',      w: 44  },
+    { label: 'TYPE',      w: 54  },
+    { label: 'PASS/FAIL', w: 40  },
+    { label: 'HYDRO DUE', w: 40  },
+    { label: 'RECHARGE',  w: 36  },
+    { label: 'NEW UNIT',  w: 36  },
+    { label: 'NOTE',      w: 37  },
   ];
 
   const drawExtHdr = () => {
@@ -7365,7 +7689,7 @@ async function buildExtinguisherPDFBytes() {
     let x = ML;
     extCols.forEach(col => {
       page.drawRectangle({ x, y: ry(13), width: col.w, height: 13, color: navy });
-      page.drawText(wrap(col.label, 5.5, col.w-3)[0]||'', { x: x+2, y: ty(13,4), size: 5.5, font: hFont, color: white });
+      page.drawText(wrap(col.label, 5, col.w-3)[0]||'', { x: x+2, y: ty(13,4), size: 5, font: hFont, color: white });
       x += col.w;
     });
     curY += 14;
@@ -7375,18 +7699,21 @@ async function buildExtinguisherPDFBytes() {
   const drawExtRow = (ext) => {
     const cellH = 14;
     if (curY + cellH > PH - MB) { addPage(); drawExtHdr(); }
-    const pf = (ext.overall || '').toUpperCase();
+    const pf = (ext.pf || ext.overall || '').toUpperCase();
     const cells = [
       String(ext.rowNum || ''),
+      ext.flr || '',
       ext.location || '',
-      ext.type || '',
+      ext.mount || '',
+      ext.cab || '',
+      ext.mfgYear || ext.mfrDate || '',
       ext.size || '',
-      ext.mfrDate || '',
-      ext.pressure || '',
-      ext.seal || '',
-      ext.label || '',
+      ext.type || '',
       pf,
-      '',
+      ext.hydroDue || '',
+      ext.recharge || '',
+      ext.newUnit || '',
+      ext.noteTxt || '',
     ];
     let x = ML;
     extCols.forEach((col, i) => {
@@ -7397,13 +7724,13 @@ async function buildExtinguisherPDFBytes() {
       const txtColor = (isStatus && (pf === 'FAIL' || pf === 'PASS')) ? white : blk;
       page.drawRectangle({ x, y: ry(cellH), width: col.w, height: cellH, color: bgColor, borderColor: sky, borderWidth: 0.3 });
       if (isStatus && pf) {
-        const tw = hFont.widthOfTextAtSize(pf, 6.5);
-        page.drawText(pf, { x: x + col.w/2 - tw/2, y: ty(cellH, 4), size: 6.5, font: hFont, color: txtColor });
+        const tw = hFont.widthOfTextAtSize(pf, 6);
+        page.drawText(pf, { x: x + col.w/2 - tw/2, y: ty(cellH, 4), size: 6, font: hFont, color: txtColor });
       } else {
         const f = form.createTextField(fid());
         f.setText(cells[i]);
         f.addToPage(page, { x: x+1, y: ry(cellH)+1, width: col.w-2, height: cellH-2, font: rFont });
-        f.setFontSize(6);
+        f.setFontSize(5.5);
       }
       x += col.w;
     });
@@ -7416,55 +7743,96 @@ async function buildExtinguisherPDFBytes() {
   // Pad to at least 3 rows
   const emptyNeeded = Math.max(0, 3 - data.extinguishers.length);
   for (let i = 0; i < emptyNeeded; i++) {
-    drawExtRow({ rowNum: data.extinguishers.length + i + 1, location:'', type:'', size:'', mfrDate:'', pressure:'', seal:'', label:'', overall:'' });
+    drawExtRow({ rowNum: data.extinguishers.length + i + 1 });
   }
   gap(8);
 
-  // ── INSPECTION CHECKLIST ─────────────────────────────────────────────────────
-  secHdr('INSPECTION CHECKLIST (NFPA 10)');
-  const LW = 340, BW = 32, NW = PW - LW - BW * 3;
-  const ciHdr = () => {
+  // ── SERVICES DUE NOW SUMMARY ──────────────────────────────────────────────────
+  if (data.extSvcTable && data.extSvcTable.some(r => r.yr6 || r.hydro || r.recharge || r.newunit || r.notes)) {
+    addPage();
+    secHdr('SERVICES DUE NOW SUMMARY');
+    // Summary stats
+    checkPage(22);
+    page.drawRectangle({ x: ML, y: ry(18), width: PW, height: 18, color: lgray, borderColor: sky, borderWidth: 0.3 });
+    page.drawText('Total Extinguishers on Report:', { x: ML+4, y: ty(18, 6), size: 8, font: hFont, color: navy });
+    page.drawText(String(data.extinguishers.length), { x: ML+200, y: ty(18, 6), size: 10, font: hFont, color: navy });
+    curY += 20;
+    gap(4);
+
+    // Services due table header
+    const svcCols = [
+      { label: 'EXTINGUISHER TYPE', w: 130 },
+      { label: '6-YEAR MAINT',      w: 70  },
+      { label: 'HYDROSTATIC',       w: 70  },
+      { label: 'RECHARGE',          w: 70  },
+      { label: 'NEW UNIT',          w: 70  },
+      { label: 'NOTES',             w: 130 },
+    ];
     checkPage(13);
-    page.drawRectangle({ x: ML,         y: ry(13), width: LW,  height: 13, color: navy });
-    page.drawText('QUESTION', { x: ML+2, y: ty(13,4), size: 6, font: hFont, color: white });
-    page.drawRectangle({ x: ML+LW,      y: ry(13), width: BW,  height: 13, color: navy });
-    page.drawText('Y',   { x: ML+LW+BW/2-3,    y: ty(13,4), size: 7, font: hFont, color: white });
-    page.drawRectangle({ x: ML+LW+BW,   y: ry(13), width: BW,  height: 13, color: navy });
-    page.drawText('N',   { x: ML+LW+BW*1.5-3,  y: ty(13,4), size: 7, font: hFont, color: white });
-    page.drawRectangle({ x: ML+LW+BW*2, y: ry(13), width: BW,  height: 13, color: navy });
-    page.drawText('N/A', { x: ML+LW+BW*2.5-6,  y: ty(13,4), size: 6, font: hFont, color: white });
-    page.drawRectangle({ x: ML+LW+BW*3, y: ry(13), width: NW,  height: 13, color: navy });
-    page.drawText('NOTES', { x: ML+LW+BW*3+2,  y: ty(13,4), size: 6, font: hFont, color: white });
+    let sx = ML;
+    svcCols.forEach(col => {
+      page.drawRectangle({ x: sx, y: ry(13), width: col.w, height: 13, color: navy });
+      page.drawText(col.label, { x: sx+2, y: ty(13,4), size: 5.5, font: hFont, color: white });
+      sx += col.w;
+    });
     curY += 14;
-  };
-  const ciRow = (label, rowId) => {
-    const val = document.getElementById('row-' + rowId)?.dataset?.val || '';
-    const yVal  = val === 'PASS' ? 'X' : '';
-    const nVal  = val === 'FAIL' ? 'X' : '';
-    const naVal = val === 'N/A'  ? 'X' : '';
-    const noteVal = document.getElementById('defic-txt-' + rowId)?.value?.trim() || '';
-    const h = 13;
-    checkPage(h + 1);
-    page.drawRectangle({ x: ML, y: ry(h), width: LW, height: h, color: gold, borderColor: sky, borderWidth: 0.3 });
-    wrap(label, 6.5, LW - 4).forEach((ln, li) => {
-      page.drawText(ln, { x: ML+2, y: ry(h) + h - 6 - li*7, size: 6.5, font: rFont, color: blk });
+    (data.extSvcTable || []).forEach(row => {
+      const hasData = row.yr6 || row.hydro || row.recharge || row.newunit || row.notes;
+      if (!hasData) return;
+      const rowH = 13;
+      checkPage(rowH + 1);
+      const vals = [row.type, row.yr6||'', row.hydro||'', row.recharge||'', row.newunit||'', row.notes||''];
+      let rx = ML;
+      svcCols.forEach((col, ci) => {
+        page.drawRectangle({ x: rx, y: ry(rowH), width: col.w, height: rowH, color: gold, borderColor: sky, borderWidth: 0.3 });
+        const f = form.createTextField(fid());
+        f.setText(vals[ci]); f.addToPage(page, { x: rx+1, y: ry(rowH)+1, width: col.w-2, height: rowH-2, font: rFont }); f.setFontSize(6);
+        rx += col.w;
+      });
+      curY += rowH + 1;
     });
-    [yVal, nVal, naVal].forEach((v, vi) => {
-      page.drawRectangle({ x: ML+LW+BW*vi, y: ry(h), width: BW, height: h, color: gold, borderColor: sky, borderWidth: 0.3 });
-      const f = form.createTextField(fid());
-      f.setText(v); f.addToPage(page, { x: ML+LW+BW*vi+1, y: ry(h)+1, width: BW-2, height: h-2, font: rFont }); f.setFontSize(8);
-    });
-    page.drawRectangle({ x: ML+LW+BW*3, y: ry(h), width: NW, height: h, color: gold, borderColor: sky, borderWidth: 0.3 });
-    const nf = form.createTextField(fid());
-    nf.setText(noteVal); nf.addToPage(page, { x: ML+LW+BW*3+1, y: ry(h)+1, width: NW-2, height: h-2, font: rFont }); nf.setFontSize(6);
-    curY += h + 1;
-  };
-  ciHdr();
-  ciRow('All Extinguishers Properly Mounted (height accessible, not obstructed)', 'ext-mounted');
-  ciRow('Location Signage (sign above each extinguisher visible)', 'ext-signage');
-  ciRow('6-Year Maintenance — if due (internal examination per NFPA 10)', 'ext-6yr');
-  ciRow('Hydrostatic Test — if due (per NFPA 10 test intervals)', 'ext-hydro');
-  gap(8);
+    gap(8);
+
+    // Total services due
+    if (data.extTotalSvcDue) {
+      checkPage(20);
+      page.drawRectangle({ x: ML, y: ry(16), width: PW, height: 16, color: lgray, borderColor: sky, borderWidth: 0.3 });
+      page.drawText('Total Services Due:', { x: ML+4, y: ty(16, 5), size: 8, font: hFont, color: navy });
+      page.drawText(String(data.extTotalSvcDue), { x: ML+160, y: ty(16, 5), size: 10, font: hFont, color: navy });
+      curY += 18;
+      gap(4);
+    }
+
+    // QA questions
+    if (data.extQA && data.extQA.some(q => q.ans)) {
+      secHdr('INSPECTION VERIFICATION QUESTIONS');
+      const qaLW = 380, qaAW = 80, qaNumW = 80;
+      checkPage(13);
+      page.drawRectangle({ x: ML,         y: ry(13), width: qaLW,   height: 13, color: navy });
+      page.drawText('QUESTION', { x: ML+2, y: ty(13,4), size: 6, font: hFont, color: white });
+      page.drawRectangle({ x: ML+qaLW,    y: ry(13), width: qaAW,  height: 13, color: navy });
+      page.drawText('ANSWER', { x: ML+qaLW+4, y: ty(13,4), size: 6, font: hFont, color: white });
+      page.drawRectangle({ x: ML+qaLW+qaAW, y: ry(13), width: qaNumW, height: 13, color: navy });
+      page.drawText('#', { x: ML+qaLW+qaAW+4, y: ty(13,4), size: 6, font: hFont, color: white });
+      curY += 14;
+      (data.extQA || []).forEach(qa => {
+        const qH = 13;
+        checkPage(qH + 1);
+        page.drawRectangle({ x: ML, y: ry(qH), width: qaLW, height: qH, color: gold, borderColor: sky, borderWidth: 0.3 });
+        wrap(qa.q, 6, qaLW - 4).forEach((ln, li) => {
+          page.drawText(ln, { x: ML+2, y: ry(qH) + qH - 6 - li*7, size: 6, font: rFont, color: blk });
+        });
+        page.drawRectangle({ x: ML+qaLW, y: ry(qH), width: qaAW, height: qH, color: gold, borderColor: sky, borderWidth: 0.3 });
+        const af = form.createTextField(fid());
+        af.setText(qa.ans||''); af.addToPage(page, { x: ML+qaLW+1, y: ry(qH)+1, width: qaAW-2, height: qH-2, font: rFont }); af.setFontSize(6);
+        page.drawRectangle({ x: ML+qaLW+qaAW, y: ry(qH), width: qaNumW, height: qH, color: gold, borderColor: sky, borderWidth: 0.3 });
+        const nf2 = form.createTextField(fid());
+        nf2.setText(qa.num||''); nf2.addToPage(page, { x: ML+qaLW+qaAW+1, y: ry(qH)+1, width: qaNumW-2, height: qH-2, font: rFont }); nf2.setFontSize(6);
+        curY += qH + 1;
+      });
+      gap(8);
+    }
+  }
 
   // ── DEFICIENCY LIST ──────────────────────────────────────────────────────────
   secHdr('DEFICIENCY LIST');
@@ -7491,14 +7859,19 @@ async function buildExtinguisherPDFBytes() {
   // ── GENERAL NOTES ─────────────────────────────────────────────────────────────
   secHdr('GENERAL NOTES & RECOMMENDATIONS');
   const extNotesVal = dv('ext-notes');
-  const noteRowCount = Math.max(extNotesVal ? 1 : 0, 3);
+  // Collect unit notes
+  const unitNotes = (data.extinguishers || []).filter(e => e.noteTxt).map(e => 'Unit #' + e.rowNum + (e.location ? ' – ' + e.location : '') + ': ' + e.noteTxt);
+  const allNotes = [];
+  if (extNotesVal) allNotes.push(extNotesVal);
+  unitNotes.forEach(n => allNotes.push(n));
+  const noteRowCount = Math.max(allNotes.length, 3);
   for (let i = 0; i < noteRowCount; i++) {
     checkPage(14);
     page.drawRectangle({ x: ML,    y: ry(13), width: 24,     height: 13, color: gold, borderColor: sky, borderWidth: 0.3 });
     page.drawText(String(i+1), { x: ML+8, y: ty(13,4), size: 7, font: hFont, color: blk });
     page.drawRectangle({ x: ML+24, y: ry(13), width: PW-24,  height: 13, color: gold, borderColor: sky, borderWidth: 0.3 });
     const nf = form.createTextField(fid());
-    nf.setText(i === 0 ? extNotesVal : '');
+    nf.setText(allNotes[i] || '');
     nf.addToPage(page, { x: ML+25, y: ry(13)+1, width: PW-26, height: 11, font: rFont }); nf.setFontSize(7);
     curY += 14;
   }
@@ -8899,6 +9272,10 @@ function startNewInspection() {
     document.getElementById('step-nav').style.display = 'flex';
     const prevDeficTab = document.getElementById('step-nav-prevdefic-tab');
     if (prevDeficTab) { prevDeficTab.style.display = 'none'; prevDeficTab.classList.remove('active', 'done'); }
+    const summaryTabReset = document.getElementById('step-nav-summary-tab');
+    if (summaryTabReset) { summaryTabReset.style.display = 'none'; summaryTabReset.classList.remove('active', 'done'); }
+    const extSummaryReset = document.getElementById('step-ext-summary');
+    if (extSummaryReset) extSummaryReset.style.display = 'none';
     activeInspectionSystem = null;
     syncMainNavDisabled();
     goStep(1);
