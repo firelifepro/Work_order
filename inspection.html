@@ -5296,7 +5296,12 @@ function updateDeficiencySummary() {
   // Update count pill
   if (countPill) countPill.textContent = defics.length + (defics.length === 1 ? ' deficiency' : ' deficiencies');
 
-  if (defics.length > 0) {
+  // Generic systems (not FA/SP) have a dedicated Deficiencies step — hide the inline box
+  const _isGenericSys = activeInspectionSystem && !['fire-alarm','sprinkler'].includes(activeInspectionSystem);
+  if (_isGenericSys) {
+    sumDiv.classList.remove('show');
+    listDiv.innerHTML = '';
+  } else if (defics.length > 0) {
     sumDiv.classList.add('show');
     listDiv.innerHTML = defics.map(d => `
       <div class="defic-item" id="defic-card-${d.itemId}">
@@ -7122,6 +7127,468 @@ function removePhoto(idx) {
 // ─────────────────────────────────────────────────────────────────────────────
 // SPRINKLER PDF
 // ─────────────────────────────────────────────────────────────────────────────
+async function buildExtinguisherPDFBytes() {
+  if (!window.PDFLib) throw new Error('PDF library not loaded. Please refresh.');
+  const data = collectAllData();
+  const { PDFDocument, rgb, StandardFonts } = window.PDFLib;
+  const pdfDoc = await PDFDocument.create();
+  const form   = pdfDoc.getForm();
+  const hFont  = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+  const rFont  = await pdfDoc.embedFont(StandardFonts.Helvetica);
+
+  const W = 612, PH = 792, ML = 36, PW = 540, MT = 36, MB = 36;
+  let page, curY, _fid = 0;
+  const fid = () => 'ext_' + (++_fid);
+
+  const FIRE_RED = rgb(0.72, 0.08, 0.08);
+  const navy  = rgb(0.13, 0.21, 0.42);
+  const sky   = rgb(0.71, 0.80, 0.93);
+  const gold  = rgb(1.0,  1.0,  0.75);
+  const lgray = rgb(0.94, 0.94, 0.94);
+  const white = rgb(1, 1, 1);
+  const blk   = rgb(0, 0, 0);
+
+  const addPage = () => { page = pdfDoc.addPage([W, PH]); curY = MT; };
+  const ry = (h) => PH - curY - h;
+  const ty = (h, a = 3) => PH - curY - h + a;
+  const checkPage = (needed) => { if (curY + needed > PH - MB) addPage(); };
+
+  const wrap = (text, sz, maxW) => {
+    if (!text) return [''];
+    const words = String(text).split(' ');
+    const lines = []; let cur = '';
+    for (const w of words) {
+      const test = cur ? cur + ' ' + w : w;
+      if (rFont.widthOfTextAtSize(test, sz) > maxW && cur) { lines.push(cur); cur = w; }
+      else cur = test;
+    }
+    if (cur) lines.push(cur);
+    return lines.length ? lines : [''];
+  };
+
+  const secHdr = (title) => {
+    checkPage(18);
+    page.drawRectangle({ x: ML, y: ry(17), width: PW, height: 17, color: navy });
+    page.drawText(title, { x: ML+4, y: ty(17,5), size: 9, font: hFont, color: white });
+    curY += 18;
+  };
+  const mkField = (val, x, fieldY, w, h) => {
+    page.drawRectangle({ x, y: fieldY, width: w, height: h, color: gold, borderColor: sky, borderWidth: 0.5 });
+    const f = form.createTextField(fid());
+    f.setText(String(val || ''));
+    f.addToPage(page, { x: x+1, y: fieldY+1, width: w-2, height: h-2, font: rFont });
+    f.setFontSize(8);
+  };
+  const dataRow = (cols, fh = 12, lh = 8, gp = 3) => {
+    checkPage(lh + fh + gp);
+    let x = ML;
+    cols.forEach(c => {
+      page.drawText((c.label||'')+':', { x: x+2, y: ty(lh, lh-3), size: 6, font: hFont, color: navy });
+      mkField(c.val, x, ry(lh+fh), c.w, fh);
+      x += c.w;
+    });
+    curY += lh + fh + gp;
+  };
+  const gap = (h) => { curY += h; };
+
+  const dv = (id) => document.getElementById(id)?.value?.trim() || '';
+  const fd = data.fieldData || {};
+
+  // ── PAGE 1: COVER ────────────────────────────────────────────────────────────
+  addPage();
+
+  // Red title banner
+  const titleH = 22;
+  const titleText = 'PORTABLE FIRE EXTINGUISHER INSPECTION REPORT';
+  page.drawRectangle({ x: 0, y: PH - titleH, width: W, height: titleH, color: FIRE_RED });
+  page.drawText(titleText, {
+    x: W/2 - hFont.widthOfTextAtSize(titleText, 13)/2,
+    y: PH - titleH + 5, size: 13, font: hFont, color: white
+  });
+  curY = titleH + 6;
+
+  // Logo + company block
+  const logoAreaH = 88;
+  const logoX = ML, logoW = 90;
+  const infoX = ML + logoW + 6, infoW = 160;
+  const rtX   = infoX + infoW + 6, rtW = PW - logoW - infoW - 18;
+
+  try {
+    const svgText = await fetch('logo.svg').then(r => r.text());
+    const sizedSvg = svgText.replace('<svg ', '<svg width="400" height="600" ');
+    const svgBlob = new Blob([sizedSvg], { type: 'image/svg+xml' });
+    const url = URL.createObjectURL(svgBlob);
+    await new Promise((resolve) => {
+      const img = new Image();
+      img.onload = async () => {
+        const scale = 3;
+        const full = document.createElement('canvas');
+        full.width = 400 * scale; full.height = 600 * scale;
+        full.getContext('2d').drawImage(img, 0, 0, full.width, full.height);
+        const cropW = 400 * scale, cropH = 445 * scale;
+        const crop = document.createElement('canvas');
+        crop.width = cropW; crop.height = cropH;
+        crop.getContext('2d').drawImage(full, 0, 0, cropW, cropH, 0, 0, cropW, cropH);
+        const b64 = crop.toDataURL('image/png').split(',')[1];
+        const ab  = Uint8Array.from(atob(b64), c => c.charCodeAt(0)).buffer;
+        const logoImg = await pdfDoc.embedPng(ab);
+        const logoDims = logoImg.scaleToFit(70, 70);
+        page.drawImage(logoImg, { x: logoX, y: ry(logoAreaH) + (logoAreaH - logoDims.height)/2, width: logoDims.width, height: logoDims.height });
+        URL.revokeObjectURL(url);
+        resolve();
+      };
+      img.onerror = () => { URL.revokeObjectURL(url); resolve(); };
+      img.src = url;
+    });
+  } catch(_) {}
+
+  // Company info box
+  page.drawRectangle({ x: infoX, y: ry(logoAreaH), width: infoW, height: logoAreaH, color: lgray, borderColor: sky, borderWidth: 0.5 });
+  const compLines = [
+    { text: 'Fire Life Protection System, Inc.', bold: true,  sz: 7.5 },
+    { text: '8201 Shaffer Parkway Suite B',       bold: false, sz: 7   },
+    { text: 'Littleton, CO 80127',                bold: false, sz: 7   },
+    { text: 'Cellular: (303) 726-8847',           bold: false, sz: 7   },
+    { text: 'Office: (720) 974-1570',             bold: false, sz: 7   },
+    { text: 'Alan.antonio@firelifeprotection',    bold: false, sz: 6.5 },
+    { text: 'systems.com',                        bold: false, sz: 6.5 },
+  ];
+  let compY = ry(logoAreaH) + logoAreaH - 10;
+  compLines.forEach(cl => {
+    page.drawText(cl.text, { x: infoX+4, y: compY, size: cl.sz, font: cl.bold ? hFont : rFont, color: blk });
+    compY -= cl.sz + 1.5;
+  });
+
+  // Report type selector boxes
+  const rtBoxH = 15, rtBW = rtW / 3;
+  const rtCur = (fd['report-type'] || '').toUpperCase();
+  ['ANNUAL','SEMI-ANNUAL','QUARTERLY'].forEach((t, i) => {
+    const sel = rtCur === t || (t === 'SEMI-ANNUAL' && rtCur.includes('SEMI'));
+    const bx = rtX + i * rtBW;
+    page.drawRectangle({ x: bx, y: ry(logoAreaH)+logoAreaH-rtBoxH, width: rtBW-1, height: rtBoxH, color: sel ? rgb(1,0.85,0) : white, borderColor: sky, borderWidth: 0.5 });
+    page.drawText(t, { x: bx+3, y: ry(logoAreaH)+logoAreaH-rtBoxH+5, size: 6, font: hFont, color: sel ? rgb(0.4,0.25,0) : navy });
+  });
+  // Job info fields
+  const jFields = [
+    ['JOB NUMBER',        fd['job-num'] || ''],
+    ['PO NUMBER (IF ANY)', ''],
+    ['DATE PERFORMED',    dv('insp-date') || data.inspection?.date || ''],
+    ['INSPECTOR',         dv('inspector-name') || data.inspection?.inspectorName || ''],
+  ];
+  let jY = ry(logoAreaH) + logoAreaH - rtBoxH - 3;
+  jFields.forEach(([lbl, val]) => {
+    jY -= 7;
+    page.drawText(lbl, { x: rtX+2, y: jY, size: 5.5, font: hFont, color: navy });
+    jY -= 10;
+    page.drawRectangle({ x: rtX, y: jY, width: rtW, height: 10, color: gold, borderColor: sky, borderWidth: 0.3 });
+    const jf = form.createTextField(fid());
+    jf.setText(val); jf.addToPage(page, { x: rtX+1, y: jY+1, width: rtW-2, height: 8, font: rFont }); jf.setFontSize(7);
+    jY -= 2;
+  });
+  curY += logoAreaH + 4;
+
+  // Property fields
+  dataRow([{ label: 'BUILDING/PROPERTY NAME', val: data.property?.name || '', w: PW }], 12, 8, 2);
+  dataRow([
+    { label: 'STREET, CITY, STATE, ZIP CODE', val: (data.property?.address || '') + (data.property?.cityStateZip ? ', ' + data.property.cityStateZip : ''), w: PW * 0.7 },
+    { label: 'JURISDICTION', val: fd['jurisdiction'] || '', w: PW * 0.3 }
+  ], 12, 8, 2);
+  gap(4);
+
+  // NFPA 10 compliance block
+  secHdr('NFPA 10 COMPLIANCE REFERENCES AND PROCEDURE');
+  const nfpaLines = [
+    { text: 'ALL PORTABLE FIRE EXTINGUISHER UNITS ARE REQUIRED TO BE THOROUGHLY INSPECTED EACH YEAR BY AN APPROVED SERVICING COMPANY IN ACCORDANCE WITH', bold: false },
+    { text: 'THE FOLLOWING NFPA CHAPTER REFERENCES:  NFPA 10 - 2010;  7.1.2, 7.2.2, 7.2.4, and 7.3.1', bold: false },
+    { text: '', bold: false },
+    { text: 'FREQUENCY:  FIRE EXTINGUISHERS SHALL BE SUBJECTED TO MAINTENANCE AT INTERVALS OF NOT MORE THAN ONE YEAR, AT THE TIME OF HYDROSTATIC TEST,', bold: true },
+    { text: 'OR WHEN SPECIFICALLY INDICATED BY AN INSPECTION.', bold: true },
+    { text: '', bold: false },
+    { text: 'INSPECTION PROCEDURE:', bold: true },
+    { text: '  1.  Date of last service', bold: false },
+    { text: '  2.  Unit located in designated place', bold: false },
+    { text: '  3.  No obstruction of access or visibility', bold: false },
+    { text: '  4.  Pressure gauge reading is in proper range', bold: false },
+    { text: '  5.  Fullness of unit (hefted or weighed)', bold: false },
+    { text: '  6.  Condition of mechanical parts, including safety pin and pull tab seal', bold: false },
+    { text: '  7.  Examination of physical condition and label', bold: false },
+    { text: '  8.  All portable fire extinguishers shall be hydrostatically tested at intervals not exceeding those specified in NFPA 10, Table 5.2', bold: false },
+    { text: '  9.  The inspection tag shall be filled out and attached to unit', bold: false },
+    { text: '  10. Inspect seals and tamper indicators', bold: false },
+    { text: '  11. Check for obvious physical damage, corrosion, leakage, or clogged nozzle', bold: false },
+  ];
+  const nfpaLH = 7.5;
+  const nfpaBlockH = nfpaLines.length * nfpaLH + 8;
+  checkPage(nfpaBlockH);
+  page.drawRectangle({ x: ML, y: ry(nfpaBlockH), width: PW, height: nfpaBlockH, color: lgray, borderColor: sky, borderWidth: 0.3 });
+  let nfpaY = ry(nfpaBlockH) + nfpaBlockH - 9;
+  nfpaLines.forEach(ln => {
+    if (ln.text) page.drawText(ln.text, { x: ML+5, y: nfpaY, size: 6, font: ln.bold ? hFont : rFont, color: blk });
+    nfpaY -= nfpaLH;
+  });
+  curY += nfpaBlockH + 2;
+
+  // Overall status bar (page 1)
+  {
+    const stH = 18;
+    const stVal = (data.overallStatus || '').toUpperCase();
+    const stColor = stVal === 'COMPLIANT' ? rgb(0.06, 0.50, 0.22) :
+                    stVal === 'DEFICIENT' ? rgb(0.76, 0.10, 0.10) :
+                    stVal === 'IMPAIRED'  ? rgb(0.75, 0.38, 0.00) :
+                                            rgb(0.38, 0.44, 0.54);
+    checkPage(stH + 6);
+    page.drawRectangle({ x: ML, y: ry(stH), width: PW, height: stH, color: stColor });
+    page.drawText('OVERALL SYSTEM STATUS', { x: ML + 8, y: ty(stH, 6), size: 6.5, font: hFont, color: white });
+    page.drawText(stVal || 'PENDING', { x: ML + 130, y: ty(stH, 6), size: 9.5, font: hFont, color: white });
+    curY += stH + 6;
+  }
+
+  // ── PAGE 2: EXTINGUISHER INVENTORY ───────────────────────────────────────────
+  addPage();
+  secHdr('EXTINGUISHER UNIT INVENTORY');
+
+  const extCols = [
+    { label: '#',          w: 22  },
+    { label: 'LOCATION',   w: 108 },
+    { label: 'TYPE',       w: 80  },
+    { label: 'SIZE',       w: 56  },
+    { label: 'MFR DATE',   w: 52  },
+    { label: 'PRESSURE',   w: 50  },
+    { label: 'SEAL/PIN',   w: 42  },
+    { label: 'LABEL',      w: 42  },
+    { label: 'PASS/FAIL',  w: 40  },
+    { label: 'NOTES',      w: 48  },
+  ];
+
+  const drawExtHdr = () => {
+    checkPage(13);
+    let x = ML;
+    extCols.forEach(col => {
+      page.drawRectangle({ x, y: ry(13), width: col.w, height: 13, color: navy });
+      page.drawText(wrap(col.label, 5.5, col.w-3)[0]||'', { x: x+2, y: ty(13,4), size: 5.5, font: hFont, color: white });
+      x += col.w;
+    });
+    curY += 14;
+  };
+  drawExtHdr();
+
+  const drawExtRow = (ext) => {
+    const cellH = 14;
+    if (curY + cellH > PH - MB) { addPage(); drawExtHdr(); }
+    const pf = (ext.overall || '').toUpperCase();
+    const cells = [
+      String(ext.rowNum || ''),
+      ext.location || '',
+      ext.type || '',
+      ext.size || '',
+      ext.mfrDate || '',
+      ext.pressure || '',
+      ext.seal || '',
+      ext.label || '',
+      pf,
+      '',
+    ];
+    let x = ML;
+    extCols.forEach((col, i) => {
+      const isStatus = i === 8;
+      const bgColor = isStatus && pf === 'FAIL' ? rgb(0.76, 0.10, 0.10)
+                    : isStatus && pf === 'PASS' ? rgb(0.06, 0.50, 0.22)
+                    : gold;
+      const txtColor = (isStatus && (pf === 'FAIL' || pf === 'PASS')) ? white : blk;
+      page.drawRectangle({ x, y: ry(cellH), width: col.w, height: cellH, color: bgColor, borderColor: sky, borderWidth: 0.3 });
+      if (isStatus && pf) {
+        const tw = hFont.widthOfTextAtSize(pf, 6.5);
+        page.drawText(pf, { x: x + col.w/2 - tw/2, y: ty(cellH, 4), size: 6.5, font: hFont, color: txtColor });
+      } else {
+        const f = form.createTextField(fid());
+        f.setText(cells[i]);
+        f.addToPage(page, { x: x+1, y: ry(cellH)+1, width: col.w-2, height: cellH-2, font: rFont });
+        f.setFontSize(6);
+      }
+      x += col.w;
+    });
+    curY += cellH + 1;
+  };
+
+  if (data.extinguishers.length > 0) {
+    data.extinguishers.forEach(drawExtRow);
+  }
+  // Pad to at least 3 rows
+  const emptyNeeded = Math.max(0, 3 - data.extinguishers.length);
+  for (let i = 0; i < emptyNeeded; i++) {
+    drawExtRow({ rowNum: data.extinguishers.length + i + 1, location:'', type:'', size:'', mfrDate:'', pressure:'', seal:'', label:'', overall:'' });
+  }
+  gap(8);
+
+  // ── INSPECTION CHECKLIST ─────────────────────────────────────────────────────
+  secHdr('INSPECTION CHECKLIST (NFPA 10)');
+  const LW = 340, BW = 32, NW = PW - LW - BW * 3;
+  const ciHdr = () => {
+    checkPage(13);
+    page.drawRectangle({ x: ML,         y: ry(13), width: LW,  height: 13, color: navy });
+    page.drawText('QUESTION', { x: ML+2, y: ty(13,4), size: 6, font: hFont, color: white });
+    page.drawRectangle({ x: ML+LW,      y: ry(13), width: BW,  height: 13, color: navy });
+    page.drawText('Y',   { x: ML+LW+BW/2-3,    y: ty(13,4), size: 7, font: hFont, color: white });
+    page.drawRectangle({ x: ML+LW+BW,   y: ry(13), width: BW,  height: 13, color: navy });
+    page.drawText('N',   { x: ML+LW+BW*1.5-3,  y: ty(13,4), size: 7, font: hFont, color: white });
+    page.drawRectangle({ x: ML+LW+BW*2, y: ry(13), width: BW,  height: 13, color: navy });
+    page.drawText('N/A', { x: ML+LW+BW*2.5-6,  y: ty(13,4), size: 6, font: hFont, color: white });
+    page.drawRectangle({ x: ML+LW+BW*3, y: ry(13), width: NW,  height: 13, color: navy });
+    page.drawText('NOTES', { x: ML+LW+BW*3+2,  y: ty(13,4), size: 6, font: hFont, color: white });
+    curY += 14;
+  };
+  const ciRow = (label, rowId) => {
+    const val = document.getElementById('row-' + rowId)?.dataset?.val || '';
+    const yVal  = val === 'PASS' ? 'X' : '';
+    const nVal  = val === 'FAIL' ? 'X' : '';
+    const naVal = val === 'N/A'  ? 'X' : '';
+    const noteVal = document.getElementById('defic-txt-' + rowId)?.value?.trim() || '';
+    const h = 13;
+    checkPage(h + 1);
+    page.drawRectangle({ x: ML, y: ry(h), width: LW, height: h, color: gold, borderColor: sky, borderWidth: 0.3 });
+    wrap(label, 6.5, LW - 4).forEach((ln, li) => {
+      page.drawText(ln, { x: ML+2, y: ry(h) + h - 6 - li*7, size: 6.5, font: rFont, color: blk });
+    });
+    [yVal, nVal, naVal].forEach((v, vi) => {
+      page.drawRectangle({ x: ML+LW+BW*vi, y: ry(h), width: BW, height: h, color: gold, borderColor: sky, borderWidth: 0.3 });
+      const f = form.createTextField(fid());
+      f.setText(v); f.addToPage(page, { x: ML+LW+BW*vi+1, y: ry(h)+1, width: BW-2, height: h-2, font: rFont }); f.setFontSize(8);
+    });
+    page.drawRectangle({ x: ML+LW+BW*3, y: ry(h), width: NW, height: h, color: gold, borderColor: sky, borderWidth: 0.3 });
+    const nf = form.createTextField(fid());
+    nf.setText(noteVal); nf.addToPage(page, { x: ML+LW+BW*3+1, y: ry(h)+1, width: NW-2, height: h-2, font: rFont }); nf.setFontSize(6);
+    curY += h + 1;
+  };
+  ciHdr();
+  ciRow('All Extinguishers Properly Mounted (height accessible, not obstructed)', 'ext-mounted');
+  ciRow('Location Signage (sign above each extinguisher visible)', 'ext-signage');
+  ciRow('6-Year Maintenance — if due (internal examination per NFPA 10)', 'ext-6yr');
+  ciRow('Hydrostatic Test — if due (per NFPA 10 test intervals)', 'ext-hydro');
+  gap(8);
+
+  // ── DEFICIENCY LIST ──────────────────────────────────────────────────────────
+  secHdr('DEFICIENCY LIST');
+  const deficTrs = [...(document.getElementById('generic-defic-tbody')?.querySelectorAll('tr') || [])];
+  if (deficTrs.length === 0) {
+    checkPage(14);
+    page.drawRectangle({ x: ML, y: ry(13), width: PW, height: 13, color: gold, borderColor: sky, borderWidth: 0.3 });
+    page.drawText('No deficiencies noted.', { x: ML+4, y: ty(13,4), size: 8, font: rFont, color: blk });
+    curY += 14;
+  } else {
+    deficTrs.forEach((tr, i) => {
+      const desc = tr.querySelector('td:nth-child(2) input')?.value?.trim() || '';
+      checkPage(14);
+      page.drawRectangle({ x: ML,    y: ry(13), width: 24,     height: 13, color: gold, borderColor: sky, borderWidth: 0.3 });
+      page.drawText(String(i+1), { x: ML+8, y: ty(13,4), size: 7, font: hFont, color: blk });
+      page.drawRectangle({ x: ML+24, y: ry(13), width: PW-24,  height: 13, color: gold, borderColor: sky, borderWidth: 0.3 });
+      const nf = form.createTextField(fid());
+      nf.setText(desc); nf.addToPage(page, { x: ML+25, y: ry(13)+1, width: PW-26, height: 11, font: rFont }); nf.setFontSize(7);
+      curY += 14;
+    });
+  }
+  gap(6);
+
+  // ── GENERAL NOTES ─────────────────────────────────────────────────────────────
+  secHdr('GENERAL NOTES & RECOMMENDATIONS');
+  const extNotesVal = dv('ext-notes');
+  const noteRowCount = Math.max(extNotesVal ? 1 : 0, 3);
+  for (let i = 0; i < noteRowCount; i++) {
+    checkPage(14);
+    page.drawRectangle({ x: ML,    y: ry(13), width: 24,     height: 13, color: gold, borderColor: sky, borderWidth: 0.3 });
+    page.drawText(String(i+1), { x: ML+8, y: ty(13,4), size: 7, font: hFont, color: blk });
+    page.drawRectangle({ x: ML+24, y: ry(13), width: PW-24,  height: 13, color: gold, borderColor: sky, borderWidth: 0.3 });
+    const nf = form.createTextField(fid());
+    nf.setText(i === 0 ? extNotesVal : '');
+    nf.addToPage(page, { x: ML+25, y: ry(13)+1, width: PW-26, height: 11, font: rFont }); nf.setFontSize(7);
+    curY += 14;
+  }
+  gap(6);
+
+  // ── OVERALL STATUS & SIGNATURES ───────────────────────────────────────────────
+  checkPage(120);
+  gap(10);
+  secHdr('OVERALL STATUS & SIGNATURES');
+  dataRow([{ label: 'OVERALL INSPECTION STATUS', val: data.overallStatus || '', w: PW }]);
+  gap(6);
+
+  const sigH = 40, sigW = PW / 2 - 6;
+  page.drawText('INSPECTOR / OWNER SIGNATURE:', { x: ML, y: ty(sigH) + sigH + 2, size: 7, font: hFont, color: navy });
+  page.drawRectangle({ x: ML, y: ry(sigH), width: sigW, height: sigH, color: gold, borderColor: sky, borderWidth: 0.5 });
+  if (sigHasData) {
+    try {
+      const sc = document.getElementById('sig-canvas');
+      const b64 = sc.toDataURL('image/png').split(',')[1];
+      const ab  = Uint8Array.from(atob(b64), c => c.charCodeAt(0)).buffer;
+      const sImg = await pdfDoc.embedPng(ab);
+      const sDims = sImg.scaleToFit(sigW - 8, sigH - 8);
+      page.drawImage(sImg, { x: ML + 4, y: ry(sigH) + 4, width: sDims.width, height: sDims.height });
+    } catch(_) {}
+  } else {
+    const sf = form.createTextField(fid());
+    sf.setText(''); sf.addToPage(page, { x: ML+2, y: ry(sigH)+2, width: sigW-4, height: sigH-4, font: rFont }); sf.setFontSize(9);
+  }
+  page.drawText('CLIENT SIGNATURE:', { x: ML+PW/2+10, y: ty(sigH) + sigH + 2, size: 7, font: hFont, color: navy });
+  page.drawRectangle({ x: ML+PW/2+8, y: ry(sigH), width: sigW, height: sigH, color: gold, borderColor: sky, borderWidth: 0.5 });
+  if (custSigHasData) {
+    try {
+      const cc = document.getElementById('cust-sig-canvas');
+      const b64 = cc.toDataURL('image/png').split(',')[1];
+      const ab  = Uint8Array.from(atob(b64), c => c.charCodeAt(0)).buffer;
+      const cImg = await pdfDoc.embedPng(ab);
+      const cDims = cImg.scaleToFit(sigW - 8, sigH - 8);
+      page.drawImage(cImg, { x: ML+PW/2+12, y: ry(sigH) + 4, width: cDims.width, height: cDims.height });
+    } catch(_) {}
+  } else {
+    const cf = form.createTextField(fid());
+    cf.setText(''); cf.addToPage(page, { x: ML+PW/2+10, y: ry(sigH)+2, width: sigW-4, height: sigH-4, font: rFont }); cf.setFontSize(9);
+  }
+  curY += sigH + 4;
+  dataRow([
+    { label: 'INSPECTOR DATE',      val: data.signature?.date || data.inspection?.date || '', w: PW/2 },
+    { label: 'CLIENT DATE',         val: fd['cust-sig-date'] || '', w: PW/2 },
+  ]);
+  dataRow([
+    { label: 'INSPECTOR PRINT NAME', val: fd['sig-name'] || data.inspection?.inspectorName || '', w: PW/2 },
+    { label: 'CLIENT PRINT NAME',    val: fd['cust-sig-name'] || '', w: PW/2 },
+  ]);
+
+  // ── PHOTOS ───────────────────────────────────────────────────────────────────
+  if (inspectionPhotos.length > 0) {
+    addPage();
+    secHdr('INSPECTION PHOTOS');
+    const photoW = Math.floor((PW - 10) / 2);
+    const photoH = 140;
+    let col = 0;
+    for (let i = 0; i < inspectionPhotos.length; i++) {
+      const photo = inspectionPhotos[i];
+      checkPage(photoH + 30);
+      const px = ML + col * (photoW + 10);
+      try {
+        const b64 = photo.dataUrl.split(',')[1];
+        const ab  = Uint8Array.from(atob(b64), c => c.charCodeAt(0)).buffer;
+        const img = photo.dataUrl.startsWith('data:image/png')
+          ? await pdfDoc.embedPng(ab) : await pdfDoc.embedJpg(ab);
+        const dims = img.scaleToFit(photoW, photoH);
+        page.drawImage(img, { x: px, y: ry(photoH) + (photoH - dims.height), width: dims.width, height: dims.height });
+      } catch(_) {
+        page.drawRectangle({ x: px, y: ry(photoH), width: photoW, height: photoH, color: lgray });
+      }
+      page.drawRectangle({ x: px+2, y: ry(photoH)+photoH-14, width: 40, height: 12, color: rgb(0,0,0) });
+      page.drawText('Photo ' + (i+1), { x: px+4, y: ry(photoH)+photoH-7, size: 7, font: hFont, color: white });
+      if (photo.note) {
+        wrap(photo.note, 7, photoW).forEach((l, li) => {
+          page.drawText(l, { x: px, y: ry(photoH) - 10 - li * 9, size: 7, font: rFont, color: blk });
+        });
+      }
+      col++;
+      if (col >= 2) { col = 0; curY += photoH + 22; }
+    }
+    if (col > 0) curY += photoH + 22;
+  }
+
+  return await pdfDoc.save();
+}
+
 async function buildSprinklerPDFBytes() {
   if (!window.PDFLib) throw new Error('PDF library not loaded. Please refresh.');
   const data = collectAllData();
@@ -8503,6 +8970,8 @@ async function saveAndDownload() {
       pdfBytes = await buildSprinklerPDFBytes();
     } else if (activeInspectionSystem === 'fire-alarm') {
       pdfBytes = await buildEditablePDFBytes();
+    } else if (activeInspectionSystem === 'extinguisher') {
+      pdfBytes = await buildExtinguisherPDFBytes();
     } else {
       // All other system types use the generic jsPDF builder
       const doc = await buildPDFDoc();
