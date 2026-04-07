@@ -347,6 +347,15 @@ body { font-family: 'DM Sans', sans-serif; background: var(--light); color: var(
 .yna-btn.n.selected  { background: var(--fail-bg); box-shadow: 0 0 0 2px var(--fail-ring); }
 .yna-btn.na.selected { background: var(--na-bg);   box-shadow: 0 0 0 2px var(--na-ring); }
 
+/* ── EXTINGUISHER Y-TOGGLE BUTTON ── */
+.ext-yn-btn{border:1.5px solid var(--border);border-radius:5px;padding:3px 12px;font-size:.78rem;font-weight:700;cursor:pointer;font-family:inherit;background:white;color:var(--slate);transition:all .12s;}
+.ext-yn-btn.active{border-color:var(--red);background:var(--fail-bg);color:var(--red);}
+/* hide number input spinners */
+input.no-spin::-webkit-inner-spin-button,input.no-spin::-webkit-outer-spin-button{-webkit-appearance:none;margin:0;}
+input.no-spin{-moz-appearance:textfield;appearance:textfield;}
+/* ext action sub-row */
+.ext-action-row td{background:var(--light);border-top:none!important;padding:4px 8px 8px;}
+
 /* ── EXTINGUISHER STAT BOXES & SUMMARY TABLES ── */
 .stat-box{background:#f8fafc;border:1.5px solid var(--border);border-radius:8px;padding:10px 14px;display:flex;align-items:center;justify-content:space-between;}
 .stat-box .stat-label{font-size:.72rem;font-weight:700;color:var(--slate);text-transform:uppercase;letter-spacing:.05em;}
@@ -779,7 +788,7 @@ body { font-family: 'DM Sans', sans-serif; background: var(--light); color: var(
     <div id="sys-forms"></div>
     <div class="btn-row">
       <button class="btn-secondary" onclick="goStep(2)">← Systems</button>
-      <button class="btn-primary" onclick="goInspNextStep()">Next: Deficiencies →</button>
+      <button class="btn-primary" id="step3-next-btn" onclick="goInspNextStep()">Next: Deficiencies →</button>
     </div>
   </div>
 
@@ -849,7 +858,7 @@ body { font-family: 'DM Sans', sans-serif; background: var(--light); color: var(
       <div class="card-header"><span class="icon">✅</span><span>Inspection Verification Questions</span></div>
       <div class="card-body">
         <table class="qa-table">
-          <thead><tr><th>Question</th><th style="width:100px;">Answer</th><th style="width:60px;">#</th></tr></thead>
+          <thead><tr><th>Question</th><th style="width:130px;">Answer</th></tr></thead>
           <tbody id="ext-qa-tbody"></tbody>
         </table>
       </div>
@@ -3661,44 +3670,37 @@ function buildExtinguisherPanel() {
       <div class="stat-box" style="flex:1;background:var(--pass-bg);border-color:var(--pass-ring);"><span class="stat-label" style="color:var(--green);">Pass</span><span class="stat-val" style="color:var(--green);" id="ext-stat-pass">0</span></div>
       <div class="stat-box" style="flex:1;background:var(--fail-bg);border-color:var(--fail-ring);"><span class="stat-label" style="color:var(--red);">Fail</span><span class="stat-val" style="color:var(--red);" id="ext-stat-fail">0</span></div>
     </div>
-    <div style="overflow-x:auto;">
-    <table class="ext-table" id="ext-table">
+    <table class="ext-table" id="ext-table" style="width:100%;border-collapse:collapse;">
       <thead>
         <tr>
-          <th>#</th>
-          <th>FLR</th>
+          <th style="width:38px;">FLR</th>
           <th>Location</th>
-          <th>Mount</th>
-          <th>Cabinet</th>
-          <th>MFG Year</th>
-          <th>Size</th>
-          <th>Type</th>
-          <th>Pass/Fail</th>
-          <th>Hydro Due</th>
-          <th>Recharge?</th>
-          <th>New Unit?</th>
-          <th>Note</th>
-          <th></th>
+          <th style="width:100px;">Mount</th>
+          <th style="width:90px;">Cabinet</th>
+          <th style="width:62px;">MFG Yr</th>
+          <th style="width:72px;">Size</th>
+          <th style="width:100px;">Type</th>
+          <th style="width:26px;"></th>
         </tr>
       </thead>
       <tbody id="ext-tbody"></tbody>
     </table>
-    </div>
     <button class="add-row-btn" onclick="addExtUnitRow()">+ Add Extinguisher</button>
     <div class="field-group" style="margin-top:8px;">
       <label>Extinguisher General Notes</label>
       <textarea id="ext-notes" rows="2"></textarea>
     </div>`;
   const panel = makePanel('extinguisher', '🧯', 'Portable Fire Extinguishers (NFPA 10)', extTable);
-  // Add initial rows only if no previous inspection data present
+  _extSvcAutoFilled = false;
   setTimeout(() => {
     const tbody = document.getElementById('ext-tbody');
     if (tbody && tbody.rows.length === 0) {
       addExtUnitRow(); addExtUnitRow();
     }
-    // Show/hide summary tab based on active system
     const summaryTab = document.getElementById('step-nav-summary-tab');
     if (summaryTab) summaryTab.style.display = '';
+    const nb = document.getElementById('step3-next-btn');
+    if (nb) nb.textContent = 'Next: Services Due →';
   }, 20);
   return panel;
 }
@@ -3718,49 +3720,58 @@ function addExtUnitRow(prefill) {
   const tbody = document.getElementById('ext-tbody');
   if (!tbody) return;
   tbody.insertAdjacentHTML('beforeend', `
-    <tr id="ext-unit-row-${n}">
-      <td style="text-align:center;font-weight:600;color:var(--slate);font-size:0.75rem;">${n}</td>
-      <td><input type="text" id="u-flr-${n}" value="${defFlr}" placeholder="1" style="width:36px;"></td>
-      <td><input type="text" id="u-loc-${n}" value="${(p.loc||'').replace(/"/g,'&quot;')}" placeholder="e.g. Lobby"></td>
+    <tr id="ext-unit-row-${n}" style="border-bottom:none;">
+      <td><input type="text" id="u-flr-${n}" value="${defFlr}" placeholder="1" style="width:30px;"></td>
+      <td><input type="text" id="u-loc-${n}" value="${(p.loc||'').replace(/"/g,'&quot;')}" placeholder="e.g. Lobby by entrance"></td>
       <td><select id="u-mount-${n}" onchange="extToggleCab(${n})">${mountSel}</select></td>
       <td><input type="text" id="u-cab-${n}" value="${(p.cab||'').replace(/"/g,'&quot;')}" placeholder="GLS,MLT,SGN" ${cabDisabled}></td>
-      <td><input type="number" id="u-mfg-${n}" value="${p.mfg||''}" placeholder="2019" min="1950" max="2099" style="width:58px;"></td>
+      <td><input type="text" inputmode="numeric" class="no-spin" id="u-mfg-${n}" value="${p.mfg||''}" placeholder="2019" style="width:54px;"></td>
       <td><input type="text" id="u-size-${n}" value="${(p.size||'').replace(/"/g,'&quot;')}" placeholder="10 lb"></td>
       <td><select id="u-type-${n}">${typeSel}</select></td>
-      <td>
-        <div class="pf-group">
-          <button class="pf-btn pass" onclick="setExtPF(this,${n},'PASS')">PASS</button>
-          <button class="pf-btn fail" onclick="setExtPF(this,${n},'FAIL')">FAIL</button>
-          <button class="pf-btn na" onclick="setExtPF(this,${n},'N/A')">N/A</button>
-        </div>
-        <input type="hidden" id="u-pf-${n}" value="${p.pf||''}">
-      </td>
-      <td><input type="number" id="u-hydro-${n}" value="${p.hydroDue||''}" placeholder="2030" min="1950" max="2099" style="width:58px;"></td>
-      <td>
-        <div class="pf-group" style="gap:2px;">
-          <button class="pf-btn pass" style="font-size:.65rem;padding:3px 5px;" onclick="setExtYN(this,${n},'recharge','Y')">Y</button>
-          <button class="pf-btn fail" style="font-size:.65rem;padding:3px 5px;" onclick="setExtYN(this,${n},'recharge','N')">N</button>
-          <button class="pf-btn na" style="font-size:.65rem;padding:3px 5px;" onclick="setExtYN(this,${n},'recharge','N/A')">N/A</button>
-        </div>
-        <input type="hidden" id="u-recharge-${n}" value="${p.recharge||''}">
-      </td>
-      <td>
-        <div class="pf-group" style="gap:2px;">
-          <button class="pf-btn pass" style="font-size:.65rem;padding:3px 5px;" onclick="setExtYN(this,${n},'newunit','Y')">Y</button>
-          <button class="pf-btn fail" style="font-size:.65rem;padding:3px 5px;" onclick="setExtYN(this,${n},'newunit','N')">N</button>
-          <button class="pf-btn na" style="font-size:.65rem;padding:3px 5px;" onclick="setExtYN(this,${n},'newunit','N/A')">N/A</button>
-        </div>
-        <input type="hidden" id="u-newunit-${n}" value="${p.newUnit||''}">
-      </td>
-      <td><button class="note-toggle-btn" onclick="toggleExtNote(${n})" title="Add note" style="background:none;border:1px solid var(--border);border-radius:5px;padding:2px 7px;cursor:pointer;font-size:.85rem;">📝</button></td>
       <td><button class="del-btn" onclick="removeExtUnit(${n})">✕</button></td>
     </tr>
+    <tr id="ext-action-row-${n}" class="ext-action-row">
+      <td colspan="8">
+        <div style="display:flex;flex-wrap:wrap;align-items:center;gap:10px;">
+          <div style="display:flex;align-items:center;gap:5px;">
+            <span style="font-size:.7rem;font-weight:700;color:var(--slate);white-space:nowrap;">Pass/Fail:</span>
+            <div class="pf-group">
+              <button class="pf-btn pass" onclick="setExtPF(this,${n},'PASS')">PASS</button>
+              <button class="pf-btn fail" onclick="setExtPF(this,${n},'FAIL')">FAIL</button>
+            </div>
+            <input type="hidden" id="u-pf-${n}" value="${p.pf||''}">
+          </div>
+          <div style="display:flex;align-items:center;gap:5px;">
+            <span style="font-size:.7rem;font-weight:700;color:var(--slate);white-space:nowrap;">Hydro Due:</span>
+            <input type="text" inputmode="numeric" class="no-spin" id="u-hydro-${n}" value="${p.hydroDue||''}" placeholder="Year" style="width:52px;border:1px solid var(--border);border-radius:4px;padding:3px 6px;font-size:.8rem;font-family:inherit;">
+          </div>
+          <div style="display:flex;align-items:center;gap:5px;">
+            <span style="font-size:.7rem;font-weight:700;color:var(--slate);white-space:nowrap;">Recharge:</span>
+            <button id="u-recharge-btn-${n}" class="ext-yn-btn${p.recharge==='Y'?' active':''}" onclick="toggleExtYN(${n},'recharge')">${p.recharge==='Y'?'Y':'—'}</button>
+            <input type="hidden" id="u-recharge-${n}" value="${p.recharge||''}">
+          </div>
+          <div style="display:flex;align-items:center;gap:5px;">
+            <span style="font-size:.7rem;font-weight:700;color:var(--slate);white-space:nowrap;">New Unit:</span>
+            <button id="u-newunit-btn-${n}" class="ext-yn-btn${p.newUnit==='Y'?' active':''}" onclick="toggleExtYN(${n},'newunit')">${p.newUnit==='Y'?'Y':'—'}</button>
+            <input type="hidden" id="u-newunit-${n}" value="${p.newUnit||''}">
+          </div>
+          <button onclick="toggleExtNote(${n})" style="background:none;border:1px solid var(--border);border-radius:5px;padding:3px 9px;cursor:pointer;font-size:.8rem;font-family:inherit;color:var(--slate);">📝 Note</button>
+        </div>
+      </td>
+    </tr>
+    <tr id="ext-defic-row-${n}" style="display:none;">
+      <td colspan="8" style="padding:4px 8px;background:var(--fail-bg);border-bottom:1px solid #fca5a5;">
+        <div style="display:flex;align-items:center;gap:6px;">
+          <span style="font-size:.72rem;font-weight:700;color:var(--red);white-space:nowrap;">⚠ Deficiency:</span>
+          <input type="text" id="u-defic-txt-${n}" value="${(p.deficTxt||'').replace(/"/g,'&quot;')}" placeholder="Describe deficiency…" style="flex:1;border:1px solid #fca5a5;border-radius:4px;padding:5px 8px;font-size:.8rem;font-family:inherit;background:white;">
+        </div>
+      </td>
+    </tr>
     <tr id="ext-note-row-${n}" style="display:none;">
-      <td colspan="14" style="padding:4px 8px;background:#fffbeb;border-bottom:1px solid var(--border);">
+      <td colspan="8" style="padding:4px 8px;background:#fffbeb;border-bottom:2px solid var(--border);">
         <input type="text" id="u-note-txt-${n}" value="${(p.noteTxt||'').replace(/"/g,'&quot;')}" placeholder="Note for Unit #${n}…" style="width:100%;border:1px solid var(--border);border-radius:4px;padding:5px 8px;font-size:.8rem;font-family:inherit;">
       </td>
     </tr>`);
-  // Restore button selected states
   if (p.pf) _restoreExtBtns(n);
   if (p.noteTxt) document.getElementById('ext-note-row-' + n).style.display = '';
   updateExtStats();
@@ -3795,21 +3806,27 @@ function setPFTable(btn, id, val) {
 function _restoreExtBtns(n) {
   const pfVal = document.getElementById('u-pf-'+n)?.value || '';
   if (pfVal) {
-    document.querySelector(`#ext-unit-row-${n} td:nth-child(9) .pf-group`)?.querySelectorAll('.pf-btn').forEach(b => {
+    document.querySelector(`#ext-action-row-${n} .pf-group`)?.querySelectorAll('.pf-btn').forEach(b => {
       b.classList.toggle('selected', b.textContent.trim() === pfVal);
     });
+    const unitRow = document.getElementById('ext-unit-row-' + n);
+    const actionRow = document.getElementById('ext-action-row-' + n);
+    if (unitRow) unitRow.style.background = pfVal === 'FAIL' ? 'var(--fail-bg)' : pfVal === 'PASS' ? 'var(--pass-bg)' : '';
+    if (actionRow) actionRow.style.background = pfVal === 'FAIL' ? 'var(--fail-bg)' : pfVal === 'PASS' ? 'var(--pass-bg)' : '';
+    if (pfVal === 'FAIL') {
+      const deficRow = document.getElementById('ext-defic-row-' + n);
+      if (deficRow) deficRow.style.display = '';
+    }
   }
   const rVal = document.getElementById('u-recharge-'+n)?.value || '';
-  if (rVal) {
-    document.querySelectorAll(`#ext-unit-row-${n} td:nth-child(11) .pf-btn`).forEach(b => {
-      b.classList.toggle('selected', b.textContent.trim() === rVal);
-    });
+  if (rVal === 'Y') {
+    const btn = document.getElementById('u-recharge-btn-' + n);
+    if (btn) { btn.classList.add('active'); btn.textContent = 'Y'; }
   }
   const nuVal = document.getElementById('u-newunit-'+n)?.value || '';
-  if (nuVal) {
-    document.querySelectorAll(`#ext-unit-row-${n} td:nth-child(12) .pf-btn`).forEach(b => {
-      b.classList.toggle('selected', b.textContent.trim() === nuVal);
-    });
+  if (nuVal === 'Y') {
+    const btn = document.getElementById('u-newunit-btn-' + n);
+    if (btn) { btn.classList.add('active'); btn.textContent = 'Y'; }
   }
 }
 
@@ -3819,36 +3836,47 @@ function setExtPF(btn, n, val) {
   const inp = document.getElementById('u-pf-' + n);
   if (inp) inp.value = val;
 
-  // Highlight row on fail
+  // Highlight both rows
   const row = document.getElementById('ext-unit-row-' + n);
-  if (row) {
-    row.style.background = val === 'FAIL' ? 'var(--fail-bg)' : val === 'PASS' ? 'var(--pass-bg)' : '';
-  }
+  const actionRow = document.getElementById('ext-action-row-' + n);
+  const bg = val === 'FAIL' ? 'var(--fail-bg)' : val === 'PASS' ? 'var(--pass-bg)' : '';
+  if (row) row.style.background = bg;
+  if (actionRow) actionRow.style.background = bg;
 
-  // Create/remove deficiency
+  // Show/hide inline deficiency row
+  const deficRow = document.getElementById('ext-defic-row-' + n);
+
   if (val === 'FAIL') {
-    if (!row?.dataset.deficId) {
+    if (deficRow) deficRow.style.display = '';
+    // Also add to generic-defic-tbody if not already there
+    const deficId = 'ext-unit-defic-' + n;
+    if (!document.getElementById(deficId)) {
       extDeficCount++;
-      const deficId = 'ext-unit-defic-' + n;
-      row.dataset.deficId = deficId;
       const loc = document.getElementById('u-loc-' + n)?.value?.trim() || '';
       const type = document.getElementById('u-type-' + n)?.value?.trim() || '';
-      const desc = 'Unit #' + n + (loc ? ' – ' + loc : '') + (type ? ' (' + type + ')' : '') + ': Failed inspection';
+      const initDesc = 'Unit #' + n + (loc ? ' – ' + loc : '') + (type ? ' (' + type + ')' : '') + ': Failed inspection';
       const tbody = document.getElementById('generic-defic-tbody');
       if (tbody) {
         tbody.insertAdjacentHTML('beforeend', `
           <tr id="${deficId}">
             <td style="text-align:center;font-weight:700;color:var(--slate);">${extDeficCount}</td>
-            <td><input type="text" id="${deficId}-desc" value="${escHtml(desc)}" placeholder="Describe deficiency…"></td>
+            <td><input type="text" id="${deficId}-desc" value="${escHtml(initDesc)}" placeholder="Describe deficiency…"></td>
             <td><button class="del-btn" onclick="removeExtUnitDefic('${deficId}',${n})">✕</button></td>
           </tr>`);
       }
+      // Wire inline text input to keep generic-defic-tbody row in sync
+      const inlineTxt = document.getElementById('u-defic-txt-' + n);
+      if (inlineTxt) {
+        inlineTxt.addEventListener('input', function() {
+          const syncEl = document.getElementById(deficId + '-desc');
+          if (syncEl) syncEl.value = this.value;
+        });
+      }
     }
   } else {
-    if (row?.dataset.deficId) {
-      document.getElementById(row.dataset.deficId)?.remove();
-      delete row.dataset.deficId;
-    }
+    if (deficRow) deficRow.style.display = 'none';
+    const deficId = 'ext-unit-defic-' + n;
+    document.getElementById(deficId)?.remove();
   }
 
   updateExtStats();
@@ -3856,22 +3884,59 @@ function setExtPF(btn, n, val) {
 
 function removeExtUnitDefic(deficId, n) {
   document.getElementById(deficId)?.remove();
+  // Hide inline defic row
+  const deficRow = document.getElementById('ext-defic-row-' + n);
+  if (deficRow) deficRow.style.display = 'none';
+  // Clear row highlights
   const row = document.getElementById('ext-unit-row-' + n);
-  if (row) {
-    delete row.dataset.deficId;
-    row.style.background = '';
-    const hidden = document.getElementById('u-pf-' + n);
-    if (hidden) hidden.value = '';
-    row.querySelectorAll('td:nth-child(9) .pf-btn').forEach(b => b.classList.remove('selected'));
-  }
+  const actionRow = document.getElementById('ext-action-row-' + n);
+  if (row) row.style.background = '';
+  if (actionRow) actionRow.style.background = '';
+  // Clear PASS/FAIL selection
+  const hidden = document.getElementById('u-pf-' + n);
+  if (hidden) hidden.value = '';
+  document.querySelector(`#ext-action-row-${n} .pf-group`)?.querySelectorAll('.pf-btn').forEach(b => b.classList.remove('selected'));
   updateExtStats();
 }
 
-function setExtYN(btn, n, field, val) {
-  btn.closest('.pf-group').querySelectorAll('.pf-btn').forEach(b => b.classList.remove('selected'));
-  btn.classList.add('selected');
+function toggleExtYN(n, field) {
+  const btn = document.getElementById('u-' + field + '-btn-' + n);
   const inp = document.getElementById('u-' + field + '-' + n);
-  if (inp) inp.value = val;
+  const deficId = 'ext-' + field + '-defic-' + n;
+  const isActive = btn?.classList.contains('active');
+  if (isActive) {
+    // Deactivate
+    if (btn) { btn.classList.remove('active'); btn.textContent = '—'; }
+    if (inp) inp.value = '';
+    document.getElementById(deficId)?.remove();
+  } else {
+    // Activate
+    if (btn) { btn.classList.add('active'); btn.textContent = 'Y'; }
+    if (inp) inp.value = 'Y';
+    if (!document.getElementById(deficId)) {
+      extDeficCount++;
+      const loc = document.getElementById('u-loc-' + n)?.value?.trim() || '';
+      const label = field === 'recharge' ? 'Recharge required' : 'New unit required';
+      const desc = label + ' – Unit #' + n + (loc ? ' – ' + loc : '');
+      const tbody = document.getElementById('generic-defic-tbody');
+      if (tbody) {
+        tbody.insertAdjacentHTML('beforeend', `
+          <tr id="${deficId}">
+            <td style="text-align:center;font-weight:700;color:var(--slate);">${extDeficCount}</td>
+            <td><input type="text" id="${deficId}-desc" value="${escHtml(desc)}" placeholder="Describe deficiency…"></td>
+            <td><button class="del-btn" onclick="removeExtYNDefic('${deficId}',${n},'${field}')">✕</button></td>
+          </tr>`);
+      }
+    }
+  }
+}
+
+function removeExtYNDefic(deficId, n, field) {
+  document.getElementById(deficId)?.remove();
+  const btn = document.getElementById('u-' + field + '-btn-' + n);
+  const inp = document.getElementById('u-' + field + '-' + n);
+  if (btn) { btn.classList.remove('active'); btn.textContent = '—'; }
+  if (inp) inp.value = '';
 }
 
 function extToggleCab(n) {
@@ -3891,9 +3956,14 @@ function toggleExtNote(n) {
 }
 
 function removeExtUnit(n) {
-  const row = document.getElementById('ext-unit-row-' + n);
-  if (row?.dataset.deficId) document.getElementById(row.dataset.deficId)?.remove();
+  // Remove associated deficiencies from generic-defic-tbody
+  document.getElementById('ext-unit-defic-' + n)?.remove();
+  document.getElementById('ext-recharge-defic-' + n)?.remove();
+  document.getElementById('ext-newunit-defic-' + n)?.remove();
+  // Remove all rows for this unit
   document.getElementById('ext-unit-row-' + n)?.remove();
+  document.getElementById('ext-action-row-' + n)?.remove();
+  document.getElementById('ext-defic-row-' + n)?.remove();
   document.getElementById('ext-note-row-' + n)?.remove();
   updateExtStats();
 }
@@ -3921,6 +3991,8 @@ function goInspNextStep() {
   }
 }
 
+let _extSvcAutoFilled = false;
+
 function goExtSummaryStep() {
   if (activeInspectionSystem !== 'extinguisher') return;
   saveDraft();
@@ -3930,6 +4002,13 @@ function goExtSummaryStep() {
   if (!document.getElementById('ext-svc-tbody')?.children.length) {
     buildExtSvcTable();
     buildExtQATable();
+    _extSvcAutoFilled = false;
+  }
+
+  // Auto-populate from unit rows on first visit
+  if (!_extSvcAutoFilled) {
+    autoFillExtSvcFromUnits();
+    _extSvcAutoFilled = true;
   }
 
   document.getElementById('step-3').style.display = 'none';
@@ -3968,15 +4047,54 @@ function buildExtSvcTable() {
 function buildExtQATable() {
   const tbody = document.getElementById('ext-qa-tbody');
   if (!tbody) return;
-  const ansOpts = ['','Yes','No','Partial','N/A'].map(o => `<option value="${o}">${o||'—'}</option>`).join('');
   EXT_QA_QUESTIONS.forEach((q, i) => {
     tbody.insertAdjacentHTML('beforeend', `
-      <tr>
+      <tr id="ext-qa-row-${i}">
         <td class="q-cell">${q}</td>
-        <td><select id="ext-qa-ans-${i}">${ansOpts}</select></td>
-        <td><input type="text" id="ext-qa-num-${i}" placeholder="#" style="width:44px;"></td>
+        <td>
+          <div style="display:flex;gap:4px;">
+            <button class="yna-btn y" onclick="setExtQA(this,${i},'Y')">Y</button>
+            <button class="yna-btn n" onclick="setExtQA(this,${i},'N')">N</button>
+            <button class="yna-btn na" onclick="setExtQA(this,${i},'NA')">NA</button>
+          </div>
+          <input type="hidden" id="ext-qa-ans-${i}" value="">
+        </td>
       </tr>`);
   });
+}
+
+let extQADeficCount = 0;
+
+function setExtQA(btn, i, val) {
+  btn.closest('td').querySelectorAll('.yna-btn').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+  const inp = document.getElementById('ext-qa-ans-' + i);
+  if (inp) inp.value = val;
+  const deficId = 'ext-qa-defic-' + i;
+  if (val === 'N') {
+    if (!document.getElementById(deficId)) {
+      extQADeficCount++;
+      const q = EXT_QA_QUESTIONS[i] || 'QA item ' + (i + 1);
+      const tbody = document.getElementById('generic-defic-tbody');
+      if (tbody) {
+        tbody.insertAdjacentHTML('beforeend', `
+          <tr id="${deficId}">
+            <td style="text-align:center;font-weight:700;color:var(--slate);">${extQADeficCount}</td>
+            <td><input type="text" id="${deficId}-desc" value="${escHtml('QA Failed: ' + q)}" placeholder="Describe deficiency…"></td>
+            <td><button class="del-btn" onclick="removeExtQADefic('${deficId}',${i})">✕</button></td>
+          </tr>`);
+      }
+    }
+  } else {
+    document.getElementById(deficId)?.remove();
+  }
+}
+
+function removeExtQADefic(deficId, i) {
+  document.getElementById(deficId)?.remove();
+  const inp = document.getElementById('ext-qa-ans-' + i);
+  if (inp) inp.value = '';
+  document.querySelector(`#ext-qa-row-${i} .yna-btn`)?.closest('td')?.querySelectorAll('.yna-btn').forEach(b => b.classList.remove('selected'));
 }
 
 function calcExtTotalSvc() {
@@ -3989,6 +4107,51 @@ function calcExtTotalSvc() {
   });
   const el = document.getElementById('ext-total-svc-due');
   if (el) el.value = total || '';
+}
+
+function matchExtSvcType(type, size) {
+  const t = (type || '').trim().toUpperCase();
+  const s = (size || '').toString().trim();
+  if (t === 'ABC') {
+    if (s.includes('2.5')) return 0;
+    if (s.includes('20')) return 3;
+    if (s.includes('10')) return 2;
+    if (s.includes('5')) return 1;
+    return 0; // default ABC to 2.5LB row
+  }
+  const typeMap = {'CO2':4,'K CLASS':5,'WATER CANNON':6,'WATER MIST':7,'HALON':8,'HALOTRON':9,'FE36':10,'FOAM':11,'BC':12,'CLASS D':13};
+  const idx = typeMap[t];
+  return idx !== undefined ? idx : 14; // 14 = Other
+}
+
+function autoFillExtSvcFromUnits() {
+  const curYear = new Date().getFullYear();
+  for (let i = 1; i <= extUnitCount; i++) {
+    if (!document.getElementById('ext-unit-row-' + i)) continue;
+    const type = document.getElementById('u-type-' + i)?.value?.trim() || '';
+    const size = document.getElementById('u-size-' + i)?.value?.trim() || '';
+    const hydroDue = document.getElementById('u-hydro-' + i)?.value?.trim() || '';
+    const recharge = document.getElementById('u-recharge-' + i)?.value || '';
+    const newUnit = document.getElementById('u-newunit-' + i)?.value || '';
+    const rowIdx = matchExtSvcType(type, size);
+
+    if (recharge === 'Y') {
+      const el = document.getElementById(`ext-svc-recharge-${rowIdx}`);
+      if (el) el.value = (parseInt(el.value || '0') || 0) + 1;
+    }
+    if (newUnit === 'Y') {
+      const el = document.getElementById(`ext-svc-newunit-${rowIdx}`);
+      if (el) el.value = (parseInt(el.value || '0') || 0) + 1;
+    }
+    if (hydroDue) {
+      const hyYear = parseInt(hydroDue);
+      if (!isNaN(hyYear) && hyYear < curYear) {
+        const el = document.getElementById(`ext-svc-hydro-${rowIdx}`);
+        if (el) el.value = (parseInt(el.value || '0') || 0) + 1;
+      }
+    }
+  }
+  calcExtTotalSvc();
 }
 
 function buildHydrantPanel() {
@@ -6284,6 +6447,7 @@ function collectAllData() {
       size:     document.getElementById('u-size-' + i)?.value?.trim() || '',
       type:     document.getElementById('u-type-' + i)?.value || '',
       pf:       document.getElementById('u-pf-' + i)?.value || '',
+      deficTxt: document.getElementById('u-defic-txt-' + i)?.value?.trim() || '',
       hydroDue: document.getElementById('u-hydro-' + i)?.value?.trim() || '',
       recharge: document.getElementById('u-recharge-' + i)?.value || '',
       newUnit:  document.getElementById('u-newunit-' + i)?.value || '',
@@ -6302,7 +6466,6 @@ function collectAllData() {
   const extQA = typeof EXT_QA_QUESTIONS !== 'undefined' ? EXT_QA_QUESTIONS.map((q, i) => ({
     q,
     ans: document.getElementById('ext-qa-ans-' + i)?.value || '',
-    num: document.getElementById('ext-qa-num-' + i)?.value?.trim() || '',
   })) : [];
   const extNfMallets  = document.getElementById('ext-nf-mallets')?.value || '';
   const extNfSignage  = document.getElementById('ext-nf-signage')?.value || '';
@@ -7714,8 +7877,8 @@ async function buildExtinguisherPDFBytes() {
       ext.type || '',
       pf,
       ext.hydroDue || '',
-      ext.recharge || '',
-      ext.newUnit || '',
+      ext.recharge === 'Y' ? 'Y' : 'N',
+      ext.newUnit === 'Y' ? 'Y' : 'N',
       ext.noteTxt || '',
     ];
     let x = ML;
@@ -7809,14 +7972,12 @@ async function buildExtinguisherPDFBytes() {
     // QA questions
     if (data.extQA && data.extQA.some(q => q.ans)) {
       secHdr('INSPECTION VERIFICATION QUESTIONS');
-      const qaLW = 380, qaAW = 80, qaNumW = 80;
+      const qaLW = 460, qaAW = 80;
       checkPage(13);
-      page.drawRectangle({ x: ML,         y: ry(13), width: qaLW,   height: 13, color: navy });
+      page.drawRectangle({ x: ML,      y: ry(13), width: qaLW, height: 13, color: navy });
       page.drawText('QUESTION', { x: ML+2, y: ty(13,4), size: 6, font: hFont, color: white });
-      page.drawRectangle({ x: ML+qaLW,    y: ry(13), width: qaAW,  height: 13, color: navy });
+      page.drawRectangle({ x: ML+qaLW, y: ry(13), width: qaAW, height: 13, color: navy });
       page.drawText('ANSWER', { x: ML+qaLW+4, y: ty(13,4), size: 6, font: hFont, color: white });
-      page.drawRectangle({ x: ML+qaLW+qaAW, y: ry(13), width: qaNumW, height: 13, color: navy });
-      page.drawText('#', { x: ML+qaLW+qaAW+4, y: ty(13,4), size: 6, font: hFont, color: white });
       curY += 14;
       (data.extQA || []).forEach(qa => {
         const qH = 13;
@@ -7828,9 +7989,6 @@ async function buildExtinguisherPDFBytes() {
         page.drawRectangle({ x: ML+qaLW, y: ry(qH), width: qaAW, height: qH, color: gold, borderColor: sky, borderWidth: 0.3 });
         const af = form.createTextField(fid());
         af.setText(qa.ans||''); af.addToPage(page, { x: ML+qaLW+1, y: ry(qH)+1, width: qaAW-2, height: qH-2, font: rFont }); af.setFontSize(6);
-        page.drawRectangle({ x: ML+qaLW+qaAW, y: ry(qH), width: qaNumW, height: qH, color: gold, borderColor: sky, borderWidth: 0.3 });
-        const nf2 = form.createTextField(fid());
-        nf2.setText(qa.num||''); nf2.addToPage(page, { x: ML+qaLW+qaAW+1, y: ry(qH)+1, width: qaNumW-2, height: qH-2, font: rFont }); nf2.setFontSize(6);
         curY += qH + 1;
       });
       gap(8);
