@@ -1795,11 +1795,13 @@ function goStep(n) {
   if (activeInspectionSystem && !['fire-alarm','sprinkler'].includes(activeInspectionSystem)) {
     saveDraft();
   }
-  // Always hide generic defic step and ext summary when navigating numbered steps
+  // Always hide generic defic step, ext summary, and prev defic when navigating numbered steps
   const genDeficEl = document.getElementById('step-generic-defic');
   if (genDeficEl) genDeficEl.style.display = 'none';
   const extSummaryEl = document.getElementById('step-ext-summary');
   if (extSummaryEl) extSummaryEl.style.display = 'none';
+  const genPrevDeficEl = document.getElementById('step-generic-prevdefic');
+  if (genPrevDeficEl) genPrevDeficEl.style.display = 'none';
   document.getElementById('step-' + currentStep).style.display = 'none';
   document.getElementById('step-' + n).style.display = 'block';
   document.querySelectorAll('#step-nav .step-tab').forEach(t => {
@@ -3740,7 +3742,7 @@ function addExtUnitRow(prefill) {
   if (!tbody) return;
   tbody.insertAdjacentHTML('beforeend', `
     <tr id="ext-unit-row-${n}" style="border-bottom:none;">
-      <td><input type="text" id="u-flr-${n}" value="${defFlr}" placeholder="1" style="width:30px;"></td>
+      <td><input type="text" id="u-flr-${n}" value="${defFlr}" style="width:30px;"></td>
       <td><input type="text" id="u-loc-${n}" value="${defLoc.replace(/"/g,'&quot;')}" placeholder="e.g. Lobby by entrance"></td>
       <td><select id="u-mount-${n}" onchange="extUpdateCabState(${n})">${mountSel}</select></td>
       <td title="Select what is missing from the cabinet: M = Mallet, S = Signage, G = Glass. Only available when Mount is set to CAB.">
@@ -3753,8 +3755,8 @@ function addExtUnitRow(prefill) {
         <input type="hidden" id="u-cab-g-${n}" value="${p.cabG||''}">
         <input type="hidden" id="u-cab-s-${n}" value="${p.cabS||''}">
       </td>
-      <td><input type="text" inputmode="numeric" class="no-spin" id="u-mfg-${n}" value="${defMfg}" placeholder="2019" style="width:54px;"></td>
-      <td><input type="text" id="u-size-${n}" value="${(p.size||'').replace(/"/g,'&quot;')}" placeholder="10 lb"></td>
+      <td><input type="text" inputmode="numeric" class="no-spin" id="u-mfg-${n}" value="${defMfg}" placeholder="Year" style="width:54px;"></td>
+      <td><input type="text" id="u-size-${n}" value="${(p.size||'').replace(/"/g,'&quot;')}" placeholder="lbs"></td>
       <td><select id="u-type-${n}">${typeSel}</select></td>
       <td><button class="del-btn" onclick="removeExtUnit(${n})">✕</button></td>
     </tr>
@@ -3999,6 +4001,9 @@ function extUpdateCabState(n) {
 }
 
 function toggleExtCab(n, item) {
+  // Only allow toggling when mount is CAB (wrap is enabled)
+  const wrap = document.getElementById('u-cab-wrap-' + n);
+  if (wrap && wrap.style.pointerEvents === 'none') return;
   const labels = { m: 'Mallet', g: 'Glass', s: 'Sign' };
   const btn = document.getElementById('u-cab-' + item + '-btn-' + n);
   const inp = document.getElementById('u-cab-' + item + '-' + n);
@@ -4181,11 +4186,11 @@ function setExtQA(btn, i, val) {
             <td><button class="del-btn" onclick="removeExtQADefic('${deficId}',${i})">✕</button></td>
           </tr>`);
       }
-      // Wire note input to sync deficiency description
+      // Wire note input to sync deficiency description (always includes the question)
       if (noteInp) {
         noteInp.addEventListener('input', function() {
           const syncEl = document.getElementById(deficId + '-desc');
-          if (syncEl) syncEl.value = this.value || initDesc;
+          if (syncEl) syncEl.value = this.value ? q + ': ' + this.value : initDesc;
         });
       }
     }
@@ -8034,18 +8039,34 @@ async function buildExtinguisherPDFBytes() {
   for (let i = 0; i < emptyNeeded; i++) {
     drawExtRow({ rowNum: data.extinguishers.length + i + 1 });
   }
-  gap(8);
+  gap(4);
+
+  // ── UNIT STATS (Total / Pass / Fail) ─────────────────────────────────────────
+  {
+    const total = data.extinguishers.length;
+    const pass  = data.extinguishers.filter(e => (e.pf||'').toUpperCase() === 'PASS').length;
+    const fail  = data.extinguishers.filter(e => (e.pf||'').toUpperCase() === 'FAIL').length;
+    const statH = 18, statW = PW / 3;
+    checkPage(statH + 4);
+    const statDefs = [
+      { label: 'TOTAL UNITS', val: String(total), color: navy },
+      { label: 'PASS',        val: String(pass),  color: rgb(0.06, 0.50, 0.22) },
+      { label: 'FAIL',        val: String(fail),  color: fail > 0 ? rgb(0.76, 0.10, 0.10) : rgb(0.38, 0.44, 0.54) },
+    ];
+    statDefs.forEach((s, si) => {
+      const sx = ML + si * statW;
+      page.drawRectangle({ x: sx, y: ry(statH), width: statW, height: statH, color: s.color });
+      page.drawText(s.label, { x: sx + 6, y: ty(statH, 11), size: 6.5, font: hFont, color: white });
+      page.drawText(s.val,   { x: sx + 6, y: ty(statH, 3),  size: 9,   font: hFont, color: white });
+    });
+    curY += statH + 2;
+  }
+  gap(6);
 
   // ── SERVICES DUE NOW SUMMARY ──────────────────────────────────────────────────
   if (data.extSvcTable && data.extSvcTable.some(r => r.yr6 || r.hydro || r.recharge || r.newunit || r.notes)) {
     addPage();
     secHdr('SERVICES DUE NOW SUMMARY');
-    // Summary stats
-    checkPage(22);
-    page.drawRectangle({ x: ML, y: ry(18), width: PW, height: 18, color: lgray, borderColor: sky, borderWidth: 0.3 });
-    page.drawText('Total Extinguishers on Report:', { x: ML+4, y: ty(18, 6), size: 8, font: hFont, color: navy });
-    page.drawText(String(data.extinguishers.length), { x: ML+200, y: ty(18, 6), size: 10, font: hFont, color: navy });
-    curY += 20;
     gap(4);
 
     // Services due table header
