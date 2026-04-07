@@ -1844,6 +1844,12 @@ function goStep(n) {
 }
 
 function checkConnAndGoSystems() {
+  const propSel = document.getElementById('property-select');
+  if (!propSel || !propSel.value) {
+    toast('⚠ Please select a property before continuing.');
+    propSel?.focus();
+    return;
+  }
   if (!accessToken) {
     toast('⚠ Not connected to Google Drive — data will not save to Drive. Connect in the top bar, or continue offline.');
   }
@@ -3701,7 +3707,7 @@ function buildExtinguisherPanel() {
           <th style="width:100px;">Mount</th>
           <th style="width:90px;">Cabinet Missing?</th>
           <th style="width:62px;">MFG Yr</th>
-          <th style="width:72px;">Size</th>
+          <th style="width:72px;">Size(lb)</th>
           <th style="width:100px;">Type</th>
           <th style="width:26px;"></th>
         </tr>
@@ -3714,7 +3720,6 @@ function buildExtinguisherPanel() {
       <textarea id="ext-notes" rows="2"></textarea>
     </div>`;
   const panel = makePanel('extinguisher', '🧯', 'Portable Fire Extinguishers (NFPA 10)', extTable);
-  _extSvcAutoFilled = false;
   setTimeout(() => {
     const summaryTab = document.getElementById('step-nav-summary-tab');
     if (summaryTab) summaryTab.style.display = '';
@@ -3747,9 +3752,9 @@ function addExtUnitRow(prefill) {
       <td><select id="u-mount-${n}" onchange="extUpdateCabState(${n})">${mountSel}</select></td>
       <td title="Select what is missing from the cabinet: M = Mallet, S = Signage, G = Glass. Only available when Mount is set to CAB.">
         <div id="u-cab-wrap-${n}" style="display:flex;gap:3px;${defMount!=='CAB'?'opacity:.35;pointer-events:none;':''}">
-          <button id="u-cab-m-btn-${n}" class="ext-yn-btn${p.cabM==='Y'?' active':''}" onclick="toggleExtCab(${n},'m')" title="Mallet missing" style="padding:3px 7px;">M</button>
-          <button id="u-cab-g-btn-${n}" class="ext-yn-btn${p.cabG==='Y'?' active':''}" onclick="toggleExtCab(${n},'g')" title="Glass missing" style="padding:3px 7px;">G</button>
-          <button id="u-cab-s-btn-${n}" class="ext-yn-btn${p.cabS==='Y'?' active':''}" onclick="toggleExtCab(${n},'s')" title="Sign missing" style="padding:3px 7px;">S</button>
+          <button id="u-cab-m-btn-${n}" class="ext-yn-btn${p.cabM==='Y'?' active':''}" onclick="toggleExtCab(${n},'m')"  style="padding:3px 7px;">M</button>
+          <button id="u-cab-g-btn-${n}" class="ext-yn-btn${p.cabG==='Y'?' active':''}" onclick="toggleExtCab(${n},'g')"  style="padding:3px 7px;">G</button>
+          <button id="u-cab-s-btn-${n}" class="ext-yn-btn${p.cabS==='Y'?' active':''}" onclick="toggleExtCab(${n},'s')"  style="padding:3px 7px;">S</button>
         </div>
         <input type="hidden" id="u-cab-m-${n}" value="${p.cabM||''}">
         <input type="hidden" id="u-cab-g-${n}" value="${p.cabG||''}">
@@ -4087,8 +4092,6 @@ function goInspNextStep() {
   }
 }
 
-let _extSvcAutoFilled = false;
-
 function goExtSummaryStep() {
   if (activeInspectionSystem !== 'extinguisher') return;
   saveDraft();
@@ -4098,14 +4101,10 @@ function goExtSummaryStep() {
   if (!document.getElementById('ext-svc-tbody')?.children.length) {
     buildExtSvcTable();
     buildExtQATable();
-    _extSvcAutoFilled = false;
   }
 
-  // Auto-populate from unit rows on first visit
-  if (!_extSvcAutoFilled) {
-    autoFillExtSvcFromUnits();
-    _extSvcAutoFilled = true;
-  }
+  // Always recompute auto-fill columns (hydro/recharge/newunit) from current unit data
+  autoFillExtSvcFromUnits();
 
   document.getElementById('step-3').style.display = 'none';
   document.getElementById('step-generic-defic').style.display = 'none';
@@ -4238,6 +4237,17 @@ function matchExtSvcType(type, size) {
 
 function autoFillExtSvcFromUnits() {
   const curYear = new Date().getFullYear();
+
+  // Reset auto-computed columns (hydro/recharge/newunit) to 0 before refilling
+  EXT_SVC_TYPES.forEach((_, i) => {
+    ['hydro','recharge','newunit'].forEach(col => {
+      const el = document.getElementById(`ext-svc-${col}-${i}`);
+      if (el) el.value = '';
+    });
+  });
+  const _malEl = document.getElementById('ext-nf-mallets'); if (_malEl) _malEl.value = '';
+  const _sigEl = document.getElementById('ext-nf-signage'); if (_sigEl) _sigEl.value = '';
+
   let malletsCount = 0, glassCount = 0, signageCount = 0;
   for (let i = 1; i <= extUnitCount; i++) {
     if (!document.getElementById('ext-unit-row-' + i)) continue;
@@ -4272,8 +4282,9 @@ function autoFillExtSvcFromUnits() {
   if (malEl && malletsCount) malEl.value = malletsCount;
   const sigEl = document.getElementById('ext-nf-signage');
   if (sigEl && signageCount) sigEl.value = signageCount;
+  // Glass field is descriptive (size), leave as-is for manual entry — just set count if user hasn't typed anything
   const glEl = document.getElementById('ext-nf-glass');
-  if (glEl && glassCount && !glEl.value) glEl.value = glassCount;
+  if (glEl && glassCount && !glEl.value) glEl.value = String(glassCount);
   calcExtTotalSvc();
 }
 
