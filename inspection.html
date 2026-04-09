@@ -4269,6 +4269,22 @@ function setESLSub(btn, prefix, n, val) {
   btn.classList.add('selected');
   const inp = document.getElementById(prefix + '-' + n);
   if (inp) inp.value = val;
+  // If a sub-item is FAIL, auto-set the row's overall Pass/Fail to FAIL
+  if (val === 'FAIL') {
+    // Determine typeStr from prefix (e.g. 'el-30s' → 'el', 'es-illum' → 'es')
+    const typeStr = prefix.startsWith('el') ? 'el' : 'es';
+    const pfInp = document.getElementById(typeStr + '-pf-' + n);
+    if (pfInp && pfInp.value !== 'FAIL') {
+      const pfGroup = pfInp.closest('.pf-group');
+      if (pfGroup) {
+        pfGroup.querySelectorAll('.pf-btn').forEach(b => b.classList.remove('selected'));
+        pfGroup.querySelector('.pf-btn.fail')?.classList.add('selected');
+      }
+      pfInp.value = 'FAIL';
+      _eslManageDefic(typeStr, n, 'FAIL');
+      _eslAutoStatus();
+    }
+  }
 }
 
 function setESLSubById(id, val) {
@@ -4310,17 +4326,18 @@ function _eslManageDefic(typeStr, n, val) {
   const deficId = typeStr + '-pf-defic-' + n;
   const locEl = document.getElementById(typeStr + '-loc-' + n);
   const loc = locEl?.value?.trim() || '';
-  const unitLabel = (typeStr === 'el' ? 'Emergency Light' : 'Exit Sign') + (loc ? ' - ' + loc : '') + ' (Unit #' + n + ')';
+  const unitLabel = (typeStr === 'el' ? 'Emergency Light' : 'Exit Sign') + (loc ? ' — ' + loc : '') + ' (Unit #' + n + ')';
   const tbody = document.getElementById('generic-defic-tbody');
   if (!tbody) return;
   const existing = document.getElementById(deficId);
   if (val === 'FAIL') {
     if (!existing) {
+      genericDeficCount++;
       const row = document.createElement('tr');
       row.id = deficId;
-      row.innerHTML = `<td style="white-space:nowrap;font-size:.78rem;padding:4px 6px;">${unitLabel}</td>
-        <td style="padding:4px 6px;"><input type="text" id="${deficId}-txt" placeholder="Deficiency note…" style="width:100%;border:1px solid var(--border);border-radius:4px;padding:3px 6px;font-size:.78rem;font-family:inherit;"></td>
-        <td style="padding:4px 6px;"><button class="del-btn" onclick="document.getElementById('${deficId}').remove();_eslAutoStatus();">✕</button></td>`;
+      row.innerHTML = `<td style="text-align:center;font-weight:700;color:var(--slate);">${genericDeficCount}</td>
+        <td><input type="text" id="${deficId}-txt" value="${escHtml(unitLabel)}: Failed inspection" placeholder="Deficiency note…" style="width:100%;border:1px solid var(--border);border-radius:4px;padding:3px 6px;font-size:.78rem;font-family:inherit;"></td>
+        <td><button class="del-btn" onclick="document.getElementById('${deficId}').remove();_eslAutoStatus();">✕</button></td>`;
       tbody.appendChild(row);
     }
   } else {
@@ -9147,7 +9164,7 @@ async function buildExitSignLightingPDFBytes() {
   const FIRE_RED = rgb(0.72, 0.08, 0.08);
   const navy  = rgb(0.13, 0.21, 0.42);
   const sky   = rgb(0.71, 0.80, 0.93);
-  const gold  = rgb(1.0, 1.0, 0.75);
+  const gold  = rgb(1.0,  1.0,  0.75);
   const lgray = rgb(0.94, 0.94, 0.94);
   const white = rgb(1, 1, 1);
   const green = rgb(0.06, 0.50, 0.22);
@@ -9181,7 +9198,83 @@ async function buildExitSignLightingPDFBytes() {
     curY += 18;
   };
 
-  // ── HEADER (same logo pattern as other PDFs) ─────────────────────────────
+  const mkField = (val, x, fieldY, w, h, multiline) => {
+    page.drawRectangle({ x, y: fieldY, width: w, height: h, color: gold, borderColor: sky, borderWidth: 0.5 });
+    const f = form.createTextField(fid());
+    f.setText(String(val || ''));
+    if (multiline) f.enableMultiline();
+    f.addToPage(page, { x: x+1, y: fieldY+1, width: w-2, height: h-2, font: rFont });
+    f.setFontSize(8);
+  };
+
+  const dataRow = (cols, fh = 12, lh = 8, gapH = 3) => {
+    checkPage(lh + fh + gapH);
+    let x = ML;
+    cols.forEach(c => {
+      page.drawText((c.label||'')+':', { x: x+2, y: ty(lh, lh-3), size: 6, font: hFont, color: navy });
+      mkField(c.val, x, ry(lh+fh), c.w, fh, false);
+      x += c.w;
+    });
+    curY += lh + fh + gapH;
+  };
+
+  const textArea = (val, h) => {
+    checkPage(h + 2);
+    mkField(val, ML, ry(h), PW, h, true);
+    curY += h + 2;
+  };
+
+  // Editable device table with Pass/Fail color coding
+  const drawEditableTable = (title, units, colDefs) => {
+    if (!units || !units.length) return;
+    secHdr(title);
+    const cellH = 14;
+    const drawHdr = () => {
+      checkPage(13);
+      let hx = ML;
+      colDefs.forEach(c => {
+        page.drawRectangle({ x: hx, y: ry(13), width: c.w, height: 13, color: navy });
+        page.drawText(c.label, { x: hx+2, y: ty(13,4), size: 5.5, font: hFont, color: white });
+        hx += c.w;
+      });
+      curY += 14;
+    };
+    drawHdr();
+    units.forEach((u, idx) => {
+      if (curY + cellH > PH - MB) { addPage(); drawHdr(); }
+      const pfVal = (u.pf || '').toUpperCase();
+      const rowBg = pfVal === 'FAIL' ? rgb(0.99,0.93,0.93) : pfVal === 'PASS' ? rgb(0.94,0.99,0.95) : lgray;
+      page.drawRectangle({ x: ML, y: ry(cellH), width: PW, height: cellH, color: rowBg, borderColor: sky, borderWidth: 0.3 });
+      let cx = ML;
+      colDefs.forEach((c, ci) => {
+        const rawVal = String(c.get(u, idx) || '');
+        if (c.static) {
+          // Static index cell (row number)
+          page.drawText(rawVal, { x: cx + c.w/2 - rFont.widthOfTextAtSize(rawVal, 7)/2, y: ty(cellH,4), size: 7, font: hFont, color: navy });
+        } else if (c.isPF) {
+          // Pass/Fail cell — colored text
+          const pfColor = rawVal === 'FAIL' ? red : rawVal === 'PASS' ? green : navy;
+          const f = form.createTextField(fid());
+          f.setText(rawVal);
+          page.drawRectangle({ x: cx+1, y: ry(cellH)+1, width: c.w-2, height: cellH-2, color: rawVal === 'FAIL' ? rgb(0.99,0.93,0.93) : rawVal === 'PASS' ? rgb(0.94,0.99,0.95) : gold, borderColor: sky, borderWidth: 0.3 });
+          f.addToPage(page, { x: cx+2, y: ry(cellH)+2, width: c.w-4, height: cellH-4, font: hFont });
+          f.setFontSize(7);
+        } else {
+          // Editable field
+          const f = form.createTextField(fid());
+          f.setText(rawVal);
+          page.drawRectangle({ x: cx+1, y: ry(cellH)+1, width: c.w-2, height: cellH-2, color: gold, borderColor: sky, borderWidth: 0.2 });
+          f.addToPage(page, { x: cx+2, y: ry(cellH)+2, width: c.w-4, height: cellH-4, font: rFont });
+          f.setFontSize(7);
+        }
+        cx += c.w;
+      });
+      curY += cellH + 1;
+    });
+    gap(6);
+  };
+
+  // ── HEADER ────────────────────────────────────────────────────────────────
   addPage();
   const titleText = 'EXIT SIGN & EMERGENCY LIGHTING INSPECTION REPORT';
   page.drawRectangle({ x: 0, y: PH - 22, width: W, height: 22, color: FIRE_RED });
@@ -9225,166 +9318,140 @@ async function buildExitSignLightingPDFBytes() {
     });
   } catch(_) {}
 
+  // Company info block
   page.drawRectangle({ x: infoX, y: ry(logoAreaH), width: infoW, height: logoAreaH, color: lgray, borderColor: sky, borderWidth: 0.5 });
-  const compLines2 = [
-    { text: 'Fire Life Protection System, Inc.', bold: true, sz: 7.5 },
+  const compLines = [
+    { text: 'Fire Life Protection System, Inc.', bold: true,  sz: 7.5 },
     { text: '8201 Shaffer Parkway Suite B',       bold: false, sz: 7 },
     { text: 'Littleton, CO 80127',                bold: false, sz: 7 },
     { text: 'Cell: (303) 726-8847  |  Office: (720) 974-1570', bold: false, sz: 6.5 },
     { text: 'Alan.antonio@firelifeprotectionsystems.com',       bold: false, sz: 6.5 },
   ];
-  let clY2 = ry(logoAreaH) + logoAreaH - 8;
-  compLines2.forEach(l => {
-    page.drawText(l.text, { x: infoX+4, y: clY2, size: l.sz, font: l.bold ? hFont : rFont, color: navy });
-    clY2 -= l.sz + 4;
+  let clY = ry(logoAreaH) + logoAreaH - 8;
+  compLines.forEach(l => {
+    page.drawText(l.text, { x: infoX+4, y: clY, size: l.sz, font: l.bold ? hFont : rFont, color: navy });
+    clY -= l.sz + 4;
   });
 
+  // Right-side editable fields
   page.drawRectangle({ x: rtX, y: ry(logoAreaH), width: rtW, height: logoAreaH, color: lgray, borderColor: sky, borderWidth: 0.5 });
-  const rtFields2 = [
+  const rtFields = [
     { label: 'DATE',         val: data.inspection.date || '' },
     { label: 'REPORT TYPE',  val: data.inspection.reportType || '' },
     { label: 'INSPECTOR',    val: data.inspection.inspectorName || '' },
     { label: 'LICENSE/CERT', val: data.inspection.inspectorCert || '' },
-    { label: 'NFPA REF.',    val: data.inspection.nfpaRef || 'NFPA 101' },
+    { label: 'NFPA REF.',    val: 'NFPA 101' },
   ];
-  let rfY2 = ry(logoAreaH) + logoAreaH - 8;
-  rtFields2.forEach(f => {
-    page.drawText(f.label + ':', { x: rtX+3, y: rfY2, size: 5.5, font: hFont, color: slate });
-    rfY2 -= 5;
-    page.drawRectangle({ x: rtX+2, y: rfY2-2, width: rtW-4, height: 9, color: gold, borderColor: sky, borderWidth: 0.3 });
-    const tf = form.createTextField(fid());
-    tf.setText(f.val); tf.addToPage(page, { x: rtX+3, y: rfY2-1, width: rtW-6, height: 7, font: rFont }); tf.setFontSize(7);
-    rfY2 -= 11;
+  let rfY = ry(logoAreaH) + logoAreaH - 8;
+  rtFields.forEach(f => {
+    page.drawText(f.label + ':', { x: rtX+3, y: rfY, size: 5.5, font: hFont, color: slate });
+    rfY -= 5;
+    mkField(f.val, rtX+2, rfY-2, rtW-4, 9, false);
+    rfY -= 12;
   });
   curY += logoAreaH + 4;
 
-  // Property
+  // ── PROPERTY ─────────────────────────────────────────────────────────────
   secHdr('PROPERTY INFORMATION');
-  const propName = data.property.name || 'Property Not Selected';
-  const addrLine = [data.property.address, data.property.cityStateZip].filter(Boolean).join('  |  ');
-  [
-    { text: propName, sz: 10, font: hFont, color: navy },
-    { text: addrLine, sz: 8, font: rFont, color: navy },
-  ].forEach(l => {
-    if (!l.text) return;
-    wrap(l.text, l.sz, PW - 8).forEach(line => {
-      checkPage(l.sz + 4);
-      page.drawText(line, { x: ML+4, y: ry(l.sz+4)+2, size: l.sz, font: l.font, color: l.color });
-      curY += l.sz + 4;
-    });
-  });
+  dataRow([
+    { label: 'PROPERTY NAME', val: data.property.name || '', w: PW * 0.55 },
+    { label: 'INSPECTION DATE', val: data.inspection.date || '', w: PW * 0.45 },
+  ]);
+  dataRow([
+    { label: 'ADDRESS', val: data.property.address || '', w: PW * 0.55 },
+    { label: 'CITY / STATE / ZIP', val: data.property.cityStateZip || '', w: PW * 0.45 },
+  ]);
   gap(4);
 
-  // Overall status
-  const stVal2 = (data.overallStatus || '').toUpperCase();
-  const stColor2 = stVal2 === 'COMPLIANT' ? green : stVal2 === 'DEFICIENT' ? red : stVal2 === 'IMPAIRED' ? amber : slate;
+  // ── OVERALL STATUS ────────────────────────────────────────────────────────
+  const stVal = (data.overallStatus || '').toUpperCase();
+  const stColor = stVal === 'COMPLIANT' ? green : stVal === 'DEFICIENT' ? red : stVal === 'IMPAIRED' ? amber : slate;
   checkPage(22);
-  page.drawRectangle({ x: ML, y: ry(18), width: PW, height: 18, color: stColor2 });
-  page.drawText('OVERALL STATUS', { x: ML+8, y: ty(18,6), size: 6.5, font: hFont, color: white });
-  page.drawText(stVal2 || 'PENDING', { x: ML+100, y: ty(18,6), size: 9.5, font: hFont, color: white });
-  curY += 18;
+  page.drawRectangle({ x: ML, y: ry(20), width: PW, height: 20, color: stColor });
+  page.drawText('OVERALL INSPECTION STATUS:', { x: ML+8, y: ty(20, 7), size: 7, font: hFont, color: white });
+  const stLabel = stVal || 'PENDING';
+  page.drawText(stLabel, { x: ML + PW/2 - hFont.widthOfTextAtSize(stLabel, 11)/2, y: ty(20, 7), size: 11, font: hFont, color: white });
+  curY += 20;
   gap(6);
 
-  // Deficiencies
-  if (data.deficiencies.length > 0) {
+  // ── DEFICIENCIES ──────────────────────────────────────────────────────────
+  if (data.deficiencies && data.deficiencies.length > 0) {
     secHdr('DEFICIENCIES — ' + data.deficiencies.length + ' ITEM(S)');
-    data.deficiencies.forEach(d => {
-      checkPage(14);
-      const text = d.item + (d.description ? ': ' + d.description : '');
+    data.deficiencies.forEach((d, i) => {
+      const text = (d.item || '') + (d.description ? ': ' + d.description : '');
       const lines = wrap(text, 8, PW - 16);
-      const rh = lines.length * 11 + 4;
-      page.drawRectangle({ x: ML, y: ry(rh), width: PW, height: rh, color: rgb(0.99, 0.93, 0.93), borderColor: red, borderWidth: 0.5 });
-      page.drawText('\u2022', { x: ML+4, y: ty(rh, rh/2+3), size: 8, font: hFont, color: red });
+      const rh = Math.max(14, lines.length * 11 + 4);
+      checkPage(rh + 2);
+      page.drawRectangle({ x: ML, y: ry(rh), width: PW, height: rh, color: rgb(0.99,0.93,0.93), borderColor: red, borderWidth: 0.5 });
+      page.drawText(String(i+1)+'.', { x: ML+3, y: ty(rh, rh/2+3), size: 7, font: hFont, color: red });
       lines.forEach((line, li) => {
-        page.drawText(line, { x: ML+12, y: ty(rh, rh-4-li*11), size: 8, font: li===0?hFont:rFont, color: red });
+        page.drawText(line, { x: ML+14, y: ty(rh, rh-4-li*11), size: 8, font: li===0 ? hFont : rFont, color: red });
       });
       curY += rh + 3;
     });
     gap(4);
   }
 
-  // Helper: draw a device table
-  const drawDeviceTable = (title, units, colDefs) => {
-    if (!units || !units.length) return;
-    secHdr(title);
-    // Table header
-    checkPage(14);
-    let hx = ML;
-    colDefs.forEach(c => {
-      page.drawRectangle({ x: hx, y: ry(13), width: c.w, height: 13, color: navy });
-      page.drawText(c.label, { x: hx+2, y: ty(13,4), size: 5.5, font: hFont, color: white });
-      hx += c.w;
-    });
-    curY += 14;
+  // ── INSPECTION COUNTS ─────────────────────────────────────────────────────
+  secHdr('INSPECTION SUMMARY');
+  dataRow([
+    { label: '# EMERGENCY LIGHTING UNITS', val: String(data.elUnits?.length || 0), w: PW/2 },
+    { label: '# EXIT SIGNS',               val: String(data.esUnits?.length || 0), w: PW/2 },
+  ]);
+  gap(4);
 
-    units.forEach((u, idx) => {
-      const rowH = 13;
-      checkPage(rowH + 1);
-      const bg = u.pf === 'FAIL' ? rgb(0.99, 0.93, 0.93) : u.pf === 'PASS' ? rgb(0.94, 0.99, 0.95) : rgb(0.97, 0.97, 0.97);
-      page.drawRectangle({ x: ML, y: ry(rowH), width: PW, height: rowH, color: bg, borderColor: sky, borderWidth: 0.3 });
-      let cx = ML;
-      colDefs.forEach(c => {
-        const val = String(c.get(u, idx) || '');
-        const color = (c.isPF && val === 'FAIL') ? red : (c.isPF && val === 'PASS') ? green : navy;
-        page.drawText(val.slice(0, Math.floor(c.w / 4.5)), { x: cx+2, y: ty(rowH, 4), size: 7, font: c.isPF ? hFont : rFont, color });
-        cx += c.w;
-      });
-      curY += rowH + 1;
-    });
-    gap(6);
-  };
-
-  // EL table
-  drawDeviceTable('EMERGENCY LIGHTING UNITS (NFPA 101 7.9)', data.elUnits, [
-    { label: '#',          w: 22,  get: (u, i) => String(i+1) },
-    { label: 'LOCATION',   w: 140, get: u => u.loc },
-    { label: 'TYPE',       w: 80,  get: u => u.type },
-    { label: '30-SEC',     w: 56,  get: u => u.pf30s },
-    { label: '90-MIN',     w: 56,  get: u => u.pf90m },
-    { label: 'BATTERY',    w: 56,  get: u => u.pfBatt },
-    { label: 'PASS/FAIL',  w: 56,  get: u => u.pf, isPF: true },
-    { label: 'COMMENTS',   w: 74,  get: u => u.comments },
+  // ── EMERGENCY LIGHTING TABLE ──────────────────────────────────────────────
+  drawEditableTable('EMERGENCY LIGHTING UNITS (NFPA 101 7.9)', data.elUnits, [
+    { label: '#',         w: 22,  static: true, get: (u, i) => String(i+1) },
+    { label: 'LOCATION',  w: 130, get: u => u.loc },
+    { label: 'TYPE',      w: 72,  get: u => u.type },
+    { label: '30-SEC',    w: 54,  get: u => u.pf30s },
+    { label: '90-MIN',    w: 54,  get: u => u.pf90m },
+    { label: 'BATTERY',   w: 54,  get: u => u.pfBatt },
+    { label: 'PASS/FAIL', w: 54,  isPF: true, get: u => u.pf },
+    { label: 'COMMENTS',  w: 100, get: u => u.comments },
   ]);
 
-  // ES table
-  drawDeviceTable('EXIT SIGNS (NFPA 101 7.10)', data.esUnits, [
-    { label: '#',          w: 22,  get: (u, i) => String(i+1) },
-    { label: 'LOCATION',   w: 140, get: u => u.loc },
-    { label: 'TYPE',       w: 80,  get: u => u.type },
-    { label: 'ILLUMINATED',w: 60,  get: u => u.pfIllum },
-    { label: 'ARROWS',     w: 52,  get: u => u.pfArrows },
-    { label: 'BATT. BKUP', w: 52,  get: u => u.pfBatt },
-    { label: 'PASS/FAIL',  w: 60,  get: u => u.pf, isPF: true },
-    { label: 'COMMENTS',   w: 74,  get: u => u.comments },
+  // ── EXIT SIGNS TABLE ──────────────────────────────────────────────────────
+  drawEditableTable('EXIT SIGNS (NFPA 101 7.10)', data.esUnits, [
+    { label: '#',          w: 22,  static: true, get: (u, i) => String(i+1) },
+    { label: 'LOCATION',   w: 130, get: u => u.loc },
+    { label: 'TYPE',       w: 72,  get: u => u.type },
+    { label: 'ILLUMINATED',w: 54,  get: u => u.pfIllum },
+    { label: 'ARROWS',     w: 54,  get: u => u.pfArrows },
+    { label: 'BATT. BKUP', w: 54,  get: u => u.pfBatt },
+    { label: 'PASS/FAIL',  w: 54,  isPF: true, get: u => u.pf },
+    { label: 'COMMENTS',   w: 100, get: u => u.comments },
   ]);
 
-  // Notes
-  const notesVal = document.getElementById('esl-notes')?.value?.trim() || '';
-  if (notesVal) {
-    secHdr('NOTES');
-    wrap(notesVal, 8, PW - 8).forEach(line => {
-      checkPage(12);
-      page.drawText(line, { x: ML+4, y: ry(12)+3, size: 8, font: rFont, color: navy });
-      curY += 12;
-    });
-    gap(4);
-  }
+  // ── NOTES ─────────────────────────────────────────────────────────────────
+  secHdr('NOTES');
+  textArea(document.getElementById('esl-notes')?.value?.trim() || '', 40);
+  gap(4);
 
-  // Signature
-  checkPage(50);
+  // ── INSPECTOR CERTIFICATION ───────────────────────────────────────────────
+  checkPage(60);
   secHdr('INSPECTOR CERTIFICATION');
-  const sigName2 = data.signature?.name || '';
-  const sigDate2 = data.signature?.date || '';
-  const halfW2 = PW / 2 - 4;
-  page.drawText('Inspector Signature:', { x: ML+2, y: ty(8,5), size: 6.5, font: hFont, color: navy });
-  page.drawText('Date:', { x: ML+halfW2+10, y: ty(8,5), size: 6.5, font: hFont, color: navy });
+  const halfW = PW / 2 - 4;
+  const sigName = data.signature?.name || '';
+  const sigDate = data.signature?.date || '';
+
+  page.drawText('Inspector Name / Signature:', { x: ML+2, y: ty(8,5), size: 6.5, font: hFont, color: navy });
+  page.drawText('Date:', { x: ML + halfW + 10, y: ty(8,5), size: 6.5, font: hFont, color: navy });
   curY += 8;
-  page.drawRectangle({ x: ML, y: ry(20), width: halfW2, height: 20, color: gold, borderColor: sky, borderWidth: 0.5 });
-  const sf2 = form.createTextField(fid());
-  sf2.setText(sigName2); sf2.addToPage(page, { x: ML+2, y: ry(20)+2, width: halfW2-4, height: 16, font: rFont }); sf2.setFontSize(9);
-  page.drawRectangle({ x: ML+halfW2+8, y: ry(20), width: halfW2, height: 20, color: gold, borderColor: sky, borderWidth: 0.5 });
-  const df2 = form.createTextField(fid());
-  df2.setText(sigDate2); df2.addToPage(page, { x: ML+halfW2+10, y: ry(20)+2, width: halfW2-4, height: 16, font: rFont }); df2.setFontSize(9);
+  mkField(sigName, ML, ry(22), halfW, 22, false);
+  mkField(sigDate, ML + halfW + 8, ry(22), halfW, 22, false);
+  curY += 24;
+  gap(4);
+
+  // Customer signature
+  page.drawText('Customer Signature:', { x: ML+2, y: ty(8,5), size: 6.5, font: hFont, color: navy });
+  page.drawText('Title:', { x: ML + halfW + 10, y: ty(8,5), size: 6.5, font: hFont, color: navy });
+  curY += 8;
+  const custSigName = document.getElementById('cust-sig-name')?.value?.trim() || '';
+  const custSigTitle = document.getElementById('cust-sig-title')?.value?.trim() || '';
+  mkField(custSigName, ML, ry(22), halfW, 22, false);
+  mkField(custSigTitle, ML + halfW + 8, ry(22), halfW, 22, false);
   curY += 24;
 
   return await pdfDoc.save();
