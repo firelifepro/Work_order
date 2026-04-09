@@ -9552,33 +9552,17 @@ async function buildEditablePDFBytes() {
       return [g0 !== 'FAIL' ? g0 : '', g0 === 'FAIL' ? 'FAIL' : ''];
     };
 
-    // Collect device table rows
-    const detRows=[], flowRows=[], tamperRows=[], spRows=[], batRows=[];
-    for (let n=1; n<=200; n++) {
-      if (!document.getElementById('fa-det-row-'+n)) break;
-      const g = (id) => dv(id+'-'+n);
-      detRows.push([g('fa-det-type'),g('fa-det-loc'),g('fa-det-scan'),g('fa-det-addr'),g('fa-det-alarm'),g('fa-det-sup')]);
-    }
-    for (let n=1; n<=200; n++) {
-      if (!document.getElementById('fa-flow-row-'+n)) break;
-      const g = (id) => dv(id+'-'+n);
-      flowRows.push([g('fa-flow-type'),g('fa-flow-loc'),g('fa-flow-scan'),g('fa-flow-addr'),g('fa-flow-sup'),g('fa-flow-secs')]);
-    }
-    for (let n=1; n<=200; n++) {
-      if (!document.getElementById('fa-tamper-row-'+n)) break;
-      const g = (id) => dv(id+'-'+n);
-      tamperRows.push([g('fa-tamper-type'),g('fa-tamper-loc'),g('fa-tamper-scan'),g('fa-tamper-addr'),g('fa-tamper-sup'),g('fa-tamper-notes')]);
-    }
-    for (let n=1; n<=50; n++) {
-      if (!document.getElementById('fa-sp-row-'+n)) break;
-      const g = (id) => dv(id+'-'+n);
-      spRows.push([g('fa-sp-loc'),g('fa-sp-make'),g('fa-sp-circuit'),g('fa-sp-amps'),g('fa-sp-lbatt'),g('fa-sp-rbatt'),g('fa-sp-spvsd'),g('fa-sp-pf')]);
-    }
-    for (let n=1; n<=50; n++) {
-      if (!document.getElementById('fa-bat-row-'+n)) break;
-      const g = (id) => dv(id+'-'+n);
-      batRows.push([g('fa-bat-size'),g('fa-bat-type'),g('fa-bat-count'),g('fa-bat-loc')]);
-    }
+    // Collect device table rows — query DOM directly so gaps from deletions are handled
+    const collectRows = (prefix, fields) =>
+      [...document.querySelectorAll(`[id^="${prefix}-row-"]`)].map(row => {
+        const n = row.id.slice((prefix + '-row-').length);
+        return fields.map(f => dv(f + '-' + n));
+      });
+    const detRows    = collectRows('fa-det',    ['fa-det-type','fa-det-loc','fa-det-scan','fa-det-addr','fa-det-alarm','fa-det-sup']);
+    const flowRows   = collectRows('fa-flow',   ['fa-flow-type','fa-flow-loc','fa-flow-scan','fa-flow-addr','fa-flow-sup','fa-flow-secs']);
+    const tamperRows = collectRows('fa-tamper', ['fa-tamper-type','fa-tamper-loc','fa-tamper-scan','fa-tamper-addr','fa-tamper-sup','fa-tamper-notes']);
+    const spRows     = collectRows('fa-sp',     ['fa-sp-loc','fa-sp-make','fa-sp-circuit','fa-sp-amps','fa-sp-lbatt','fa-sp-rbatt','fa-sp-spvsd','fa-sp-pf']);
+    const batRows    = collectRows('fa-bat',    ['fa-bat-size','fa-bat-type','fa-bat-count','fa-bat-loc']);
     const preRows  = [...(document.getElementById('fa-pre-checklist')?.querySelectorAll('.inspect-row')  || [])];
     const postRows = [...(document.getElementById('fa-post-checklist')?.querySelectorAll('.inspect-row') || [])];
 
