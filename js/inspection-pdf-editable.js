@@ -2674,6 +2674,7 @@ async function buildHoodPDFBytes() {
 
   // System Information
   secHdr('SYSTEM INFORMATION');
+  gap(4);
   dataRow([
     { label: 'MANUFACTURER',      val: fd['hood-mfr']   || '', w: 180 },
     { label: 'MODEL / CYLINDER #', val: fd['hood-model'] || '', w: 180 },

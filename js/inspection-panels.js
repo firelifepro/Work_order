@@ -508,7 +508,14 @@ function buildStandpipePanel() {
 }
 
 function buildHoodPanel() {
+  const identDisplay = activeHoodIdentifier
+    ? `<div style="background:#d97706;color:white;border-radius:7px;padding:9px 14px;margin-bottom:14px;font-weight:700;font-size:0.88rem;display:flex;align-items:center;gap:10px;">
+        <span style="opacity:0.85;font-size:0.75rem;font-weight:600;white-space:nowrap;">KITCHEN HOOD</span>
+        <span style="flex:1;">${activeHoodIdentifier}</span>
+      </div>`
+    : '';
   const body = `
+    ${identDisplay}
     ${sectionDiv('System Information')}
     ${dataRow(
       {id:'hood-mfr',      label:'System Manufacturer'},

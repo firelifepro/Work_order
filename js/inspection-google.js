@@ -625,34 +625,7 @@ function _buildFreshGenericInspection() {
       });
     }
 
-    // ── Restore previous deficiency states ──────────────────────────────────
-    // Re-apply FAIL rows from the saved inspection so the deficiency box
-    // shows what was outstanding, exactly like clicking FAIL yourself.
-    // The inspector can then clear each one by clicking PASS once confirmed fixed.
-    const states = prev.pfStates || {};
-    Object.entries(states).forEach(([rowId, state]) => {
-      if (state.val !== 'FAIL') return;          // only rehydrate FAILs
-      const itemId = rowId.replace('row-', '');
-      const row    = document.getElementById(rowId);
-      if (!row) return;                          // system not in this inspection
-
-      // Mark the row as FAIL
-      row.dataset.val = 'FAIL';
-      const failBtn = row.querySelector('.pf-btn.fail');
-      if (failBtn) failBtn.classList.add('selected');
-
-      // Restore deficiency note
-      const deficRow = document.getElementById('defic-' + itemId);
-      const deficInp = document.getElementById('defic-txt-' + itemId);
-      if (deficInp && state.defic) {
-        deficInp.value = state.defic;
-        if (deficRow) deficRow.classList.add('show');
-      } else if (deficRow) {
-        deficRow.classList.add('show');   // show box even with no note
-      }
-    });
-
-    toast(`✓ Previous data loaded${Object.values(states).filter(s=>s.val==='FAIL').length > 0 ? ' — prior deficiencies shown in red, clear each one after verifying' : ''}`);
+    toast('✓ Previous inspection data pre-filled. All items start fresh — review prior deficiencies on the Prior Defic. tab if shown.');
   }
 
   // Build the item→panel map THEN run deficiency summary
