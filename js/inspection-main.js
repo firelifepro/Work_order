@@ -230,4 +230,3 @@ window.addEventListener('load', () => {
   });
   observer.observe(document.getElementById('step-4'), { attributes: true, attributeFilter: ['style'] });
 });
-</script>
