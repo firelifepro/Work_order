@@ -49,3 +49,21 @@ Browser side (HTML pages): There's now a let flipsLogLevel = 'NORMAL' constant n
 flipsLogLevel = 'VERBOSE'
 Set it back to 'NORMAL' the same way, or just refresh the page.
 Apps Script side: The same logic lives in maybeLog() — INFO rows are suppressed in NORMAL mode, WARN/ERROR always write. To switch the Apps Script verbosity without editing code, go to Project Settings → Script Properties and add/change LOG_LEVEL to VERBOSE or NORMAL. No re-deploy needed since it's read at runtime via PropertiesService.
+
+
+
+Done. Here's the summary:
+
+10 JS files in js/:
+
+File	Lines	Contents
+inspection-config.js	      44	Constants, global state vars, SYS_META
+inspection-utils.js	        83	todayMT, buildFileSlug, toast, escHtml, setStatus, photo management
+inspection-nav.js	          763	Step wizard, FA/SP multi-step nav, start/exit/proceed functions
+inspection-google.js	      593	Auth, sheet loading, property selection, building config, system toggles, form building
+inspection-panels.js	      1,655	Panel builder helpers + all 13 system panel builders + extinguisher logic + ESL logic
+inspection-deficiencies.js	1,175	FA devices/checklists, SP/FA/generic PF handlers, deficiency tracking, signatures, overall status
+inspection-drafts.js	      754	Draft modal, save/load/restore drafts, Drive folder mgmt, property profiles
+inspection-pdf.js	          1,243	collectAllData, restorePanelFields, buildPDFDoc (jsPDF)
+inspection-pdf-editable.js	2,454	All pdf-lib builders (FA, SP, Ext, ESL, Generic)
+inspection-main.js	        233	saveAndDownload, startNewInspection, window.onload
