@@ -67,7 +67,7 @@ async function updateInspectionSchedule(data) {
     const resp = await fetch('/api/apps-script', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ _appsScriptUrl: APPS_SCRIPT_URL, secret: APPS_SCRIPT_SECRET, updates })
+      body: JSON.stringify({ updates })
     });
 
     if (!resp.ok) {

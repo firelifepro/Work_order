@@ -131,12 +131,13 @@ export default {
 
       const targetUrl = env.APPS_SCRIPT_URL || body._appsScriptUrl;
       if (!targetUrl) {
-        return corsResponse({ error: 'APPS_SCRIPT_URL not set — add it as a Cloudflare env var or pass _appsScriptUrl in body' }, 500);
+        return corsResponse({ error: 'APPS_SCRIPT_URL not set — add it as a Cloudflare env var' }, 500);
       }
 
-      // Remove the internal routing key before forwarding
+      // Remove internal routing keys before forwarding; inject secret from env if set
       const forwardBody = Object.assign({}, body);
       delete forwardBody._appsScriptUrl;
+      if (env.APPS_SCRIPT_SECRET) forwardBody.secret = env.APPS_SCRIPT_SECRET;
 
       try {
         const resp = await fetch(targetUrl, {

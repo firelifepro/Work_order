@@ -922,11 +922,8 @@ const SHEET_ID  = '1_Koq_v0RjsFbQ_c2qZh-eQpGQT2-0IkOal-I4CjSJrI';
 // ── Inspection Schedule Web App ─────────────────────────────────────────────
 // After deploying InspectionSchedule_AppScript.gs as a Web App, paste the URL:
 // ── INSPECTION SCHEDULE INTEGRATION ────────────────────────────────────────
-// After deploying the Apps Script as a Web App, paste the URL below.
-// Apps Script → Deploy → New Deployment → Web App → Execute as Me → Anyone
-// Also run setSecret() in the Apps Script once after pasting.
-const APPS_SCRIPT_URL    = 'https://script.google.com/macros/s/AKfycbxUkTZq5Wpfet8Qbyt0S17VfHVkrevEfMpoCG3wlqNNtTS0QVgL1mJ68rWxqqlk2c_C7w/exec'; // ← PASTE WEB APP URL HERE
-const APPS_SCRIPT_SECRET = 'flips-2026-secret'; // must match setSecret() in Apps Script
+// URL and secret are Cloudflare env vars (APPS_SCRIPT_URL, APPS_SCRIPT_SECRET).
+// The worker at /api/apps-script injects them server-side — no secrets in client code.
 
 // ── Log verbosity ────────────────────────────────────────────────────────────
 // 'NORMAL'  — only logs WO/invoice creation and errors (production default)
@@ -2391,8 +2388,6 @@ async function testScriptConnection() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        _appsScriptUrl: APPS_SCRIPT_URL,
-        secret: APPS_SCRIPT_SECRET,
         action: 'log',
         log: {
           source: 'work-order-page',
@@ -2440,7 +2435,7 @@ function logToSheet(action, detail, status, error) {
   fetch('/api/apps-script', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ _appsScriptUrl: APPS_SCRIPT_URL, secret: APPS_SCRIPT_SECRET, action: 'log', log: entry })
+    body: JSON.stringify({ action: 'log', log: entry })
   }).catch(() => {});
 }
 
@@ -2523,7 +2518,7 @@ async function updateInspectionSchedule(data) {
     const resp = await fetch('/api/apps-script', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ _appsScriptUrl: APPS_SCRIPT_URL, secret: APPS_SCRIPT_SECRET, updates })
+      body: JSON.stringify({ updates })
     });
 
     if (!resp.ok) {

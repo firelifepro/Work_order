@@ -253,7 +253,7 @@ tbody tr:hover .edit-last-btn { color: #2e6da4; }
 const SHEET_ID          = '1_Koq_v0RjsFbQ_c2qZh-eQpGQT2-0IkOal-I4CjSJrI';
 const HISTORY_TAB_NAME  = 'Inspection History';
 const SCOPES            = 'https://www.googleapis.com/auth/spreadsheets.readonly';
-const APPS_SCRIPT_SECRET = 'flips-2026-secret';
+// Secret is a Cloudflare env var (APPS_SCRIPT_SECRET) — injected by the worker at /api/apps-script.
 
 let accessToken = null;
 let tokenClient = null;
@@ -475,7 +475,7 @@ async function migrateOldData() {
     const resp = await fetch('/api/apps-script', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ secret: APPS_SCRIPT_SECRET, action: 'migrate_schedule' })
+      body: JSON.stringify({ action: 'migrate_schedule' })
     });
     if (!resp.ok) throw new Error('HTTP ' + resp.status);
     const result = await resp.json();
@@ -733,7 +733,6 @@ async function saveLastDone(idx) {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        secret: APPS_SCRIPT_SECRET,
         updates: [{
           propertyName:   row.property,
           acctNum:        row.acct,

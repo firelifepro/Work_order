@@ -486,9 +486,8 @@ document.addEventListener('click', e => {
 let accessToken = null;
 let tokenClient = null;
 // ── INSPECTION SCHEDULE / SYSTEM LOG ────────────────────────────────────────
-// Paste the same Apps Script Web App URL here as in index.html
-const APPS_SCRIPT_URL    = 'https://script.google.com/macros/s/AKfycbxUkTZq5Wpfet8Qbyt0S17VfHVkrevEfMpoCG3wlqNNtTS0QVgL1mJ68rWxqqlk2c_C7w/exec'; // ← PASTE WEB APP URL HERE
-const APPS_SCRIPT_SECRET = 'flips-2026-secret'; // must match setSecret() in Apps Script
+// URL and secret are Cloudflare env vars (APPS_SCRIPT_URL, APPS_SCRIPT_SECRET).
+// The worker at /api/apps-script injects them server-side — no secrets in client code.
 
 // ── Log verbosity ────────────────────────────────────────────────────────────
 // 'NORMAL'  — only logs WO/invoice creation and errors (production default)
@@ -635,7 +634,7 @@ function logToSheet(action, detail, status, error) {
   fetch('/api/apps-script', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ _appsScriptUrl: APPS_SCRIPT_URL, secret: APPS_SCRIPT_SECRET, action: 'log', log: entry })
+    body: JSON.stringify({ action: 'log', log: entry })
   }).catch(() => {});
 }
 
