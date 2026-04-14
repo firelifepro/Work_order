@@ -386,6 +386,67 @@ function getAcctForProperty(propName) {
   return _getClientRow(propName).acct || '';
 }
 
+// ── Back-fill acct # into existing History rows that have none ───────────────
+// Run this once manually from the Apps Script editor after migration.
+// Matches History rows to Client List by property name (case-insensitive,
+// trimmed). Logs any property names it couldn't match so you can fix them.
+function backfillAcctNumbers() {
+  const ss          = SpreadsheetApp.getActiveSpreadsheet();
+  const histSheet   = ss.getSheetByName(HISTORY_TAB);
+  const clientSheet = ss.getSheetByName(CLIENT_TAB);
+  if (!histSheet)   { Logger.log('Inspection History tab not found.'); return; }
+  if (!clientSheet) { Logger.log('Client List tab not found.'); return; }
+
+  // Build acct lookup from Client List: lowercase property name → acct #
+  const clientData    = clientSheet.getDataRange().getValues();
+  const clientHeaders = clientData[0].map(h => String(h).trim());
+  const cPropCol = clientHeaders.indexOf('Property Name');
+  const cAcctCol = clientHeaders.findIndex(h => h.toLowerCase().includes('acct') || h.toLowerCase().includes('account number'));
+
+  if (cPropCol === -1) { Logger.log('ERROR: "Property Name" column not found in Client List.'); return; }
+  if (cAcctCol === -1) { Logger.log('ERROR: No acct column found in Client List (looking for header containing "acct" or "account number").'); return; }
+
+  const acctByName = {};
+  for (let i = 1; i < clientData.length; i++) {
+    const name = String(clientData[i][cPropCol] || '').trim().toLowerCase();
+    const acct = String(clientData[i][cAcctCol] || '').trim();
+    if (name && acct) acctByName[name] = acct;
+  }
+  Logger.log('Client List loaded: ' + Object.keys(acctByName).length + ' properties with acct #.');
+
+  // Read History tab
+  const histData    = histSheet.getDataRange().getValues();
+  const histHeaders = histData[0].map(h => String(h).trim().toLowerCase());
+  const hPropIdx = histHeaders.findIndex(h => h.includes('property'));
+  const hAcctIdx = histHeaders.findIndex(h => h.includes('acct'));
+
+  if (hPropIdx === -1) { Logger.log('ERROR: No property column found in Inspection History.'); return; }
+  if (hAcctIdx === -1) { Logger.log('ERROR: No acct column found in Inspection History. Run upgradeHistoryTab() first.'); return; }
+
+  let filled = 0, alreadySet = 0, noMatch = [];
+  for (let i = 1; i < histData.length; i++) {
+    const currentAcct = String(histData[i][hAcctIdx] || '').trim();
+    if (currentAcct) { alreadySet++; continue; }
+
+    const propName = String(histData[i][hPropIdx] || '').trim();
+    if (!propName) continue;
+
+    const acct = acctByName[propName.toLowerCase()];
+    if (acct) {
+      histSheet.getRange(i + 1, hAcctIdx + 1).setValue(acct);
+      filled++;
+    } else {
+      if (!noMatch.includes(propName)) noMatch.push(propName);
+    }
+  }
+
+  Logger.log('Done. Filled: ' + filled + ' | Already had acct#: ' + alreadySet + ' | No match: ' + noMatch.length);
+  if (noMatch.length > 0) {
+    Logger.log('Properties with no Client List match (check spelling/case):');
+    noMatch.forEach(n => Logger.log('  · ' + n));
+  }
+}
+
 function setSecret() {
   PropertiesService.getScriptProperties().setProperty('FLIPS_SECRET', 'flips-2026-secret');
   Logger.log('Secret set to: flips-2026-secret');
