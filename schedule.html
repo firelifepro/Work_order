@@ -142,9 +142,6 @@ tbody tr:hover .edit-last-btn { color: #2e6da4; }
 .date-save-btn { background: #2e6da4; color: white; border: none; padding: 2px 8px; border-radius: 3px; cursor: pointer; font-size: 0.72rem; font-weight: 600; }
 .date-save-btn:disabled { opacity: 0.5; cursor: default; }
 .date-cancel-btn { background: #f3f4f6; color: #555; border: 1px solid #ddd; padding: 2px 6px; border-radius: 3px; cursor: pointer; font-size: 0.72rem; }
-#mark-wo-btn { background: #1e3a5f; color: #bfdbfe; border: 1px solid #3b82f6; padding: 5px 12px; border-radius: 4px; cursor: pointer; font-size: 0.75rem; font-weight: 600; display: none; }
-#mark-wo-btn:hover { background: #1e40af; color: white; }
-#mark-wo-btn:disabled { opacity: 0.5; cursor: default; }
 
 /* ── Empty / loading states ── */
 #loading, #empty-state { text-align: center; padding: 60px 20px; color: #888; }
@@ -224,7 +221,6 @@ tbody tr:hover .edit-last-btn { color: #2e6da4; }
       <option value="">All types</option>
     </select>
     <button id="refresh-btn" onclick="loadSchedule(true)">↺ Refresh</button>
-    <button id="mark-wo-btn" onclick="markAllAsWorkOrder()" title="Set source to 'Work Order' for all rows that have a Last Done date but no source set">📋 Mark all dates as Work Order</button>
     <span class="filter-count" id="filter-count"></span>
   </div>
 
@@ -254,16 +250,16 @@ tbody tr:hover .edit-last-btn { color: #2e6da4; }
 <div id="toast"></div>
 <script src="https://accounts.google.com/gsi/client"></script>
 <script>
-const SHEET_ID  = '1_Koq_v0RjsFbQ_c2qZh-eQpGQT2-0IkOal-I4CjSJrI';
-const SCHEDULE_TAB_NAME = 'Inspection Schedule';
-const SCOPES = 'https://www.googleapis.com/auth/spreadsheets';
+const SHEET_ID          = '1_Koq_v0RjsFbQ_c2qZh-eQpGQT2-0IkOal-I4CjSJrI';
+const HISTORY_TAB_NAME  = 'Inspection History';
+const SCOPES            = 'https://www.googleapis.com/auth/spreadsheets.readonly';
+const APPS_SCRIPT_SECRET = 'flips-2026-secret';
 
 let accessToken = null;
 let tokenClient = null;
-let allRows = [];       // parsed schedule rows
+let allRows = [];
 let sortCol = 'days';
 let sortAsc = true;
-let colIndices = { last: -1, next: -1, source: -1 }; // column positions in the sheet
 
 // ── Nav toggle ─────────────────────────────────────────────
 function toggleNav(btn) {
@@ -302,11 +298,8 @@ function initGoogle() {
   } catch(e) { setStatus('✗ ' + e.message, 'err'); }
 }
 
-async function googleFetch(url, extraOpts = {}) {
-  const makeOpts = () => ({
-    ...extraOpts,
-    headers: { Authorization: 'Bearer ' + accessToken, ...(extraOpts.headers || {}) }
-  });
+async function googleFetch(url) {
+  const makeOpts = () => ({ headers: { Authorization: 'Bearer ' + accessToken } });
   let res = await fetch(url, makeOpts());
   if (res.status === 401) {
     toast('⏳ Session expired — reconnecting…');
@@ -326,15 +319,20 @@ async function googleFetch(url, extraOpts = {}) {
   return res;
 }
 
+
 // ── Load schedule ──────────────────────────────────────────
+// Reads the append-only Inspection History tab. Groups by property + type
+// and keeps only the most recent completion per combination. Next Due is
+// computed in JS from that date + the frequency column.
 async function loadSchedule(forceRefresh = false) {
   const CACHE_KEY = 'flips_schedule_cache';
-  const CACHE_TTL = 5 * 60 * 1000; // 5 min — schedule changes often
+  const CACHE_TTL = 5 * 60 * 1000;
   if (!forceRefresh) {
     try {
       const cached = JSON.parse(sessionStorage.getItem(CACHE_KEY) || 'null');
       if (cached && (Date.now() - cached.ts) < CACHE_TTL) {
         allRows = cached.data;
+        allRows.forEach((r, i) => r._idx = i);
         buildPropDropdown();
         renderTable();
         return;
@@ -348,42 +346,65 @@ async function loadSchedule(forceRefresh = false) {
 
   try {
     const res = await googleFetch(
-      `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${encodeURIComponent(SCHEDULE_TAB_NAME)}`
+      `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${encodeURIComponent(HISTORY_TAB_NAME)}`
     );
+
+    // Tab doesn't exist yet
+    if (res.status === 400) { showSetupPrompt(); return; }
     if (!res.ok) throw new Error('Sheets API error ' + res.status);
+
     const json = await res.json();
     const rows = json.values || [];
-    if (rows.length < 2) { showEmpty('No data in Inspection Schedule tab.'); return; }
+
+    if (rows.length < 2) { showSetupPrompt(); return; }
 
     const headers = rows[0].map(h => h.trim().toLowerCase());
     const col = (name) => headers.findIndex(h => h.includes(name));
-    const iProperty = col('property');
-    const iAddress  = col('address');
-    const iType     = col('inspection');
-    const iFreq     = col('freq');
-    const iLast     = col('last');
-    const iNext     = col('next');
-    const iStatus   = col('status');
-    const iNotes    = col('notes');
-    const iSource   = col('source');
+    const iProp   = col('property');
+    const iAddr   = col('address') >= 0 ? col('address') : col('service');
+    const iType   = col('inspection') >= 0 ? col('inspection') : col('type');
+    const iDate   = col('date');
+    const iFreq   = col('freq');
+    const iSource = col('source');
+    const iNotes  = col('notes');
 
-    // Store column positions for writes
-    colIndices = { last: iLast, next: iNext, source: iSource };
+    // For each property+type, keep only the most recent completion
+    const bestMap = new Map();
+    for (let i = 1; i < rows.length; i++) {
+      const r = rows[i];
+      const get = (idx) => (idx >= 0 ? (r[idx] || '').trim() : '');
+      const property = get(iProp);
+      const type     = get(iType);
+      if (!property || !type) continue;
+
+      const dateRaw = get(iDate);
+      const dateObj = parseSheetDate(dateRaw);
+      const key = property + '\x00' + type;
+      const cur = bestMap.get(key);
+
+      if (!cur || (dateObj && (!cur.dateObj || dateObj > cur.dateObj))) {
+        bestMap.set(key, {
+          property,
+          address: get(iAddr),
+          type,
+          freq:    get(iFreq) || 'Annual',
+          last:    dateRaw,
+          dateObj,
+          source:  get(iSource),
+          notes:   get(iNotes),
+        });
+      }
+    }
 
     const today = new Date(); today.setHours(0,0,0,0);
     allRows = [];
 
-    for (let i = 1; i < rows.length; i++) {
-      const r = rows[i];
-      const get = (idx) => (idx >= 0 ? (r[idx] || '').trim() : '');
-      const property = get(iProperty);
-      if (!property) continue;
-
-      const nextRaw = get(iNext);
-      let nextDate = null, daysUntil = null, bucket = 'unknown';
-      if (nextRaw) {
-        nextDate = parseSheetDate(nextRaw);
+    for (const entry of bestMap.values()) {
+      let next = '', nextDate = null, daysUntil = null, bucket = 'unknown';
+      if (entry.dateObj) {
+        nextDate = addFreqMonths(entry.dateObj, entry.freq);
         if (nextDate) {
+          next = `${nextDate.getMonth()+1}/${nextDate.getDate()}/${nextDate.getFullYear()}`;
           daysUntil = Math.round((nextDate - today) / 86400000);
           if      (daysUntil < 0)   bucket = 'overdue';
           else if (daysUntil <= 31) bucket = 'thismonth';
@@ -391,24 +412,22 @@ async function loadSchedule(forceRefresh = false) {
           else                      bucket = 'ok';
         }
       }
-
       allRows.push({
-        property,
-        address:  get(iAddress),
-        type:     get(iType),
-        freq:     get(iFreq),
-        last:     get(iLast),
-        next:     nextRaw,
+        property: entry.property,
+        address:  entry.address,
+        type:     entry.type,
+        freq:     entry.freq,
+        last:     entry.last,
+        next,
         nextDate,
         daysUntil,
         bucket,
-        status:   get(iStatus),
-        notes:    get(iNotes),
-        source:   get(iSource),
-        rowIdx:   i + 1,  // 1-indexed sheet row (row 1 = headers)
+        source:   entry.source,
+        notes:    entry.notes,
       });
     }
 
+    allRows.forEach((r, i) => r._idx = i);
     try { sessionStorage.setItem(CACHE_KEY, JSON.stringify({ ts: Date.now(), data: allRows })); } catch(_) {}
     populateTypeFilter();
     buildPropDropdown();
@@ -417,6 +436,49 @@ async function loadSchedule(forceRefresh = false) {
     showEmpty('Error loading schedule: ' + e.message);
   } finally {
     document.getElementById('loading').style.display = 'none';
+  }
+}
+
+// Add months to a date according to a frequency string
+function addFreqMonths(date, freq) {
+  const d = new Date(date);
+  const f = (freq || 'annual').trim().toLowerCase();
+  const map = { 'monthly': 1, 'quarterly': 3, 'semi annual': 6, 'annual': 12, '3-year': 36, '5-year': 60 };
+  d.setMonth(d.getMonth() + (map[f] || 12));
+  return d;
+}
+
+// Show empty-state with optional one-time migration CTA
+function showSetupPrompt() {
+  const el = document.getElementById('empty-state');
+  el.innerHTML =
+    'No inspection history found. Complete a work order or inspection to start tracking automatically, ' +
+    'or import your existing data:' +
+    '<br><br>' +
+    '<button onclick="migrateOldData()" style="background:#2e6da4;color:white;border:none;padding:6px 16px;border-radius:4px;cursor:pointer;font-size:0.82rem;font-weight:600;">' +
+    '⬆ Import from old Inspection Schedule tab</button>' +
+    '<div style="font-size:0.72rem;color:#aaa;margin-top:6px;">Copies all rows with a Last Done date into Inspection History as Work Order entries.</div>';
+  el.style.display = 'block';
+  document.getElementById('sched-table').style.display = 'none';
+}
+
+// One-time migration: calls Apps Script to copy old Schedule tab → History tab
+async function migrateOldData() {
+  if (!confirm('Import all dated rows from "Inspection Schedule" into "Inspection History" as Work Order entries?\n\nThis runs once. The old tab is not deleted.')) return;
+  toast('⏳ Importing…');
+  try {
+    const resp = await fetch('/api/apps-script', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ secret: APPS_SCRIPT_SECRET, action: 'migrate_schedule' })
+    });
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    const result = await resp.json();
+    if (!result.success) throw new Error(result.error || 'Unknown error');
+    toast(`✓ Imported ${result.migrated} record(s). Loading…`);
+    setTimeout(() => loadSchedule(true), 1200);
+  } catch(e) {
+    toast('✗ Import failed: ' + e.message);
   }
 }
 
@@ -545,13 +607,6 @@ function populateTypeFilter() {
 function renderTable() {
   document.getElementById('sched-table').style.display = 'block';
   document.getElementById('empty-state').style.display = 'none';
-  // Show "mark all as WO" only when there's a Source column and rows with dates but no source set
-  const markBtn = document.getElementById('mark-wo-btn');
-  if (markBtn) {
-    const hasSourceCol = colIndices.source >= 0;
-    const hasUnsourced = allRows.some(r => r.last && !r.source);
-    markBtn.style.display = (hasSourceCol && hasUnsourced) ? 'inline-block' : 'none';
-  }
   updateSummaryCards();
   applyFilters();
 }
@@ -605,13 +660,9 @@ function showEmpty(msg) {
 }
 
 // ── Date editing ───────────────────────────────────────────
-
-function colToLetter(n) {
-  // 0-indexed: 0='A', 25='Z', 26='AA', etc.
-  let s = ''; n++;
-  while (n > 0) { n--; s = String.fromCharCode(65 + (n % 26)) + s; n = Math.floor(n / 26); }
-  return s;
-}
+// Manual edits append a new row to Inspection History via the Apps Script
+// (same endpoint used by work orders and inspections). The history is
+// append-only — old entries are preserved, the latest date wins the view.
 
 function displayToIso(str) {
   if (!str) return '';
@@ -619,24 +670,6 @@ function displayToIso(str) {
   if (mdy) return `${mdy[3]}-${mdy[1].padStart(2,'0')}-${mdy[2].padStart(2,'0')}`;
   if (/^\d{4}-\d{2}-\d{2}$/.test(str)) return str;
   return '';
-}
-
-function isoToDisplay(iso) {
-  if (!iso) return '';
-  const m = iso.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-  if (!m) return iso;
-  return `${parseInt(m[2])}/${parseInt(m[3])}/${m[1]}`;
-}
-
-function calcNextDue(lastIso, freq) {
-  if (!lastIso) return '';
-  const d = new Date(lastIso + 'T12:00:00');
-  const f = (freq || 'annual').toLowerCase();
-  if (f.includes('quarter'))       d.setMonth(d.getMonth() + 3);
-  else if (f.includes('semi') || f.includes('6')) d.setMonth(d.getMonth() + 6);
-  else if (f.includes('month'))    d.setMonth(d.getMonth() + 1);
-  else                             d.setFullYear(d.getFullYear() + 1);
-  return `${d.getMonth()+1}/${d.getDate()}/${d.getFullYear()}`;
 }
 
 function sourceBadgeHtml(src) {
@@ -651,129 +684,70 @@ function sourceBadgeHtml(src) {
 function buildLastDoneCell(r) {
   const dateHtml = r.last ? escHtml(r.last) : '<span style="color:#aaa;">—</span>';
   const badge = sourceBadgeHtml(r.source);
-  return `<td class="col-last" id="last-cell-${r.rowIdx}" style="white-space:nowrap;">` +
+  const pencil = `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>`;
+  return `<td class="col-last" id="last-cell-${r._idx}" style="white-space:nowrap;">` +
     dateHtml + badge +
-    `<button class="edit-last-btn" onclick="openDateEdit(${r.rowIdx})" title="Edit last done date"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg></button>` +
+    `<button class="edit-last-btn" onclick="openDateEdit(${r._idx})" title="Edit last done date">${pencil}</button>` +
     `</td>`;
 }
 
-function openDateEdit(rowIdx) {
-  const row = allRows.find(r => r.rowIdx === rowIdx);
-  const cell = document.getElementById('last-cell-' + rowIdx);
+function openDateEdit(idx) {
+  const row = allRows[idx];
+  const cell = document.getElementById('last-cell-' + idx);
   if (!row || !cell) return;
   if (row.source && !row.source.toLowerCase().includes('manual')) {
-    if (!confirm(`This date was set automatically ("${row.source}"). Are you sure you want to change it?`)) return;
+    if (!confirm(`This date was set automatically (source: "${row.source}").\nAdding a manual entry will become the new "last done" date. Continue?`)) return;
   }
   const isoVal = displayToIso(row.last);
   cell.innerHTML =
     `<div class="date-edit-wrap">` +
-    `<input type="date" id="date-input-${rowIdx}" value="${isoVal}">` +
-    `<button class="date-save-btn" id="date-save-${rowIdx}" onclick="saveLastDone(${rowIdx})">Save</button>` +
-    `<button class="date-cancel-btn" onclick="cancelDateEdit(${rowIdx})">✕</button>` +
+    `<input type="date" id="date-input-${idx}" value="${isoVal}">` +
+    `<button class="date-save-btn" id="date-save-${idx}" onclick="saveLastDone(${idx})">Save</button>` +
+    `<button class="date-cancel-btn" onclick="cancelDateEdit(${idx})">✕</button>` +
     `</div>`;
-  document.getElementById('date-input-' + rowIdx)?.focus();
+  document.getElementById('date-input-' + idx)?.focus();
 }
 
-function cancelDateEdit(rowIdx) {
-  const row = allRows.find(r => r.rowIdx === rowIdx);
-  const cell = document.getElementById('last-cell-' + rowIdx);
+function cancelDateEdit(idx) {
+  const row = allRows[idx];
+  const cell = document.getElementById('last-cell-' + idx);
   if (!cell || !row) return;
   cell.outerHTML = buildLastDoneCell(row);
 }
 
-async function saveLastDone(rowIdx) {
-  if (!accessToken) { toast('⚠ Not connected to Google'); return; }
-  const input = document.getElementById('date-input-' + rowIdx);
-  const saveBtn = document.getElementById('date-save-' + rowIdx);
+async function saveLastDone(idx) {
+  const row = allRows[idx];
+  if (!row) return;
+  const input   = document.getElementById('date-input-' + idx);
+  const saveBtn = document.getElementById('date-save-' + idx);
   if (!input || !input.value) { toast('⚠ Please select a date'); return; }
-
   if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = '…'; }
 
-  const isoDate   = input.value;
-  const newDisplay = isoToDisplay(isoDate);
-  const row = allRows.find(r => r.rowIdx === rowIdx);
-  if (!row) return;
-
-  const lastCol = colToLetter(colIndices.last);
-  const newNext = calcNextDue(isoDate, row.freq);
-  const updates = [
-    { range: `'${SCHEDULE_TAB_NAME}'!${lastCol}${rowIdx}`, values: [[newDisplay]] }
-  ];
-  if (colIndices.next >= 0 && newNext) {
-    updates.push({ range: `'${SCHEDULE_TAB_NAME}'!${colToLetter(colIndices.next)}${rowIdx}`, values: [[newNext]] });
-  }
-  if (colIndices.source >= 0) {
-    updates.push({ range: `'${SCHEDULE_TAB_NAME}'!${colToLetter(colIndices.source)}${rowIdx}`, values: [['Manual']] });
-  }
-
   try {
-    const res = await googleFetch(
-      `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values:batchUpdate`,
-      { method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ valueInputOption: 'USER_ENTERED', data: updates }) }
-    );
-    if (!res.ok) { const e = await res.json(); throw new Error(e.error?.message || `HTTP ${res.status}`); }
-
-    // Update in-memory row
-    row.last   = newDisplay;
-    row.source = 'Manual';
-    if (newNext) {
-      row.next    = newNext;
-      row.nextDate = parseSheetDate(newNext);
-      const today = new Date(); today.setHours(0,0,0,0);
-      row.daysUntil = row.nextDate ? Math.round((row.nextDate - today) / 86400000) : null;
-      row.bucket = row.daysUntil === null ? 'unknown'
-        : row.daysUntil < 0 ? 'overdue'
-        : row.daysUntil <= 31 ? 'thismonth'
-        : row.daysUntil <= 60 ? 'soon' : 'ok';
-    }
+    const resp = await fetch('/api/apps-script', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        secret: APPS_SCRIPT_SECRET,
+        updates: [{
+          propertyName:   row.property,
+          inspectionType: row.type,
+          dateCompleted:  input.value,
+          frequency:      row.freq,
+          source:         'Manual',
+        }]
+      })
+    });
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    const result = await resp.json();
+    if (!result.success) throw new Error(result.error || 'Apps Script error');
 
     try { sessionStorage.removeItem('flips_schedule_cache'); } catch(_) {}
     toast('✓ Date saved');
-    updateSummaryCards();
-    renderTable();
+    await loadSchedule(true);
   } catch(e) {
     toast('✗ Save failed: ' + e.message);
     if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = 'Save'; }
-  }
-}
-
-async function markAllAsWorkOrder() {
-  if (!accessToken) { toast('⚠ Not connected to Google'); return; }
-  if (colIndices.source < 0) {
-    toast('⚠ No "Source" column found — add a column with header "Source" to your sheet first');
-    return;
-  }
-  const rows = allRows.filter(r => r.last && !r.source);
-  if (rows.length === 0) { toast('All dated rows already have a source set'); return; }
-  if (!confirm(`Mark ${rows.length} row(s) as "Work Order"? This updates the Source column in Google Sheets.`)) return;
-
-  const btn = document.getElementById('mark-wo-btn');
-  if (btn) { btn.disabled = true; btn.textContent = '⏳ Updating…'; }
-
-  const srcCol = colToLetter(colIndices.source);
-  const data = rows.map(r => ({
-    range: `'${SCHEDULE_TAB_NAME}'!${srcCol}${r.rowIdx}`,
-    values: [['Work Order']]
-  }));
-
-  try {
-    for (let i = 0; i < data.length; i += 100) {
-      const chunk = data.slice(i, i + 100);
-      const res = await googleFetch(
-        `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values:batchUpdate`,
-        { method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ valueInputOption: 'USER_ENTERED', data: chunk }) }
-      );
-      if (!res.ok) { const e = await res.json(); throw new Error(e.error?.message || `HTTP ${res.status}`); }
-    }
-    rows.forEach(r => r.source = 'Work Order');
-    try { sessionStorage.removeItem('flips_schedule_cache'); } catch(_) {}
-    toast(`✓ Marked ${rows.length} rows as "Work Order"`);
-    renderTable();
-  } catch(e) {
-    toast('✗ Failed: ' + e.message);
-    if (btn) { btn.disabled = false; btn.textContent = '📋 Mark all dates as Work Order'; }
   }
 }
 
