@@ -709,11 +709,18 @@ function syncFAReportTypeButtons() {
 
 // ─── SUB PANEL PASS/FAIL + DEFICIENCY ─────────────────────────────────────────
 function setSubpanelComp(btn, n, prefix, val) {
-  // Standard icon toggle
   const group = btn.closest('.pf-group') || btn.parentElement;
+  const input = document.getElementById(prefix + '-' + n);
+
+  // Toggle off if already selected
+  if (btn.classList.contains('selected')) {
+    btn.classList.remove('selected');
+    if (input) input.value = '';
+    return;
+  }
+
   group.querySelectorAll('.pf-btn').forEach(b => b.classList.remove('selected'));
   btn.classList.add('selected');
-  const input = document.getElementById(prefix + '-' + n);
   if (input) input.value = val;
   // If any component fails, auto-set Pass/Fail to FAIL
   if (val === 'FAIL') {
@@ -734,6 +741,15 @@ function setSubpanelComp(btn, n, prefix, val) {
 function setSubpanelPF(btn, n, val) {
   const pfInput = document.getElementById('fa-sp-pf-' + n);
   if (!pfInput) return;
+
+  // Toggle off if already selected
+  if (btn.classList.contains('selected')) {
+    btn.classList.remove('selected');
+    pfInput.value = '';
+    hideSubpanelDeficRow(n);
+    return;
+  }
+
   (btn.closest('.pf-group') || btn.parentElement).querySelectorAll('.pf-btn').forEach(b => b.classList.remove('selected'));
   btn.classList.add('selected');
   pfInput.value = val;
