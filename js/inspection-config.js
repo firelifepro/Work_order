@@ -7,7 +7,7 @@ const SHEET_ID  = '1_Koq_v0RjsFbQ_c2qZh-eQpGQT2-0IkOal-I4CjSJrI';
 // After deploying the Apps Script as a Web App, paste the URL below.
 // Apps Script → Deploy → New Deployment → Web App → Execute as Me → Anyone
 // Also run setSecret() in the Apps Script once after pasting.
-const APPS_SCRIPT_URL    = ''; // ← PASTE WEB APP URL HERE
+const APPS_SCRIPT_URL    = 'https://script.google.com/macros/s/AKfycbxUkTZq5Wpfet8Qbyt0S17VfHVkrevEfMpoCG3wlqNNtTS0QVgL1mJ68rWxqqlk2c_C7w/exec'; // ← PASTE WEB APP URL HERE
 const APPS_SCRIPT_SECRET = 'flips-2026-secret'; // must match setSecret() in Apps Script
 const SHEET_GID = '1899870347';
 const SCOPES    = 'https://www.googleapis.com/auth/spreadsheets.readonly https://www.googleapis.com/auth/drive';
