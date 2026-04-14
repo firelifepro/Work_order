@@ -83,9 +83,15 @@ body { font-family: 'Inter', Arial, sans-serif; font-size: 10pt; background: #e8
 #filters label { font-size: 0.78rem; color: #666; font-weight: 500; }
 #filters input, #filters select { border: 1px solid #ddd; border-radius: 4px; padding: 5px 10px; font-size: 0.8rem; font-family: inherit; outline: none; }
 #filters input:focus, #filters select:focus { border-color: #2e6da4; }
-#search-box { width: 220px; }
 #filter-status { width: 160px; }
 #filter-type { width: 220px; }
+#prop-filter-wrap { display: flex; flex-direction: column; gap: 4px; }
+#prop-filter-wrap .prop-search-row { position: relative; display: flex; align-items: center; }
+#prop-search { width: 220px; padding-right: 22px; border: 1px solid #ddd; border-radius: 4px; padding-top: 5px; padding-bottom: 5px; padding-left: 10px; font-size: 0.8rem; font-family: inherit; outline: none; }
+#prop-search:focus { border-color: #2e6da4; }
+#prop-search-clear { display: none; position: absolute; right: 6px; cursor: pointer; color: #999; font-size: 11px; line-height: 1; }
+#prop-search-clear:hover { color: #333; }
+#property-select { width: 230px; }
 .filter-count { font-size: 0.78rem; color: #888; margin-left: auto; }
 #refresh-btn { background: #2e6da4; color: white; border: none; padding: 5px 14px; border-radius: 4px; cursor: pointer; font-size: 0.78rem; font-weight: 600; }
 #refresh-btn:hover { background: #4a86e8; }
@@ -177,8 +183,16 @@ tbody td { padding: 9px 12px; vertical-align: middle; }
   </div>
 
   <div id="filters">
-    <label>Search:</label>
-    <input type="text" id="search-box" placeholder="Property name…" oninput="applyFilters()">
+    <div id="prop-filter-wrap">
+      <label>Property:</label>
+      <div class="prop-search-row">
+        <input type="text" id="prop-search" placeholder="🔍 Search properties…" oninput="filterPropDropdown(this.value)" autocomplete="off">
+        <span id="prop-search-clear" onclick="clearPropSearch()" title="Clear">✕</span>
+      </div>
+      <select id="property-select" onchange="applyFilters()">
+        <option value="">— All properties —</option>
+      </select>
+    </div>
     <label>Status:</label>
     <select id="filter-status" onchange="applyFilters()">
       <option value="">All statuses</option>
@@ -298,6 +312,7 @@ async function loadSchedule(forceRefresh = false) {
       const cached = JSON.parse(sessionStorage.getItem(CACHE_KEY) || 'null');
       if (cached && (Date.now() - cached.ts) < CACHE_TTL) {
         allRows = cached.data;
+        buildPropDropdown();
         renderTable();
         return;
       }
@@ -367,6 +382,7 @@ async function loadSchedule(forceRefresh = false) {
 
     try { sessionStorage.setItem(CACHE_KEY, JSON.stringify({ ts: Date.now(), data: allRows })); } catch(_) {}
     populateTypeFilter();
+    buildPropDropdown();
     renderTable();
   } catch(e) {
     showEmpty('Error loading schedule: ' + e.message);
@@ -389,14 +405,59 @@ function parseSheetDate(str) {
   return isNaN(d) ? null : d;
 }
 
+// ── Property search dropdown ────────────────────────────────
+function buildPropDropdown() {
+  const sel = document.getElementById('property-select');
+  const prevVal = sel.value;
+  sel.innerHTML = '<option value="">— All properties —</option>';
+  const names = [...new Set(allRows.map(r => r.property))].sort();
+  names.forEach(name => {
+    const o = document.createElement('option');
+    o.value = name; o.textContent = name;
+    sel.appendChild(o);
+  });
+  if (prevVal && names.includes(prevVal)) sel.value = prevVal;
+}
+
+function filterPropDropdown(query) {
+  const sel   = document.getElementById('property-select');
+  const clear = document.getElementById('prop-search-clear');
+  const q = query.trim().toLowerCase();
+  clear.style.display = q ? 'block' : 'none';
+  const prevVal = sel.value;
+  const names = [...new Set(allRows.map(r => r.property))].sort();
+  const matches = names.filter(n => !q || n.toLowerCase().includes(q));
+  sel.innerHTML = '';
+  const ph = document.createElement('option');
+  ph.value = ''; ph.textContent = q ? `— ${matches.length} match${matches.length !== 1 ? 'es' : ''} —` : '— All properties —';
+  sel.appendChild(ph);
+  matches.forEach(name => {
+    const o = document.createElement('option');
+    o.value = name; o.textContent = name;
+    sel.appendChild(o);
+  });
+  if (matches.length === 1) {
+    sel.value = matches[0];
+  } else if (prevVal && matches.includes(prevVal)) {
+    sel.value = prevVal;
+  }
+  applyFilters();
+}
+
+function clearPropSearch() {
+  document.getElementById('prop-search').value = '';
+  document.getElementById('prop-search-clear').style.display = 'none';
+  filterPropDropdown('');
+}
+
 // ── Filters & sort ─────────────────────────────────────────
 function applyFilters() {
-  const q      = document.getElementById('search-box').value.toLowerCase();
+  const prop   = document.getElementById('property-select').value;
   const status = document.getElementById('filter-status').value;
   const type   = document.getElementById('filter-type').value;
 
   const filtered = allRows.filter(r => {
-    if (q      && !r.property.toLowerCase().includes(q) && !r.type.toLowerCase().includes(q)) return false;
+    if (prop   && r.property !== prop) return false;
     if (status && r.bucket !== status) return false;
     if (type   && r.type !== type) return false;
     return true;

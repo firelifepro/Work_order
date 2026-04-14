@@ -116,6 +116,7 @@ function filterPropDropdown(query) {
   const clear = document.getElementById('prop-search-clear');
   const q = query.trim().toLowerCase();
   clear.style.display = q ? 'block' : 'none';
+  const prevVal = sel.value;
   const names = Object.keys(clientData).sort();
   sel.innerHTML = '';
   const ph = document.createElement('option');
@@ -127,7 +128,12 @@ function filterPropDropdown(query) {
     o.value = name; o.textContent = name;
     sel.appendChild(o);
   });
-  if (matches.length === 1) { sel.value = matches[0]; onPropertySelect(); }
+  if (matches.length === 1) {
+    sel.value = matches[0];
+    if (matches[0] !== prevVal) onPropertySelect();
+  } else if (prevVal && matches.includes(prevVal)) {
+    sel.value = prevVal; // keep existing selection visible when search widens
+  }
 }
 
 function clearPropSearch() {

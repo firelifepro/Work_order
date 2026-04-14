@@ -1125,29 +1125,28 @@ function filterPropertyDropdown(query) {
   const clear = document.getElementById('prop-search-clear');
   const q = query.trim().toLowerCase();
   clear.style.display = q ? 'block' : 'none';
+  const prevVal = sel.value;
 
   // Rebuild options filtered by query
   sel.innerHTML = '';
   const names = Object.keys(clientData).sort();
+  const matches = names.filter(n => !q || n.toLowerCase().includes(q));
   const placeholder = document.createElement('option');
   placeholder.value = '';
-  placeholder.textContent = q ? `— ${names.filter(n => n.toLowerCase().includes(q)).length} match${names.filter(n => n.toLowerCase().includes(q)).length !== 1 ? 'es' : ''} —` : '— Select property —';
+  placeholder.textContent = q ? `— ${matches.length} match${matches.length !== 1 ? 'es' : ''} —` : '— Select property —';
   sel.appendChild(placeholder);
-
-  let firstMatch = null;
-  names.forEach(name => {
-    if (!q || name.toLowerCase().includes(q)) {
-      const o = document.createElement('option');
-      o.value = name; o.textContent = name;
-      sel.appendChild(o);
-      if (!firstMatch) firstMatch = name;
-    }
+  matches.forEach(name => {
+    const o = document.createElement('option');
+    o.value = name; o.textContent = name;
+    sel.appendChild(o);
   });
 
   // Auto-select if exactly one match
-  if (firstMatch && sel.options.length === 2) {
-    sel.value = firstMatch;
-    onPropertySelect();
+  if (matches.length === 1) {
+    sel.value = matches[0];
+    if (matches[0] !== prevVal) onPropertySelect();
+  } else if (prevVal && matches.includes(prevVal)) {
+    sel.value = prevVal; // keep existing selection visible when search widens
   }
 }
 
