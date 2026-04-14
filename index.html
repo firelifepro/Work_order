@@ -1966,6 +1966,9 @@ async function createDoc() {
     document.getElementById('new-wo-btn').style.display = 'inline-block';
     toast('✓ Saved: ' + docName);
 
+    // Update inspection schedule (non-blocking — runs in background)
+    updateInspectionSchedule(data).catch(e => console.warn('[Schedule] Exception:', e.message));
+
     // Write client + amount as Drive file properties so create-invoices
     // can read them instantly from the file list without opening each doc.
     setStatus('submit-status', '✓ Work order saved!', 'ok');
@@ -2512,6 +2515,97 @@ window.addEventListener('load', () => {
 // Called after a work order is saved. Reads all checked
 // service boxes and posts updates to the Apps Script web app.
 // ─────────────────────────────────────────────────────────
+async function updateInspectionSchedule(data) {
+  const propertyName  = data['PROPERTY NAME']     || '';
+  const dateCompleted = data['DATE COMPLETED ISO'] || data['DATE COMPLETED'] || '';
+  const svcRaw        = data['SERVICES']           || '';
+  const lineNum       = data['LINE #']             || '';
+
+  logToSheet('WO_SAVE_START',
+    `Line #${lineNum} | Property: ${propertyName} | Date: ${dateCompleted} | Services: ${svcRaw.replace(/\n/g,' | ')}`,
+    'INFO');
+
+  if (!propertyName) { logToSheet('WO_SAVE_SKIP', 'No property name on work order', 'WARN'); return; }
+  if (!dateCompleted || dateCompleted === 'N/A') {
+    logToSheet('WO_SAVE_SKIP', `Property: ${propertyName} — Date Completed is blank or N/A`, 'WARN'); return;
+  }
+
+  const parsedDate = parseDisplayDate(dateCompleted);
+  if (!parsedDate) {
+    logToSheet('WO_DATE_PARSE_FAIL', `Could not parse date: "${dateCompleted}"`, 'ERROR'); return;
+  }
+
+  const SVC_MAP = [
+    { match: /^Fire Alarm\s*[–-]/i,            type: 'Fire Alarm Inspection',           freqKey: true  },
+    { match: /^Sprinkler\s*[–-]/i,             type: 'Sprinkler Inspection',             freqKey: true  },
+    { match: /^Extinguisher\s*[–-]/i,          type: 'Extinguisher Inspection',          freqKey: true  },
+    { match: /^Exit Light\s*[–-]/i,            type: 'Emergency Exit Light Inspection',  freqKey: true  },
+    { match: /5-Year Internal Pipe/i,          type: '5-Year Internal Pipe Inspection',  freq: '5-Year' },
+    { match: /5-Year FDC Hydrostatic/i,        type: '5-Year FDC Hydrostatic Test',      freq: '5-Year' },
+    { match: /3-Year Dry Pipe/i,               type: '3-Year Dry Pipe Test',             freq: '3-Year' },
+    { match: /Annual Backflow Prevention/i,    type: 'Annual Backflow Prevention Test',  freq: 'Annual' },
+    { match: /^Hood Inspection\s*[–-]/i,       type: 'Hood Inspection',                  freqKey: true  },
+    { match: /^Fire Pump Inspection\s*[–-]/i,  type: 'Fire Pump Inspection',             freqKey: true  },
+    { match: /^Jockey Pump Inspection\s*[–-]/i,type: 'Jockey Pump Inspection',           freqKey: true  },
+  ];
+  const FREQ_MAP = { 'annual':'Annual','semi annual':'Semi Annual','quarterly':'Quarterly','monthly':'Monthly' };
+
+  const checkedSvcs = svcRaw.split('\n').map(s => s.trim()).filter(Boolean);
+  const updates = [];
+  for (const svc of checkedSvcs) {
+    for (const rule of SVC_MAP) {
+      if (rule.match.test(svc)) {
+        let freq = rule.freq || 'Annual';
+        if (rule.freqKey) {
+          const freqPart = svc.replace(/^[^–—-]+[–—-]\s*/i, '').trim().toLowerCase();
+          freq = FREQ_MAP[freqPart] || 'Annual';
+        }
+        updates.push({ propertyName, inspectionType: rule.type, dateCompleted: parsedDate, frequency: freq, source: 'Work Order' });
+        break;
+      }
+    }
+  }
+
+  if (updates.length === 0) {
+    logToSheet('WO_NO_TRACKABLE_SVCS', `Property: ${propertyName} — no checked services map to tracked inspection types`, 'WARN');
+    return;
+  }
+
+  try {
+    const resp = await fetch('/api/apps-script', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ _appsScriptUrl: APPS_SCRIPT_URL, secret: APPS_SCRIPT_SECRET, updates })
+    });
+    if (!resp.ok) {
+      const txt = await resp.text();
+      logToSheet('WO_HTTP_ERROR', `HTTP ${resp.status}: ${txt.substring(0,200)}`, 'ERROR');
+      return;
+    }
+    const result = await resp.json();
+    if (result.success) {
+      logToSheet('WO_SAVED', `Work order saved + ${updates.length} inspection record(s) updated for ${propertyName}`, 'OK');
+    } else {
+      logToSheet('WO_SCHEDULE_FAILED', `Apps Script returned error for ${propertyName}`, 'ERROR', result.error);
+    }
+  } catch(e) {
+    logToSheet('WO_FETCH_EXCEPTION', `fetch() to Apps Script threw`, 'ERROR', e.message);
+  }
+}
+
+// Parse date string → ISO "YYYY-MM-DD"
+// Handles: YYYY-MM-DD, MM/DD/YYYY, "Mar 12, 2026"
+function parseDisplayDate(str) {
+  if (!str || str === 'N/A') return null;
+  str = str.trim();
+  if (/^\d{4}-\d{2}-\d{2}$/.test(str)) return str;
+  const mdy = str.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (mdy) return `${mdy[3]}-${mdy[1].padStart(2,'0')}-${mdy[2].padStart(2,'0')}`;
+  const d = new Date(str + ' 12:00:00');
+  if (!isNaN(d)) return d.toISOString().slice(0, 10);
+  return null;
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // TEST CONNECTION — click "Test Schedule Connection" to ping
 // the Apps Script and confirm the whole chain works.

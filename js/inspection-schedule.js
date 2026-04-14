@@ -58,7 +58,7 @@ async function updateInspectionSchedule(data) {
     : (data.inspection?.reportType || 'Annual').toLowerCase();
   const frequency = INSP_FREQ_MAP[rawFreq] || 'Annual';
 
-  const updates = [{ propertyName, inspectionType, dateCompleted, frequency }];
+  const updates = [{ propertyName, inspectionType, dateCompleted, frequency, source: 'Inspection' }];
 
   console.log(`[Schedule] Posting update → ${propertyName} | ${inspectionType} | ${frequency} | ${dateCompleted}`);
 
