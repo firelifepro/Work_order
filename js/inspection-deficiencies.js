@@ -543,6 +543,7 @@ function addFADetectionRow() {
       </td>
     </tr>`);
   syncDeviceSummary();
+  saveDraft();
 }
 
 function addFAFlowRow() {
@@ -573,6 +574,7 @@ function addFAFlowRow() {
       </td>
     </tr>`);
   syncDeviceSummary();
+  saveDraft();
 }
 
 function addFATamperRow() {
@@ -603,6 +605,7 @@ function addFATamperRow() {
       </td>
     </tr>`);
   syncDeviceSummary();
+  saveDraft();
 }
 
 function addFABatteryRow() {
