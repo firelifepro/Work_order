@@ -1253,16 +1253,24 @@ async function buildGenericSystemPDFBytes() {
 
   // System data fields (ids → labels)
   const SYS_FIELDS = {
-    'fire-pump': [
-      [{label:'Manufacturer',id:'fp-mfr',w:180},{label:'Model',id:'fp-model',w:180},{label:'Serial #',id:'fp-serial',w:180}],
-      [{label:'Driver Type',id:'fp-type',w:180},{label:'Rated GPM',id:'fp-rated-gpm',w:180},{label:'Rated PSI',id:'fp-rated-psi',w:180}],
-      [{label:'Rated RPM',id:'fp-rpm',w:135},{label:'Horsepower',id:'fp-hp',w:135},{label:'Year Installed',id:'fp-year',w:135},{label:'Jockey Start PSI',id:'fp-jockey-start',w:135}],
-      [{label:'Churn Suction PSI',id:'fp-churn-suction',w:180},{label:'Churn Discharge PSI',id:'fp-churn-discharge',w:180},{label:'Churn RPM',id:'fp-churn-rpm',w:180}],
-      [{label:'Voltage (all phases)',id:'fp-churn-volts',w:270},{label:'Amps (all phases)',id:'fp-churn-amps',w:270}],
-      [{label:'Flow Rate (GPM)',id:'fp-flow-gpm',w:135},{label:'Suction PSI',id:'fp-flow-suction',w:135},{label:'Discharge PSI',id:'fp-flow-discharge',w:135},{label:'RPM at Flow',id:'fp-flow-rpm',w:135}],
-      [{label:'Voltage at Flow',id:'fp-flow-volts',w:180},{label:'Amps at Flow',id:'fp-flow-amps',w:180},{label:'Oil Pressure (PSI)',id:'fp-diesel-oil',w:180}],
-      [{label:'Coolant Temp (°F)',id:'fp-diesel-temp',w:270},{label:'Engine Hours',id:'fp-diesel-hours',w:270}],
-    ],
+    'fire-pump': { sections: [
+      { title: 'PUMP INFORMATION', rows: [
+        [{label:'Manufacturer',id:'fp-mfr',w:180},{label:'Model',id:'fp-model',w:180},{label:'Serial #',id:'fp-serial',w:180}],
+        [{label:'Driver Type',id:'fp-type',w:180},{label:'Rated GPM',id:'fp-rated-gpm',w:180},{label:'Rated PSI',id:'fp-rated-psi',w:180}],
+        [{label:'Rated RPM',id:'fp-rpm',w:180},{label:'Horsepower',id:'fp-hp',w:180},{label:'Year Installed',id:'fp-year',w:180}],
+      ]},
+      { title: 'CHURN / NO-FLOW TEST DATA', rows: [
+        [{label:'Churn Suction PSI',id:'fp-churn-suction',w:180},{label:'Churn Discharge PSI',id:'fp-churn-discharge',w:180},{label:'Churn RPM',id:'fp-churn-rpm',w:180}],
+        [{label:'Voltage — All Phases',id:'fp-churn-volts',w:270},{label:'Amps — All Phases',id:'fp-churn-amps',w:270}],
+      ]},
+      { title: '100% FLOW TEST DATA (ANNUAL)', rows: [
+        [{label:'Flow Rate (GPM)',id:'fp-flow-gpm',w:135},{label:'Suction PSI',id:'fp-flow-suction',w:135},{label:'Discharge PSI',id:'fp-flow-discharge',w:135},{label:'RPM at Flow',id:'fp-flow-rpm',w:135}],
+        [{label:'Voltage at Flow',id:'fp-flow-volts',w:270},{label:'Amps at Flow',id:'fp-flow-amps',w:270}],
+      ]},
+      { title: 'DIESEL ENGINE DATA (IF APPLICABLE)', rows: [
+        [{label:'Oil Pressure (PSI)',id:'fp-diesel-oil',w:180},{label:'Coolant Temp (°F)',id:'fp-diesel-temp',w:180},{label:'Engine Hours',id:'fp-diesel-hours',w:180}],
+      ]},
+    ]},
     'standpipe': [
       [{label:'Standpipe Class',id:'std-class',w:180},{label:'System Type',id:'std-type',w:180},{label:'# Standpipes',id:'std-count',w:180}],
       [{label:'# Floors Served',id:'std-floors',w:180},{label:'# Hose Stations',id:'std-hose-stations',w:180},{label:'Last Flow Test Date',id:'std-flow-date',w:180}],
@@ -1334,8 +1342,8 @@ async function buildGenericSystemPDFBytes() {
   });
   curY = 22 + 6;
 
-  // Logo + company block
-  const logoAreaH = 104;
+  // Logo + company block  (5 fields × 21pt + 4pt top pad = 109; use 112 for breathing room)
+  const logoAreaH = 112;
   const logoX = ML, logoW = 88;
   const infoX = ML + logoW + 6, infoW = 162;
   const rtX = infoX + infoW + 6, rtW = PW - logoW - infoW - 18;
@@ -1372,16 +1380,16 @@ async function buildGenericSystemPDFBytes() {
   // Company info box
   page.drawRectangle({ x: infoX, y: ry(logoAreaH), width: infoW, height: logoAreaH, color: lgray, borderColor: sky, borderWidth: 0.5 });
   const compLines = [
-    { text: 'Fire Life Protection System, Inc.', bold: true, sz: 7.5 },
-    { text: '8201 Shaffer Parkway Suite B',       bold: false, sz: 7 },
-    { text: 'Littleton, CO 80127',                bold: false, sz: 7 },
-    { text: 'Cell: (303) 726-8847  |  Office: (720) 974-1570', bold: false, sz: 6.5 },
-    { text: 'Alan.antonio@firelifeprotectionsystems.com',       bold: false, sz: 6.5 },
+    { text: 'Fire Life Protection System, Inc.', bold: true,  sz: 9   },
+    { text: '8201 Shaffer Parkway Suite B',       bold: false, sz: 8   },
+    { text: 'Littleton, CO 80127',                bold: false, sz: 8   },
+    { text: 'Cell: (303) 726-8847  |  Office: (720) 974-1570', bold: false, sz: 7.5 },
+    { text: 'Alan.antonio@firelifeprotectionsystems.com',       bold: false, sz: 7.5 },
   ];
-  let clY = ry(logoAreaH) + logoAreaH - 8;
+  let clY = ry(logoAreaH) + logoAreaH - 9;
   compLines.forEach(l => {
     page.drawText(l.text, { x: infoX + 4, y: clY, size: l.sz, font: l.bold ? hFont : rFont, color: navy });
-    clY -= l.sz + 4;
+    clY -= l.sz + 5;
   });
 
   // Report info box (right side)
@@ -1393,16 +1401,16 @@ async function buildGenericSystemPDFBytes() {
     { label: 'LICENSE/CERT', val: data.inspection.inspectorCert || '' },
     { label: 'NFPA REF.', val: data.inspection.nfpaRef || NFPA_REF[sys] || '' },
   ];
-  // Each field: 6pt label, 2pt gap, 10pt box, 2pt gap = 20pt per field; 5 fields = 100pt, fits in 104
+  // Each field: 6pt label + 3pt gap + 11pt box + 2pt gap = 22pt × 5 = 110pt + 4 pad = 114 → fits in 112 tightly; ok
   let rfY = ry(logoAreaH) + logoAreaH - 4;
   rtFields.forEach(f => {
-    rfY -= 7; // room for label
-    page.drawText(f.label + ':', { x: rtX+3, y: rfY, size: 6, font: hFont, color: slate });
-    rfY -= 3; // gap between label and box top
-    page.drawRectangle({ x: rtX+2, y: rfY - 10, width: rtW-4, height: 10, color: gold, borderColor: sky, borderWidth: 0.3 });
+    rfY -= 7; // label height + line spacing
+    page.drawText(f.label + ':', { x: rtX+3, y: rfY, size: 6.5, font: hFont, color: slate });
+    rfY -= 4; // gap between label baseline and top of box
+    page.drawRectangle({ x: rtX+2, y: rfY - 11, width: rtW-4, height: 11, color: gold, borderColor: sky, borderWidth: 0.3 });
     const tf = form.createTextField(fid());
-    tf.setText(f.val); tf.addToPage(page, { x: rtX+3, y: rfY-9, width: rtW-6, height: 8, font: rFont }); tf.setFontSize(7);
-    rfY -= 13; // box height + bottom gap
+    tf.setText(f.val); tf.addToPage(page, { x: rtX+4, y: rfY-10, width: rtW-8, height: 9, font: rFont }); tf.setFontSize(7.5);
+    rfY -= 13; // box + bottom gap
   });
   curY += logoAreaH + 4;
 
@@ -1437,14 +1445,30 @@ async function buildGenericSystemPDFBytes() {
 
   // System info fields
   const sysFields = SYS_FIELDS[sys];
-  if (sysFields && sysFields.length) {
-    secHdr('SYSTEM INFORMATION');
-    gap(4);
-    sysFields.forEach(row => {
-      const cols = row.map(c => ({ label: c.label, val: document.getElementById(c.id)?.value?.trim() || '', w: c.w }));
-      dataRow(cols);
-    });
-    gap(4);
+  if (sysFields) {
+    if (sysFields.sections) {
+      // Sectioned format (e.g. fire pump)
+      secHdr('SYSTEM INFORMATION');
+      gap(4);
+      sysFields.sections.forEach(sec => {
+        subHdr(sec.title);
+        sec.rows.forEach(row => {
+          const cols = row.map(c => ({ label: c.label, val: document.getElementById(c.id)?.value?.trim() || '', w: c.w }));
+          dataRow(cols);
+        });
+        gap(2);
+      });
+      gap(2);
+    } else if (sysFields.length) {
+      // Flat array format
+      secHdr('SYSTEM INFORMATION');
+      gap(4);
+      sysFields.forEach(row => {
+        const cols = row.map(c => ({ label: c.label, val: document.getElementById(c.id)?.value?.trim() || '', w: c.w }));
+        dataRow(cols);
+      });
+      gap(4);
+    }
   }
 
   // Deficiencies
