@@ -1258,7 +1258,10 @@ async function buildGenericSystemPDFBytes() {
       [{label:'Driver Type',id:'fp-type',w:180},{label:'Rated GPM',id:'fp-rated-gpm',w:180},{label:'Rated PSI',id:'fp-rated-psi',w:180}],
       [{label:'Rated RPM',id:'fp-rpm',w:135},{label:'Horsepower',id:'fp-hp',w:135},{label:'Year Installed',id:'fp-year',w:135},{label:'Jockey Start PSI',id:'fp-jockey-start',w:135}],
       [{label:'Churn Suction PSI',id:'fp-churn-suction',w:180},{label:'Churn Discharge PSI',id:'fp-churn-discharge',w:180},{label:'Churn RPM',id:'fp-churn-rpm',w:180}],
-      [{label:'Flow GPM',id:'fp-flow-gpm',w:135},{label:'Flow Suction PSI',id:'fp-flow-suction',w:135},{label:'Flow Discharge PSI',id:'fp-flow-discharge',w:135},{label:'Flow RPM',id:'fp-flow-rpm',w:135}],
+      [{label:'Voltage (all phases)',id:'fp-churn-volts',w:270},{label:'Amps (all phases)',id:'fp-churn-amps',w:270}],
+      [{label:'Flow Rate (GPM)',id:'fp-flow-gpm',w:135},{label:'Suction PSI',id:'fp-flow-suction',w:135},{label:'Discharge PSI',id:'fp-flow-discharge',w:135},{label:'RPM at Flow',id:'fp-flow-rpm',w:135}],
+      [{label:'Voltage at Flow',id:'fp-flow-volts',w:180},{label:'Amps at Flow',id:'fp-flow-amps',w:180},{label:'Oil Pressure (PSI)',id:'fp-diesel-oil',w:180}],
+      [{label:'Coolant Temp (°F)',id:'fp-diesel-temp',w:270},{label:'Engine Hours',id:'fp-diesel-hours',w:270}],
     ],
     'standpipe': [
       [{label:'Standpipe Class',id:'std-class',w:180},{label:'System Type',id:'std-type',w:180},{label:'# Standpipes',id:'std-count',w:180}],
@@ -1390,14 +1393,16 @@ async function buildGenericSystemPDFBytes() {
     { label: 'LICENSE/CERT', val: data.inspection.inspectorCert || '' },
     { label: 'NFPA REF.', val: data.inspection.nfpaRef || NFPA_REF[sys] || '' },
   ];
-  let rfY = ry(logoAreaH) + logoAreaH - 7;
+  // Each field: 6pt label, 2pt gap, 10pt box, 2pt gap = 20pt per field; 5 fields = 100pt, fits in 104
+  let rfY = ry(logoAreaH) + logoAreaH - 4;
   rtFields.forEach(f => {
+    rfY -= 7; // room for label
     page.drawText(f.label + ':', { x: rtX+3, y: rfY, size: 6, font: hFont, color: slate });
-    rfY -= 7;
-    page.drawRectangle({ x: rtX+2, y: rfY - 2, width: rtW-4, height: 10, color: gold, borderColor: sky, borderWidth: 0.3 });
+    rfY -= 3; // gap between label and box top
+    page.drawRectangle({ x: rtX+2, y: rfY - 10, width: rtW-4, height: 10, color: gold, borderColor: sky, borderWidth: 0.3 });
     const tf = form.createTextField(fid());
-    tf.setText(f.val); tf.addToPage(page, { x: rtX+3, y: rfY-1, width: rtW-6, height: 8, font: rFont }); tf.setFontSize(7);
-    rfY -= 13;
+    tf.setText(f.val); tf.addToPage(page, { x: rtX+3, y: rfY-9, width: rtW-6, height: 8, font: rFont }); tf.setFontSize(7);
+    rfY -= 13; // box height + bottom gap
   });
   curY += logoAreaH + 4;
 
