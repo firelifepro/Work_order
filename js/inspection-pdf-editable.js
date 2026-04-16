@@ -1417,7 +1417,7 @@ async function buildGenericSystemPDFBytes() {
   // Property block
   secHdr('PROPERTY INFORMATION');
   gap(3);
-  const propAddress = data.property.address || '';
+  const propAddress = data.property.address || data.property.name || '';
   const propCSZ     = data.property.cityStateZip || '';
   const propMgr     = data.property.contact || '';
   const propEmail   = data.property.contactEmail || '';
