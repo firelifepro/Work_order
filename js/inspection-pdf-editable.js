@@ -1416,21 +1416,34 @@ async function buildGenericSystemPDFBytes() {
 
   // Property block
   secHdr('PROPERTY INFORMATION');
-  const propName = data.property.name || 'Property Not Selected';
-  const addrLine = [data.property.address, data.property.cityStateZip].filter(Boolean).join('  |  ');
-  const contactLine = [data.property.contact, data.property.contactEmail, data.property.company].filter(Boolean).join('  |  ');
-  [
-    { text: propName, sz: 10, font: hFont, color: navy },
-    { text: addrLine, sz: 8, font: rFont, color: navy },
-    { text: contactLine, sz: 7.5, font: rFont, color: slate },
-  ].forEach(l => {
-    if (!l.text) return;
-    wrap(l.text, l.sz, PW - 8).forEach(line => {
-      checkPage(l.sz + 4);
-      page.drawText(line, { x: ML+4, y: ry(l.sz + 4) + 2, size: l.sz, font: l.font, color: l.color });
-      curY += l.sz + 4;
+  gap(3);
+  const propAddress = data.property.address || '';
+  const propCSZ     = data.property.cityStateZip || '';
+  const propMgr     = data.property.contact || '';
+  const propEmail   = data.property.contactEmail || '';
+  // Street address
+  if (propAddress) {
+    wrap(propAddress, 8, PW - 8).forEach(line => {
+      checkPage(12);
+      page.drawText(line, { x: ML+4, y: ry(12)+3, size: 8, font: rFont, color: navy });
+      curY += 12;
     });
-  });
+  }
+  // City, State, ZIP
+  if (propCSZ) {
+    checkPage(12);
+    page.drawText(propCSZ, { x: ML+4, y: ry(12)+3, size: 8, font: rFont, color: navy });
+    curY += 12;
+  }
+  // Property manager and email
+  const mgr = [propMgr ? 'Property Manager: ' + propMgr : '', propEmail ? 'Email: ' + propEmail : ''].filter(Boolean).join('   |   ');
+  if (mgr) {
+    wrap(mgr, 7.5, PW - 8).forEach(line => {
+      checkPage(11);
+      page.drawText(line, { x: ML+4, y: ry(11)+3, size: 7.5, font: rFont, color: slate });
+      curY += 11;
+    });
+  }
   gap(4);
 
   // Overall status bar
