@@ -1401,16 +1401,16 @@ async function buildGenericSystemPDFBytes() {
     { label: 'LICENSE/CERT', val: data.inspection.inspectorCert || '' },
     { label: 'NFPA REF.', val: data.inspection.nfpaRef || NFPA_REF[sys] || '' },
   ];
-  // Each field: 6pt label + 3pt gap + 11pt box + 2pt gap = 22pt × 5 = 110pt + 4 pad = 114 → fits in 112 tightly; ok
+  // 5 fields × 21pt (6 label + 2 gap + 10 box + 3 bottom) + 4 top pad = 109pt ≤ 112
   let rfY = ry(logoAreaH) + logoAreaH - 4;
   rtFields.forEach(f => {
-    rfY -= 7; // label height + line spacing
-    page.drawText(f.label + ':', { x: rtX+3, y: rfY, size: 6.5, font: hFont, color: slate });
-    rfY -= 4; // gap between label baseline and top of box
-    page.drawRectangle({ x: rtX+2, y: rfY - 11, width: rtW-4, height: 11, color: gold, borderColor: sky, borderWidth: 0.3 });
+    rfY -= 6; // label line height
+    page.drawText(f.label + ':', { x: rtX+3, y: rfY, size: 6, font: hFont, color: slate });
+    rfY -= 2; // gap label→box
+    page.drawRectangle({ x: rtX+2, y: rfY - 10, width: rtW-4, height: 10, color: gold, borderColor: sky, borderWidth: 0.3 });
     const tf = form.createTextField(fid());
-    tf.setText(f.val); tf.addToPage(page, { x: rtX+4, y: rfY-10, width: rtW-8, height: 9, font: rFont }); tf.setFontSize(7.5);
-    rfY -= 13; // box + bottom gap
+    tf.setText(f.val); tf.addToPage(page, { x: rtX+4, y: rfY-9, width: rtW-8, height: 8, font: rFont }); tf.setFontSize(7);
+    rfY -= 13; // box (10) + bottom gap (3)
   });
   curY += logoAreaH + 4;
 
@@ -1452,11 +1452,12 @@ async function buildGenericSystemPDFBytes() {
       gap(4);
       sysFields.sections.forEach(sec => {
         subHdr(sec.title);
+        gap(3);
         sec.rows.forEach(row => {
           const cols = row.map(c => ({ label: c.label, val: document.getElementById(c.id)?.value?.trim() || '', w: c.w }));
           dataRow(cols);
         });
-        gap(2);
+        gap(8);
       });
       gap(2);
     } else if (sysFields.length) {
@@ -1520,16 +1521,16 @@ async function buildGenericSystemPDFBytes() {
       rf.setText(result || '');
       rf.addToPage(page, { x: bX+1, y: ry(rowH)+2, width: bW-2, height: rowH-4, font: hFont });
       rf.setFontSize(7);
-      curY += rowH + 1;
+      curY += rowH + 3;
       if (result === 'FAIL' && deficTxt) {
         const defH = 12;
-        checkPage(defH + 1);
+        checkPage(defH + 2);
         page.drawRectangle({ x: ML+4, y: ry(defH), width: PW-4, height: defH, color: rgb(0.99, 0.93, 0.93), borderColor: red, borderWidth: 0.3 });
         const defField = form.createTextField(fid());
         defField.setText('Deficiency: ' + deficTxt);
         defField.addToPage(page, { x: ML+6, y: ry(defH)+1, width: PW-10, height: defH-2, font: rFont });
         defField.setFontSize(7);
-        curY += defH + 1;
+        curY += defH + 3;
       }
     });
     gap(4);
@@ -1588,9 +1589,11 @@ async function buildGenericSystemPDFBytes() {
   secHdr('OVERALL STATUS & SIGNATURES');
   gap(4);
   dataRow([{ label: 'OVERALL INSPECTION STATUS', val: data.overallStatus || '', w: PW }]);
-  gap(6);
+  gap(14);
   const genSigH = 40, genSigW = PW / 2 - 6;
-  page.drawText('INSPECTOR SIGNATURE:', { x: ML, y: ry(genSigH) + genSigH + 4, size: 7, font: hFont, color: navy });
+  page.drawText('INSPECTOR SIGNATURE:', { x: ML, y: ry(0) + 2, size: 7, font: hFont, color: navy });
+  page.drawText('CLIENT SIGNATURE:',    { x: ML+PW/2+10, y: ry(0) + 2, size: 7, font: hFont, color: navy });
+  gap(10);
   page.drawRectangle({ x: ML, y: ry(genSigH), width: genSigW, height: genSigH, color: gold, borderColor: sky, borderWidth: 0.5 });
   if (sigHasData) {
     try {
@@ -1605,7 +1608,6 @@ async function buildGenericSystemPDFBytes() {
     const sf2 = form.createTextField(fid());
     sf2.setText(''); sf2.addToPage(page, { x: ML+2, y: ry(genSigH)+2, width: genSigW-4, height: genSigH-4, font: rFont }); sf2.setFontSize(9);
   }
-  page.drawText('CLIENT SIGNATURE:', { x: ML+PW/2+10, y: ry(genSigH) + genSigH + 4, size: 7, font: hFont, color: navy });
   page.drawRectangle({ x: ML+PW/2+8, y: ry(genSigH), width: genSigW, height: genSigH, color: gold, borderColor: sky, borderWidth: 0.5 });
   if (custSigHasData) {
     try {
