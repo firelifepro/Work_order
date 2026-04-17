@@ -390,7 +390,7 @@ canvas#cust-sig-canvas, canvas#sig-canvas {
 
 /* ══════════════════════════════════════════════════
    PDF SPEC TOKENS — used by JS PDF generator
-   (Integrity Fire orange = #e67e22 / dark header = #1a1a1a)
+   (FLPS orange = #e67e22 / dark header = #1a1a1a)
    Page width: 816px (8.5"), margin 30px each side
    Header row height: 28px, data row: 22px
    Section header bg: #1a1a1a, text: white
@@ -1867,7 +1867,7 @@ canvas#cust-sig-canvas, canvas#sig-canvas {
    Font sizes:       title 10pt, header 8pt, body 7pt, small 6pt
    Border color:     #cccccc, line weight 0.2mm
    PASS text color:  #16a34a  FAIL text color: #dc2626  N/A: #64748b
-   Orange accent:    #e67e22 (Integrity Fire brand orange)
+   Orange accent:    #e67e22 (FLPS brand orange)
 
    PDF PAGE ORDER:
      1. Cover page (property info, job #, date, report type, contacts, NFPA refs)
@@ -2063,13 +2063,582 @@ const RECURRING_ROWS = [
   ['Backflow Preventor Annual','','Portable Extinguisher Annual',''],
 ];
 
-// ─── STUB FUNCTIONS (to be implemented in full JS file) ──
-function toggleNav() { const m = document.getElementById('nav-menu'); m.style.display = m.style.display==='none'?'block':'none'; }
-function toggleDrawer() { const d = document.getElementById('conn-drawer'); d.style.display = d.style.display==='none'?'block':'none'; }
-function initGoogle() { showToast('Google connection coming soon'); }
-function filterPropDropdown(v) {}
-function clearPropSearch() {}
-function onPropertySelect() {}
+// ════════════════════════════════════════════════════════════════
+//  GLOBAL HELPERS — fv/sv available everywhere (also re-used
+//  inside buildHospPDF as local aliases for clarity)
+// ════════════════════════════════════════════════════════════════
+function fv(id) { return document.getElementById(id)?.value?.trim() || ''; }
+function sv(id) {
+  const el = document.getElementById(id);
+  return el ? (el.options[el.selectedIndex]?.text || '') : '';
+}
+
+// ════════════════════════════════════════════════════════════════
+//  PRE / POST INSPECTION CHECKLIST BUILDER
+//  Populates the two columns in the Panel step
+// ════════════════════════════════════════════════════════════════
+const PRE_CHECKLIST_ITEMS = [
+  { id:'h-pre-engineer', label:'Check in with the engineer?' },
+  { id:'h-pre-keys',     label:'Were keys provided?' },
+  { id:'h-pre-normal',   label:'Panel showing normal upon arrival?' },
+  { id:'h-pre-offline',  label:'Panel taken offline / disabled?' },
+  { id:'h-pre-working',  label:'All fire equipment in working order?' },
+];
+const POST_CHECKLIST_ITEMS = [
+  { id:'h-post-signals',  label:'Signals received at central station?' },
+  { id:'h-post-reenabled',label:'Panel reenabled & placed online?' },
+  { id:'h-post-tags',     label:'Applicable device tags updated?' },
+  { id:'h-post-checkout', label:'Checkout with Mgmt / keys returned?' },
+  { id:'h-post-clean',    label:'FCC left clean & organized?' },
+];
+
+function buildPrePostChecklists() {
+  function buildBlock(containerId, items) {
+    const el = document.getElementById(containerId);
+    if (!el || el.children.length) return;
+    items.forEach(item => {
+      const row = document.createElement('div');
+      row.className = 'inspect-row';
+      row.innerHTML = `
+        <div class="inspect-row-top">
+          <div class="inspect-label">${item.label}</div>
+          <div class="pf-group">
+            <button class="pf-btn pass" onclick="setChkYNA(this,'${item.id}','YES')">YES</button>
+            <button class="pf-btn fail" onclick="setChkYNA(this,'${item.id}','NO')">NO</button>
+            <button class="pf-btn na"   onclick="setChkYNA(this,'${item.id}','NA')">NA</button>
+          </div>
+        </div>
+        <input type="hidden" id="${item.id}" value="">`;
+      el.appendChild(row);
+    });
+  }
+  buildBlock('h-pre-checklist',  PRE_CHECKLIST_ITEMS);
+  buildBlock('h-post-checklist', POST_CHECKLIST_ITEMS);
+}
+
+function setChkYNA(btn, hiddenId, val) {
+  const group = btn.parentElement;
+  group.querySelectorAll('.pf-btn').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+  const hidden = document.getElementById(hiddenId);
+  if (hidden) hidden.value = val;
+}
+
+// ════════════════════════════════════════════════════════════════
+//  DRY PIPE / PRE-ACTION + 5-YEAR CHECKLIST BLOCKS
+// ════════════════════════════════════════════════════════════════
+const SP_DRY_ITEMS = [
+  { id:'sp-air-pressure', label:'Air/Nitrogen pressure at set pressure — no excessive leakage', fail:true },
+  { id:'sp-dp-valve',     label:'Dry pipe / deluge valve — no corrosion; priming water level correct', fail:true },
+  { id:'sp-low-air',      label:'Low air alarm — tested and transmitted to panel', fail:true },
+  { id:'sp-quick-open',   label:'Quick opening device (if present) — operational', fail:false },
+];
+const SP_DRY_EXTRA = [
+  { id:'h-sp-trip-date', label:'Last Trip Test Date', type:'date' },
+  { id:'h-sp-trip-psi',  label:'Trip Pressure (PSI)', type:'number' },
+];
+const SP_5YR_ITEMS = [
+  { id:'sp-5yr-pipe', label:'5-Year internal pipe inspection — obstruction investigation performed (NFPA 25 Ch. 13.4.2.1)', fail:true },
+  { id:'sp-5yr-fdc',  label:'FDC hydrostatic / forward flow test — 200 PSI for 2 hrs (NFPA 25 Ch. 13.8.5)', fail:true },
+  { id:'sp-ga-5yr',   label:'Gauge replacement / recalibration — all gauges replaced or tested within 5 years', fail:true },
+];
+
+function buildDryAndFiveYearBlocks() {
+  // Dry block
+  const dryEl = document.getElementById('h-sp-dry-block');
+  if (dryEl && !dryEl.children.length) {
+    SP_DRY_ITEMS.forEach(item => {
+      const row = document.createElement('div');
+      row.className = 'inspect-row';
+      row.dataset.id  = item.id;
+      row.dataset.val = '';
+      row.innerHTML = `
+        <div class="inspect-row-top">
+          <div class="inspect-label">${item.label}</div>
+          <div class="yna-group">
+            <button class="yna-btn y"  onclick="setSpYNA(this,'${item.id}','Y',${item.fail})">Y</button>
+            <button class="yna-btn n"  onclick="setSpYNA(this,'${item.id}','N',${item.fail})">N</button>
+            <button class="yna-btn na" onclick="setSpYNA(this,'${item.id}','NA',false)">NA</button>
+          </div>
+        </div>
+        <div class="note-row" id="sp-note-row-${item.id}">
+          <span class="note-badge">Deficiency</span>
+          <input type="text" class="note-input" id="sp-defic-note-${item.id}" placeholder="Describe deficiency…"
+            oninput="syncSpDefic('${item.id}')">
+        </div>`;
+      dryEl.appendChild(row);
+    });
+    // Extra numeric/date fields
+    SP_DRY_EXTRA.forEach(({ id, label, type }) => {
+      const wrap = document.createElement('div');
+      wrap.className = 'data-row cols-1';
+      wrap.style.margin = '4px 8px 8px';
+      wrap.innerHTML = `<div class="data-field"><label>${label}</label><input type="${type}" id="${id}" style="width:100%"></div>`;
+      dryEl.appendChild(wrap);
+    });
+  }
+
+  // 5-Year block
+  const yrEl = document.getElementById('h-sp-5yr-block');
+  if (yrEl && !yrEl.children.length) {
+    SP_5YR_ITEMS.forEach(item => {
+      const row = document.createElement('div');
+      row.className = 'inspect-row';
+      row.dataset.id  = item.id;
+      row.dataset.val = '';
+      row.innerHTML = `
+        <div class="inspect-row-top">
+          <div class="inspect-label">${item.label}</div>
+          <div class="yna-group">
+            <button class="yna-btn y"  onclick="setSpYNA(this,'${item.id}','Y',${item.fail})">Y</button>
+            <button class="yna-btn n"  onclick="setSpYNA(this,'${item.id}','N',${item.fail})">N</button>
+            <button class="yna-btn na" onclick="setSpYNA(this,'${item.id}','NA',false)">NA</button>
+          </div>
+        </div>
+        <div class="note-row" id="sp-note-row-${item.id}">
+          <span class="note-badge">Deficiency</span>
+          <input type="text" class="note-input" id="sp-defic-note-${item.id}" placeholder="Describe deficiency…"
+            oninput="syncSpDefic('${item.id}')">
+        </div>`;
+      yrEl.appendChild(row);
+    });
+    const nextDue = document.createElement('div');
+    nextDue.className = 'data-row cols-1';
+    nextDue.style.margin = '4px 8px 8px';
+    nextDue.innerHTML = `<div class="data-field"><label>5-Year Items Next Due Date</label><input type="date" id="h-sp-5yr-due" style="width:100%"></div>`;
+    yrEl.appendChild(nextDue);
+  }
+}
+
+// ════════════════════════════════════════════════════════════════
+//  FA KEY SHEET — result summary auto-update
+//  When current totals change in the key sheet, sync the
+//  corresponding row in the FA results summary table
+// ════════════════════════════════════════════════════════════════
+function updateResultSummary() {
+  // Walk the FA key sheet rows and push current totals into the
+  // matching result summary row (matched by row index)
+  const keyRows = document.querySelectorAll('#h-fa-key-tbody tr');
+  const resRows = document.querySelectorAll('#h-fa-result-tbody tr');
+  keyRows.forEach((kRow, i) => {
+    const resRow = resRows[i];
+    if (!resRow) return;
+    const keyInput = kRow.querySelector('input[type=number]');
+    const resInput = resRow.querySelector('input[type=number]');
+    if (keyInput && resInput && !resInput.value) {
+      resInput.value = keyInput.value;
+      calcResultRow(resInput);
+    }
+  });
+}
+
+// ════════════════════════════════════════════════════════════════
+//  MISSING setSpYNA row.dataset.val sync
+//  (the existing setSpYNA sets btn state but missed dataset.val)
+// ════════════════════════════════════════════════════════════════
+// Override the version defined in the SP checklist section to
+// also keep dataset.val in sync (needed by PDF reader)
+const _origSetSpYNA = window.setSpYNA;
+// setSpYNA — defined fully below with dataset.val sync
+
+function toggleNav() {
+  const m = document.getElementById('nav-menu');
+  m.style.display = m.style.display === 'none' ? 'block' : 'none';
+}
+function toggleDrawer() {
+  const d = document.getElementById('conn-drawer');
+  d.style.display = d.style.display === 'none' ? 'block' : 'none';
+}
+
+// ════════════════════════════════════════════════════════════════
+//  GOOGLE DRIVE / OAUTH2 INTEGRATION
+//  Mirrors the pattern used by js/inspection-google.js in the
+//  main inspection app. Uses the API Key + OAuth Client ID entered
+//  in the connection drawer.
+//
+//  Drive folder structure expected:
+//    FLPS Inspection Reports/       ← PDF uploads go here
+//    FLPS Inspection History/       ← JSON inspection records
+//    FLPS Property Profiles/        ← per-property JSON
+//
+//  Sheets:  one Google Sheet named "FLPS Properties" with columns:
+//    A: property_id  B: name  C: address  D: city_state_zip
+//    E: contact_name  F: contact_email  G: client_company
+//    H: systems (JSON array)  I: notes
+// ════════════════════════════════════════════════════════════════
+
+const GDrive = {
+  apiKey:       '',
+  clientId:     '',
+  accessToken:  '',
+  tokenExpiry:  0,
+  folderId_reports:  '',
+  folderId_history:  '',
+  folderId_profiles: '',
+  propertiesSheetId: '',
+  properties: [],        // [{id, name, address, ...}]
+  ready: false,
+};
+
+// ── Persist credentials across reloads ──────────────────────────
+function loadSavedCredentials() {
+  try {
+    const saved = JSON.parse(localStorage.getItem('flps_hosp_creds') || '{}');
+    if (saved.apiKey)   { document.getElementById('api-key').value   = saved.apiKey;   GDrive.apiKey   = saved.apiKey; }
+    if (saved.clientId) { document.getElementById('client-id').value = saved.clientId; GDrive.clientId = saved.clientId; }
+    if (saved.accessToken && saved.tokenExpiry > Date.now()) {
+      GDrive.accessToken = saved.accessToken;
+      GDrive.tokenExpiry = saved.tokenExpiry;
+    }
+  } catch(e) {}
+}
+
+function saveCredentials() {
+  localStorage.setItem('flps_hosp_creds', JSON.stringify({
+    apiKey:       GDrive.apiKey,
+    clientId:     GDrive.clientId,
+    accessToken:  GDrive.accessToken,
+    tokenExpiry:  GDrive.tokenExpiry,
+  }));
+}
+
+// ── Main entry point called by Connect button ────────────────────
+async function initGoogle() {
+  const apiKey   = document.getElementById('api-key').value.trim();
+  const clientId = document.getElementById('client-id').value.trim();
+
+  if (!apiKey || !clientId) {
+    showToast('Please enter both API Key and OAuth Client ID');
+    return;
+  }
+  GDrive.apiKey   = apiKey;
+  GDrive.clientId = clientId;
+
+  setConnStatus('warn', '⏳ Connecting…');
+  try {
+    await requestOAuthToken();
+    await ensureDriveFolders();
+    await loadProperties();
+    GDrive.ready = true;
+    setConnStatus('ok', '✓ Connected');
+    toggleDrawer(); // close drawer
+    saveCredentials();
+    showToast('✅ Google Drive connected');
+    populatePropertyDropdown();
+  } catch(e) {
+    setConnStatus('warn', 'Not connected');
+    showToast('❌ Connection failed: ' + (e.message || e));
+    console.error('Google init error:', e);
+  }
+}
+
+function setConnStatus(state, label) {
+  const el = document.getElementById('conn-status');
+  el.textContent = label;
+  el.className = 'conn-status-pill ' + state;
+}
+
+// ── OAuth2 token via Google Identity Services popup ──────────────
+function requestOAuthToken() {
+  return new Promise((resolve, reject) => {
+    if (GDrive.accessToken && GDrive.tokenExpiry > Date.now() + 60000) {
+      return resolve(GDrive.accessToken);
+    }
+    if (typeof google === 'undefined' || !google.accounts) {
+      return reject(new Error('Google Identity Services script not loaded'));
+    }
+    const tokenClient = google.accounts.oauth2.initTokenClient({
+      client_id: GDrive.clientId,
+      scope: [
+        'https://www.googleapis.com/auth/drive.file',
+        'https://www.googleapis.com/auth/drive.readonly',
+        'https://www.googleapis.com/auth/spreadsheets.readonly',
+      ].join(' '),
+      callback: (resp) => {
+        if (resp.error) return reject(new Error(resp.error));
+        GDrive.accessToken = resp.access_token;
+        GDrive.tokenExpiry = Date.now() + (resp.expires_in || 3600) * 1000;
+        resolve(resp.access_token);
+      },
+      error_callback: (err) => reject(new Error(err.message || 'OAuth error')),
+    });
+    tokenClient.requestAccessToken({ prompt: 'consent' });
+  });
+}
+
+// ── Low-level authenticated fetch helpers ───────────────────────
+async function driveGet(url) {
+  const sep = url.includes('?') ? '&' : '?';
+  const resp = await fetch(url + sep + 'key=' + GDrive.apiKey, {
+    headers: { Authorization: 'Bearer ' + GDrive.accessToken }
+  });
+  if (!resp.ok) throw new Error(`Drive GET failed ${resp.status}: ${await resp.text()}`);
+  return resp.json();
+}
+
+async function drivePost(url, body, method='POST', contentType='application/json') {
+  const resp = await fetch(url, {
+    method,
+    headers: {
+      Authorization: 'Bearer ' + GDrive.accessToken,
+      'Content-Type': contentType,
+    },
+    body: contentType === 'application/json' ? JSON.stringify(body) : body,
+  });
+  if (!resp.ok) throw new Error(`Drive ${method} failed ${resp.status}: ${await resp.text()}`);
+  return resp.json();
+}
+
+// ── Find or create a Drive folder by name under a parent ─────────
+async function findOrCreateFolder(name, parentId) {
+  const q = `name='${name}' and mimeType='application/vnd.google-apps.folder' and trashed=false` +
+            (parentId ? ` and '${parentId}' in parents` : '');
+  const list = await driveGet(`https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q)}&fields=files(id,name)`);
+  if (list.files && list.files.length > 0) return list.files[0].id;
+  // Create
+  const meta = { name, mimeType: 'application/vnd.google-apps.folder' };
+  if (parentId) meta.parents = [parentId];
+  const created = await drivePost('https://www.googleapis.com/drive/v3/files', meta);
+  return created.id;
+}
+
+// ── Ensure the three FLPS folders exist ─────────────────────────
+async function ensureDriveFolders() {
+  GDrive.folderId_reports  = await findOrCreateFolder('FLPS Inspection Reports',  null);
+  GDrive.folderId_history  = await findOrCreateFolder('FLPS Inspection History',  null);
+  GDrive.folderId_profiles = await findOrCreateFolder('FLPS Property Profiles',   null);
+}
+
+// ── Load properties from the "FLPS Properties" sheet ────────────
+async function loadProperties() {
+  // Find the spreadsheet
+  const q = `name='FLPS Properties' and mimeType='application/vnd.google-apps.spreadsheet' and trashed=false`;
+  const list = await driveGet(`https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q)}&fields=files(id,name)`);
+  if (!list.files || !list.files.length) {
+    GDrive.properties = [];
+    return; // no sheet yet — that's OK
+  }
+  GDrive.propertiesSheetId = list.files[0].id;
+  // Read values
+  const range = 'Sheet1!A2:I500';
+  const data  = await driveGet(
+    `https://sheets.googleapis.com/v4/spreadsheets/${GDrive.propertiesSheetId}/values/${range}`
+  );
+  GDrive.properties = (data.values || []).map(row => ({
+    id:          row[0] || '',
+    name:        row[1] || '',
+    address:     row[2] || '',
+    cityStateZip:row[3] || '',
+    contactName: row[4] || '',
+    contactEmail:row[5] || '',
+    company:     row[6] || '',
+    systems:     safeParseJSON(row[7], []),
+    notes:       row[8] || '',
+  })).filter(p => p.id);
+}
+
+function safeParseJSON(str, fallback) {
+  try { return JSON.parse(str); } catch(e) { return fallback; }
+}
+
+// ── Populate the property dropdown ──────────────────────────────
+function populatePropertyDropdown() {
+  const sel = document.getElementById('property-select');
+  sel.innerHTML = '<option value="">— Select a property —</option>';
+  GDrive.properties.forEach(p => {
+    const opt = document.createElement('option');
+    opt.value = p.id;
+    opt.textContent = p.name + (p.address ? ` — ${p.address}` : '');
+    sel.appendChild(opt);
+  });
+  // Show/update search if there are properties
+  if (GDrive.properties.length) {
+    document.getElementById('prop-search').placeholder = `🔍 Search ${GDrive.properties.length} properties…`;
+  }
+}
+
+// ── Property search filter ───────────────────────────────────────
+function filterPropDropdown(query) {
+  const sel   = document.getElementById('property-select');
+  const clear = document.getElementById('prop-search-clear');
+  clear.style.display = query ? 'block' : 'none';
+  const q = query.toLowerCase();
+  Array.from(sel.options).forEach(opt => {
+    if (!opt.value) { opt.style.display = 'block'; return; }
+    opt.style.display = opt.textContent.toLowerCase().includes(q) ? 'block' : 'none';
+  });
+}
+
+function clearPropSearch() {
+  document.getElementById('prop-search').value = '';
+  document.getElementById('prop-search-clear').style.display = 'none';
+  filterPropDropdown('');
+}
+
+// ── Auto-fill fields when a property is selected ─────────────────
+function onPropertySelect() {
+  const sel   = document.getElementById('property-select');
+  const propId = sel.value;
+  if (!propId) return;
+  const prop = GDrive.properties.find(p => p.id === propId);
+  if (!prop) return;
+  document.getElementById('property-name').value    = prop.name;
+  document.getElementById('service-address').value  = prop.address;
+  document.getElementById('city-state-zip').value   = prop.cityStateZip;
+  document.getElementById('primary-name').value     = prop.contactName;
+  document.getElementById('primary-email').value    = prop.contactEmail;
+  document.getElementById('client-company').value   = prop.company;
+  // Pre-select systems if stored
+  if (prop.systems && prop.systems.length) {
+    document.querySelectorAll('.sys-toggle').forEach(el => {
+      el.classList.toggle('active', prop.systems.includes(el.dataset.sys));
+    });
+    updateHospStartButton();
+  }
+  // Search Drive for previous inspection
+  searchPreviousInspection(propId);
+}
+
+// ── Search Drive for a previous inspection for this property ─────
+async function searchPreviousInspection(propId) {
+  if (!GDrive.ready || !GDrive.folderId_history) return;
+  const banner = document.getElementById('prev-insp-banner');
+  banner.style.display = 'none';
+  try {
+    const q = `'${GDrive.folderId_history}' in parents and name contains '${propId}' and trashed=false`;
+    const list = await driveGet(
+      `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q)}&orderBy=createdTime desc&pageSize=5&fields=files(id,name,createdTime)`
+    );
+    if (!list.files || !list.files.length) return;
+    const latest = list.files[0];
+    // Download the JSON record
+    const rec = await driveGet(`https://www.googleapis.com/drive/v3/files/${latest.id}?alt=media`);
+    const date = rec.inspDate || latest.createdTime?.substring(0,10) || '—';
+    const insp = rec.inspectorName || rec.inspectorInitials || '—';
+    const type = rec.reportType || '—';
+    // Show banner
+    document.getElementById('prev-insp-summary').textContent =
+      ` ${date}  |  ${insp}  |  ${type}`;
+    banner.style.display = 'block';
+    // Stash deficiencies for the prev defic step
+    if (rec.deficiencies && rec.deficiencies.length) {
+      H.prevDefic = rec.deficiencies;
+      // Show the prevdefic tab
+      document.querySelectorAll('[data-hstep="prevdefic"]').forEach(t => t.style.display = 'flex');
+    }
+  } catch(e) {
+    console.warn('Previous inspection search failed:', e.message);
+  }
+}
+
+// ── Upload PDF to Drive ──────────────────────────────────────────
+async function uploadPDFToDrive(pdfBlob, filename) {
+  if (!GDrive.ready || !GDrive.folderId_reports) return null;
+  const meta = JSON.stringify({ name: filename, parents: [GDrive.folderId_reports] });
+  const form = new FormData();
+  form.append('metadata', new Blob([meta], { type: 'application/json' }));
+  form.append('file', pdfBlob);
+  const resp = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
+    method: 'POST',
+    headers: { Authorization: 'Bearer ' + GDrive.accessToken },
+    body: form,
+  });
+  if (!resp.ok) throw new Error('PDF upload failed: ' + resp.status);
+  return resp.json();
+}
+
+// ── Save inspection JSON record to Drive ─────────────────────────
+async function saveInspectionRecord(record) {
+  if (!GDrive.ready || !GDrive.folderId_history) return null;
+  const propId = record.propertyId || 'unknown';
+  const dt     = (record.inspDate || new Date().toISOString().substring(0,10)).replace(/-/g,'');
+  const name   = `${propId}_${dt}_TJC.json`;
+  const blob   = new Blob([JSON.stringify(record, null, 2)], { type: 'application/json' });
+  const meta   = JSON.stringify({ name, parents: [GDrive.folderId_history] });
+  const form   = new FormData();
+  form.append('metadata', new Blob([meta], { type: 'application/json' }));
+  form.append('file', blob);
+  const resp = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
+    method: 'POST',
+    headers: { Authorization: 'Bearer ' + GDrive.accessToken },
+    body: form,
+  });
+  if (!resp.ok) throw new Error('Record save failed: ' + resp.status);
+  return resp.json();
+}
+
+// ── Build inspection record object from current form state ───────
+function buildInspectionRecord() {
+  return {
+    propertyId:       document.getElementById('property-select')?.value || '',
+    propertyName:     fv('property-name'),
+    serviceAddress:   fv('service-address'),
+    cityStateZip:     fv('city-state-zip'),
+    inspDate:         fv('insp-date'),
+    reportType:       H.reportType,
+    inspectorName:    fv('h-sig-name'),
+    inspectorInitials:fv('inspector-initials'),
+    jobNumber:        fv('job-number'),
+    overallStatus:    H.overallStatus,
+    deficiencies:     Array.from(document.querySelectorAll('#h-defic-tbody tr')).map(row => {
+      const ins = row.querySelectorAll('input');
+      return { text: ins[0]?.value||'', severity: row.querySelector('select')?.value||'' };
+    }).filter(d => d.text),
+    batteries:        Array.from(document.querySelectorAll('#h-battery-tbody tr')).map(row => {
+      const ins = row.querySelectorAll('input');
+      return { size: ins[0]?.value||'', type: ins[1]?.value||'', count: ins[2]?.value||'', locations: ins[3]?.value||'' };
+    }),
+    notes:            Array.from(document.querySelectorAll('#h-notes-tbody tr')).map(row =>
+      row.querySelector('input')?.value||'').filter(Boolean),
+    savedAt: new Date().toISOString(),
+  };
+}
+
+// ── Patched hospSaveAndDownload — now also saves to Drive ─────────
+async function hospSaveAndDownload() {
+  const sigWarn = document.getElementById('h-sig-warning');
+  if (!H.inspSig) {
+    sigWarn.textContent = 'Please sign before generating the report.';
+    sigWarn.classList.add('visible');
+    return;
+  }
+  sigWarn.classList.remove('visible');
+  saveDraft();
+
+  const status = document.getElementById('h-pdf-status');
+  status.textContent = '⏳ Generating PDF…';
+
+  try {
+    // 1) Generate PDF
+    const pdfDoc  = buildHospPDF(true); // returns doc when second arg truthy
+    const pdfBlob = pdfDoc.output('blob');
+    const propName = fv('property-name').replace(/\s+/g,'_') || 'Hospital';
+    const dt       = fv('insp-date').replace(/-/g,'') || new Date().toISOString().substring(0,10).replace(/-/g,'');
+    const filename = `FLPS_TJC_${propName}_${dt}.pdf`;
+
+    // 2) Download to device
+    pdfDoc.save(filename);
+    status.textContent = '✅ PDF downloaded.';
+
+    // 3) Upload to Drive (non-blocking — show progress)
+    if (GDrive.ready) {
+      status.textContent += ' ⏳ Saving to Drive…';
+      try {
+        const [pdfFile, recFile] = await Promise.all([
+          uploadPDFToDrive(pdfBlob, filename),
+          saveInspectionRecord(buildInspectionRecord()),
+        ]);
+        status.textContent = `✅ PDF downloaded & saved to Drive (${filename})`;
+      } catch(driveErr) {
+        status.textContent += ` ⚠ Drive save failed: ${driveErr.message}`;
+      }
+    }
+    document.getElementById('h-new-insp-btn-wrap').style.display = 'block';
+  } catch(e) {
+    status.textContent = '❌ Error: ' + e.message;
+    console.error(e);
+  }
+}
 function toggleSys(el) { el.classList.toggle('active'); updateHospStartButton(); }
 function updateHospStartButton() {
   const any = [...document.querySelectorAll('.sys-toggle.active')].length > 0;
@@ -2095,13 +2664,7 @@ function goStep(n) {
   document.querySelectorAll('#step-nav .step-tab').forEach(t => { t.classList.toggle('active', +t.dataset.step === n); });
 }
 const HOSP_STEPS = ['prevdefic','panel','eockey','sysoverview','fa-results','sp-results','device-detail','extinguish','defic','sign'];
-function goHospStep(step) {
-  HOSP_STEPS.forEach(s => { const el = document.getElementById('step-hosp-'+s); if(el) el.style.display='none'; });
-  const target = document.getElementById('step-hosp-'+step);
-  if(target) target.style.display = 'block';
-  document.querySelectorAll('#hosp-step-nav .step-tab').forEach(t => { t.classList.toggle('active', t.dataset.hstep === step); });
-  if(step === 'device-detail') showDeviceSheet('supervisory');
-}
+// goHospStep and showDeviceSheet — defined fully below with done-state tracking
 function startHospInspection() {
   [1,2,4].forEach(i => document.getElementById('step-'+i).style.display='none');
   document.getElementById('step-nav').style.display = 'none';
@@ -2119,13 +2682,10 @@ function exitHospInspection(dest) {
   goStep(n);
 }
 function proceedFromHospPrevDefic() { goHospStep('panel'); }
-function showDeviceSheet(name) {
-  document.querySelectorAll('.h-device-sheet').forEach(s => s.style.display='none');
-  const t = document.getElementById('h-sheet-'+name);
-  if(t) t.style.display = 'block';
-  document.querySelectorAll('#h-device-subnav .pf-btn').forEach(b => b.classList.remove('selected'));
-}
+// showDeviceSheet — defined fully below with active-state button highlight
 function initHospData() {
+  buildPrePostChecklists();
+  buildDryAndFiveYearBlocks();
   // Populate EOC checklist table
   const tbody = document.getElementById('h-eoc-checklist-tbody');
   if(tbody && !tbody.children.length) {
@@ -2494,26 +3054,7 @@ function addHInventoryRow() {
   tbody.appendChild(tr);
 }
 
-function addHExtRow() {
-  const tbody = document.getElementById('h-ext-tbody');
-  const tr = document.createElement('tr');
-  tr.innerHTML = `<td><input type="text" style="width:100%"></td>
-    <td><input type="text" style="width:100%"></td>
-    <td><select style="width:100%;"><option>HK</option><option>FK</option><option>CAB.</option><option>NM</option></select></td>
-    <td><select style="width:100%;"><option value="">—</option><option>YES TO ALL</option><option>NO MALLET</option><option>NO GLASS</option><option>NO SIGN</option><option>NA</option></select></td>
-    <td><input type="number" placeholder="2022" style="width:100%"></td>
-    <td><input type="number" placeholder="10" style="width:100%"></td>
-    <td><select style="width:100%;"><option>ABC</option><option>K CLASS</option><option>CO2</option><option>HALOTRON</option><option>FE36</option><option>HALON</option><option>FOAM</option><option>BC</option><option>CLASS D</option></select></td>
-    <td><select style="width:100%;"><option value="">—</option><option>PASS</option><option>FAIL</option><option>NF</option></select></td>
-    <td><input type="number" placeholder="2028" style="width:100%"></td>
-    <td><input type="number" placeholder="2034" style="width:100%"></td>
-    <td><select style="width:100%;"><option value="">—</option><option>YES</option><option>NO</option></select></td>
-    <td><select style="width:100%;"><option value="">—</option><option>YES</option><option>NO</option></select></td>
-    <td><input type="text" style="width:100%"></td>
-    <td><button class="del-btn" onclick="this.closest('tr').remove();updateHExtCount()">✕</button></td>`;
-  tbody.appendChild(tr);
-  updateHExtCount();
-}
+// addHExtRow — defined fully below with change-listener and summary rebuild
 function updateHExtCount() {
   const count = document.getElementById('h-ext-tbody').children.length;
   document.getElementById('h-ext-count').textContent = count;
@@ -2765,6 +3306,219 @@ function rebuildHospDeficList() {
   if (banner) banner.classList.toggle('has-defics', list.length > 0);
 }
 
+function rebuildHospDeficList() {
+  const list   = [];
+  // From sprinkler checklist N answers (all sections including dry/5yr)
+  const allSpItems = [
+    ...Object.values(SP_CHECKLIST).flat(),
+    ...SP_DRY_ITEMS,
+    ...SP_5YR_ITEMS,
+  ];
+  allSpItems.forEach(item => {
+    const noteEl = document.getElementById('sp-defic-note-' + item.id);
+    const rowEl  = document.querySelector(`[data-id="${item.id}"]`);
+    if (rowEl && rowEl.dataset.val === 'N' && noteEl && noteEl.value.trim()) {
+      list.push(noteEl.value.trim());
+    }
+  });
+  // From explicit defic table rows
+  document.querySelectorAll('#h-defic-tbody tr td:nth-child(2) input').forEach(inp => {
+    if (inp.value.trim()) list.push(inp.value.trim());
+  });
+  const pill   = document.getElementById('h-defic-count-pill');
+  const listEl = document.getElementById('h-defic-list');
+  const banner = document.getElementById('h-defic-summary');
+  if (pill)   pill.textContent = list.length;
+  if (listEl) listEl.innerHTML = list.map(t => `<div class="defic-item">⚠ ${t}</div>`).join('');
+  if (banner) banner.classList.toggle('has-defics', list.length > 0);
+}
+
+// ════════════════════════════════════════════════════════════════
+//  EXTINGUISHER SUMMARY AUTO-POPULATION
+//  Reads the ext tbody rows and builds the deficiency summary
+//  sheet grouped by type, counting services due
+// ════════════════════════════════════════════════════════════════
+const EXT_TYPES_ORDER = [
+  'ABC - 2.5LB','ABC - 5LB','ABC - 10LB','ABC - 20LB','ABC - 30LB',
+  'CO2','K CLASS','HALON','HALOTRON','FE36','FOAM','BC','CLASS D','OTHER',
+];
+// Which types have no 6-year maintenance (only hydrostatic)
+const EXT_NO_6YR = new Set(['CO2','K CLASS','WATER CANNON','WATER MIST','FOAM']);
+
+function rebuildExtSummary() {
+  const rows = Array.from(document.querySelectorAll('#h-ext-tbody tr'));
+
+  // Tally by type
+  const tally = {}; // type -> {sixYr, hydro, recharge, newUnit}
+  EXT_TYPES_ORDER.forEach(t => { tally[t] = { sixYr:0, hydro:0, recharge:0, newUnit:0 }; });
+
+  const today = new Date();
+  const thisYear = today.getFullYear();
+
+  rows.forEach(row => {
+    const sels = row.querySelectorAll('select');
+    const ins  = row.querySelectorAll('input');
+    // select indices: 0=mount, 1=cabinet, 2=type, 3=pass/fail, 4=recharge, 5=newUnit
+    const rawType    = sels[2]?.options[sels[2].selectedIndex]?.text || 'ABC';
+    const pf         = sels[3]?.options[sels[3].selectedIndex]?.text || '';
+    const needRecharge = sels[4]?.options[sels[4].selectedIndex]?.text === 'YES';
+    const needNew      = sels[5]?.options[sels[5].selectedIndex]?.text === 'YES';
+    // Map raw type to our category keys
+    const typeKey = EXT_TYPES_ORDER.find(k => rawType.toUpperCase().includes(k.replace(' - ','').replace('LB','').trim().toUpperCase()))
+                    || 'OTHER';
+    if (!tally[typeKey]) tally[typeKey] = { sixYr:0, hydro:0, recharge:0, newUnit:0 };
+
+    // 6-year due: read the "6-Yr Due" input (index 4 of number inputs)
+    const sixYrDue = parseInt(ins[4]?.value) || 0;
+    const hydroDue = parseInt(ins[5]?.value) || 0;
+
+    if (sixYrDue && sixYrDue <= thisYear && !EXT_NO_6YR.has(typeKey)) tally[typeKey].sixYr++;
+    if (hydroDue && hydroDue <= thisYear) tally[typeKey].hydro++;
+    if (needRecharge) tally[typeKey].recharge++;
+    if (needNew)      tally[typeKey].newUnit++;
+  });
+
+  // Rebuild summary tbody
+  const tbody = document.getElementById('h-ext-summary-tbody');
+  if (!tbody) return;
+  tbody.innerHTML = '';
+  let totalServices = 0;
+
+  EXT_TYPES_ORDER.forEach(type => {
+    const t = tally[type] || { sixYr:0, hydro:0, recharge:0, newUnit:0 };
+    const rowTotal = t.sixYr + t.hydro + t.recharge + t.newUnit;
+    totalServices += rowTotal;
+    const tr = document.createElement('tr');
+    const na = EXT_NO_6YR.has(type) ? 'NA' : (t.sixYr || '');
+    tr.innerHTML = `
+      <td style="font-weight:600;">${type}</td>
+      <td style="text-align:center;${EXT_NO_6YR.has(type)?'color:var(--slate);font-style:italic;':t.sixYr?'color:var(--red);font-weight:700;':''}">${EXT_NO_6YR.has(type)?'NA':t.sixYr||''}</td>
+      <td style="text-align:center;${t.hydro?'color:var(--red);font-weight:700;':''}">${t.hydro||''}</td>
+      <td style="text-align:center;${t.recharge?'color:var(--red);font-weight:700;':''}">${t.recharge||''}</td>
+      <td style="text-align:center;${t.newUnit?'color:var(--red);font-weight:700;':''}">${t.newUnit||''}</td>
+      <td><input type="text" style="width:100%;border:1px solid var(--border);border-radius:4px;padding:3px 5px;font-size:.75rem;" placeholder="Notes…"></td>`;
+    tbody.appendChild(tr);
+  });
+
+  const totalEl = document.getElementById('h-ext-total-svc');
+  if (totalEl) totalEl.value = totalServices || '';
+}
+
+// Hook ext summary rebuild into ext row add/remove
+const _origAddHExtRow = window.addHExtRow;
+function addHExtRow() {
+  const tbody = document.getElementById('h-ext-tbody');
+  if (!tbody) return;
+  const tr = document.createElement('tr');
+  tr.innerHTML = `
+    <td><input type="text" style="width:100%"></td>
+    <td><input type="text" style="width:100%"></td>
+    <td><select style="width:100%;"><option>HK</option><option>FK</option><option>CAB.</option><option>NM</option></select></td>
+    <td><select style="width:100%;"><option value="">—</option><option>YES TO ALL</option><option>NO MALLET</option><option>NO GLASS</option><option>NO SIGN</option><option>NA</option></select></td>
+    <td><input type="number" placeholder="2022" style="width:100%"></td>
+    <td><input type="number" placeholder="10" style="width:100%"></td>
+    <td><select style="width:100%;"><option>ABC</option><option>K CLASS</option><option>CO2</option><option>HALOTRON</option><option>FE36</option><option>HALON</option><option>FOAM</option><option>BC</option><option>CLASS D</option></select></td>
+    <td><select style="width:100%;"><option value="">—</option><option>PASS</option><option>FAIL</option><option>NF</option></select></td>
+    <td><input type="number" placeholder="2028" style="width:100%"></td>
+    <td><input type="number" placeholder="2034" style="width:100%"></td>
+    <td><select style="width:100%;"><option value="">—</option><option>YES</option><option>NO</option></select></td>
+    <td><select style="width:100%;"><option value="">—</option><option>YES</option><option>NO</option></select></td>
+    <td><input type="text" style="width:100%"></td>
+    <td><button class="del-btn" onclick="this.closest('tr').remove();updateHExtCount();rebuildExtSummary();">✕</button></td>`;
+  // Rebuild summary on any change
+  tr.querySelectorAll('input,select').forEach(el => {
+    el.addEventListener('change', () => { updateHExtCount(); rebuildExtSummary(); });
+  });
+  tbody.appendChild(tr);
+  updateHExtCount();
+  rebuildExtSummary();
+}
+
+// ════════════════════════════════════════════════════════════════
+//  DEVICE SUB-NAV — active state highlight when switching sheets
+// ════════════════════════════════════════════════════════════════
+function showDeviceSheet(name) {
+  document.querySelectorAll('.h-device-sheet').forEach(s => s.style.display = 'none');
+  const t = document.getElementById('h-sheet-' + name);
+  if (t) t.style.display = 'block';
+  // Highlight the active sub-nav button
+  document.querySelectorAll('#h-device-subnav .pf-btn').forEach(b => {
+    b.classList.toggle('selected', b.getAttribute('onclick')?.includes(`'${name}'`));
+  });
+}
+
+// ════════════════════════════════════════════════════════════════
+//  STEP-TAB DONE STATE — marks steps complete as user advances
+// ════════════════════════════════════════════════════════════════
+function markHospStepDone(step) {
+  const tab = document.querySelector(`[data-hstep="${step}"]`);
+  if (tab) tab.classList.add('done');
+}
+
+// Override goHospStep to auto-mark previous step done
+const _baseGoHospStep = goHospStep;
+function goHospStep(step) {
+  // Find current active step and mark it done
+  const active = document.querySelector('#hosp-step-nav .step-tab.active');
+  if (active && active.dataset.hstep && active.dataset.hstep !== step) {
+    active.classList.add('done');
+    active.classList.remove('active');
+  }
+  HOSP_STEPS.forEach(s => {
+    const el = document.getElementById('step-hosp-' + s);
+    if (el) el.style.display = 'none';
+  });
+  const target = document.getElementById('step-hosp-' + step);
+  if (target) target.style.display = 'block';
+  document.querySelectorAll('#hosp-step-nav .step-tab').forEach(t => {
+    t.classList.toggle('active', t.dataset.hstep === step);
+  });
+  if (step === 'device-detail') showDeviceSheet('supervisory');
+  // Rebuild summary when entering deficiencies step
+  if (step === 'defic') rebuildHospDeficList();
+  // Rebuild ext summary when entering extinguisher step
+  if (step === 'extinguish') rebuildExtSummary();
+  // Scroll to top
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// ════════════════════════════════════════════════════════════════
+//  DEVICE COUNT BADGE — live count shown in step nav pill
+// ════════════════════════════════════════════════════════════════
+function getDeviceTotalCount() {
+  let n = 0;
+  ['h-supervisory-tbody','h-flow-tbody','h-tamper-tbody','h-smoke-tbody',
+   'h-heat-tbody','h-pull-tbody','h-duct-tbody','h-av-tbody',
+   'h-door-release-tbody','h-fdc-tbody','h-hose-valve-tbody',
+   'h-standpipe-tbody','h-valves-tbody','h-gauges-tbody','h-hydraulic-tbody',
+   'h-ahu-tbody'].forEach(id => {
+    n += document.getElementById(id)?.children.length || 0;
+  });
+  return n;
+}
+
+// ════════════════════════════════════════════════════════════════
+//  KEYBOARD SHORTCUT — Ctrl+S saves draft
+// ════════════════════════════════════════════════════════════════
+document.addEventListener('keydown', e => {
+  if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+    e.preventDefault();
+    saveDraft();
+  }
+});
+
+// ════════════════════════════════════════════════════════════════
+//  SCROLL RESTORATION — remember scroll position per step
+// ════════════════════════════════════════════════════════════════
+let _lastScrollY = 0;
+document.addEventListener('scroll', () => { _lastScrollY = window.scrollY; }, { passive: true });
+
+// ════════════════════════════════════════════════════════════════
+//  PHOTO COUNT UPDATE (also exposed globally)
+// ════════════════════════════════════════════════════════════════
+// updatePhotoCount is already defined above — exposed here for
+// clarity that it IS available globally.
+
 // ════════════════════════════════════════════════════════════════
 //  DRAFT — localStorage save / restore
 // ════════════════════════════════════════════════════════════════
@@ -2937,10 +3691,10 @@ function hospSaveAndDownload() {
 
 // ════════════════════════════════════════════════════════════════
 //  PDF GENERATION — jsPDF builder
-//  Integrity Fire brand: orange #e67e22, dark #1a1a1a
+//  FLPS brand: orange #e67e22, dark #1a1a1a
 //  Letter 8.5"×11", units=mm, margins: L10 R10 T12 B12
 // ════════════════════════════════════════════════════════════════
-function buildHospPDF() {
+function buildHospPDF(returnDoc) {
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({ unit:'mm', format:'letter', orientation:'portrait' });
 
@@ -3062,8 +3816,7 @@ function buildHospPDF() {
   }
 
   // ── helper to read a text input value ──
-  function fv(id) { return document.getElementById(id)?.value?.trim() || ''; }
-  function sv(id) { const el = document.getElementById(id); return el ? (el.options[el.selectedIndex]?.text || '') : ''; }
+  // fv() and sv() are global helpers defined above
 
   // ─────────────────────────────────────────
   // PAGE 1: COVER PAGE
@@ -3180,12 +3933,17 @@ function buildHospPDF() {
 
   // Pre/post checklist
   subHeader('Pre & Post Inspection Checklist');
-  const preItems  = ['Check in with the engineer?','Were keys provided?','Panel showing normal upon arrival?','Panel taken offline/disabled?','All fire equipment in working order?'];
-  const postItems = ['Signals received at central station?','Panel reenabled & placed online?','Applicable device tags updated?','Checkout with Mgmt/keys returned?','FCC left clean & organized?'];
-  const chkCols = [{w:CW*0.45},{w:CW*0.1},{w:CW*0.35},{w:CW*0.1}];
-  tableHeader([{label:'PRE-INSPECTION QUESTION',w:CW*0.45},{label:'Y/N/NA',w:CW*0.1},{label:'POST-INSPECTION QUESTION',w:CW*0.35},{label:'Y/N/NA',w:CW*0.1}]);
+  const preItems  = PRE_CHECKLIST_ITEMS.map(item => ({
+    label: item.label, val: document.getElementById(item.id)?.value || '',
+  }));
+  const postItems = POST_CHECKLIST_ITEMS.map(item => ({
+    label: item.label, val: document.getElementById(item.id)?.value || '',
+  }));
+  const chkCols = [{w:CW*0.4},{w:CW*0.1},{w:CW*0.4},{w:CW*0.1}];
+  tableHeader([{label:'PRE-INSPECTION QUESTION',w:CW*0.4},{label:'Y/N/NA',w:CW*0.1},{label:'POST-INSPECTION QUESTION',w:CW*0.4},{label:'Y/N/NA',w:CW*0.1}]);
   preItems.forEach((pre, i) => {
-    tableRow(chkCols, [pre,'', postItems[i]||'',''], i%2===0);
+    const post = postItems[i] || { label:'', val:'' };
+    tableRow(chkCols, [pre.label, pre.val, post.label, post.val], i%2===0);
   });
   curY += 5;
 
@@ -3614,6 +4372,21 @@ function buildHospPDF() {
   spChkSection('Sprinkler Heads / Components', SP_CHECKLIST.heads);
   spChkSection('Visible Pipe', SP_CHECKLIST.pipe);
   spChkSection('Main Drain Observations', SP_CHECKLIST.drain);
+  checkPageBreak(40);
+  spChkSection('Dry Pipe / Pre-Action (If Applicable)', SP_DRY_ITEMS);
+  spChkSection('5-Year Items (If Due)', SP_5YR_ITEMS);
+  // Dry pipe extra fields
+  const tripDate = fv('h-sp-trip-date');
+  const tripPsi  = fv('h-sp-trip-psi');
+  const due5yr   = fv('h-sp-5yr-due');
+  if (tripDate || tripPsi || due5yr) {
+    checkPageBreak(10);
+    doc.setFont('helvetica','normal'); doc.setFontSize(7); doc.setTextColor(...DARK);
+    if (tripDate) doc.text(`Last Trip Test Date: ${tripDate}`, ML + 2, curY + 4);
+    if (tripPsi)  doc.text(`Trip Pressure: ${tripPsi} PSI`, ML + 60, curY + 4);
+    if (due5yr)   doc.text(`5-Year Items Next Due: ${due5yr}`, ML + 120, curY + 4);
+    curY += 8;
+  }
 
   // PAGE 31: INVENTORY CHANGE SHEET
   newPage('Inventory Change Sheet');
@@ -3822,12 +4595,13 @@ function buildHospPDF() {
   for (let p = 1; p <= totalPages; p++) {
     doc.setPage(p);
     doc.setFont('helvetica','italic'); doc.setFontSize(6); doc.setTextColor(120,120,120);
-    doc.text('Integral to your Safety. Because it Matters.   303.557.1820   www.integrityfiresafetyservices.com', PW/2, PH - 5, {align:'center'});
+    doc.text('Fire Life Protection Systems   |   firelifeprotection.com', PW/2, PH - 5, {align:'center'});
   }
 
   // Save the file
   const bld  = fv('property-name').replace(/\s+/g,'_') || 'Hospital';
   const dt   = fv('insp-date').replace(/-/g,'') || new Date().toISOString().substring(0,10).replace(/-/g,'');
+  if (returnDoc) return doc;
   doc.save(`FLPS_TJC_${bld}_${dt}.pdf`);
 }
 
@@ -3885,6 +4659,11 @@ document.addEventListener('DOMContentLoaded', () => {
   initSigCanvas('sig-canvas', 'inspSig');
   initSigCanvas('cust-sig-canvas', 'custSig');
 
+  // Build pre/post checklists and dry-pipe/5yr blocks eagerly
+  // (also called from initHospData when inspection starts)
+  buildPrePostChecklists();
+  buildDryAndFiveYearBlocks();
+
   // Build sprinkler checklist blocks
   buildSpChecklistBlock('h-sp-pre-block',   SP_CHECKLIST.pre);
   buildSpChecklistBlock('h-sp-fdc-block',   SP_CHECKLIST.fdc);
@@ -3895,6 +4674,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Update start button
   updateHospStartButton();
+
+  // Load saved Google credentials and silently reconnect if token still valid
+  loadSavedCredentials();
+  if (GDrive.apiKey && GDrive.clientId && GDrive.accessToken && GDrive.tokenExpiry > Date.now() + 60000) {
+    ensureDriveFolders()
+      .then(() => loadProperties())
+      .then(() => {
+        GDrive.ready = true;
+        setConnStatus('ok', '✓ Connected');
+        populatePropertyDropdown();
+      })
+      .catch(() => {
+        GDrive.accessToken = '';
+        setConnStatus('warn', 'Not connected');
+      });
+  }
 
   // Ensure draft modal exists and check for saved drafts
   ensureDraftModal();
