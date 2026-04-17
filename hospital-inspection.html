@@ -171,6 +171,9 @@ body {
 .pf-btn.pass:hover, .pf-btn.pass.selected { background: #dcfce7; border-color: var(--green); color: var(--green); }
 .pf-btn.fail:hover, .pf-btn.fail.selected { background: #fee2e2; border-color: var(--red); color: var(--red); }
 .pf-btn.na:hover,   .pf-btn.na.selected   { background: #f1f5f9; border-color: #94a3b8; color: #475569; }
+/* Sub-nav tab buttons (no pass/fail/na modifier) */
+.pf-btn:not(.pass):not(.fail):not(.na):hover,
+.pf-btn:not(.pass):not(.fail):not(.na).selected { background: var(--hosp); border-color: var(--hosp); color: white; }
 
 /* Y/N/NA row buttons */
 .yna-group { display: flex; gap: 4px; }
@@ -496,17 +499,17 @@ canvas#cust-sig-canvas, canvas#sig-canvas {
     <div class="step-tab"        data-hstep="sysoverview" onclick="goHospStep('sysoverview')">
       <span class="step-num">5</span><span class="step-check">✓</span>Systems Overview
     </div>
-    <div class="step-tab"        data-hstep="fa-results" onclick="goHospStep('fa-results')">
-      <span class="step-num">6</span><span class="step-check">✓</span>FA Results
-    </div>
-    <div class="step-tab"        data-hstep="sp-results" onclick="goHospStep('sp-results')">
-      <span class="step-num">7</span><span class="step-check">✓</span>SP Results
-    </div>
     <div class="step-tab"        data-hstep="device-detail" onclick="goHospStep('device-detail')">
-      <span class="step-num">8</span><span class="step-check">✓</span>Device Detail
+      <span class="step-num">6</span><span class="step-check">✓</span>Device Detail
     </div>
     <div class="step-tab"        data-hstep="extinguish" onclick="goHospStep('extinguish')">
-      <span class="step-num">9</span><span class="step-check">✓</span>Extinguishers
+      <span class="step-num">7</span><span class="step-check">✓</span>Extinguishers
+    </div>
+    <div class="step-tab"        data-hstep="fa-results" onclick="goHospStep('fa-results')">
+      <span class="step-num">8</span><span class="step-check">✓</span>FA Results
+    </div>
+    <div class="step-tab"        data-hstep="sp-results" onclick="goHospStep('sp-results')">
+      <span class="step-num">9</span><span class="step-check">✓</span>SP Results
     </div>
     <div class="step-tab"        data-hstep="defic"      onclick="goHospStep('defic')">
       <span class="step-num">D</span><span class="step-check">✓</span>Deficiencies
@@ -588,36 +591,12 @@ canvas#cust-sig-canvas, canvas#sig-canvas {
             <input type="email" id="primary-email">
           </div>
 
-          <!-- SECONDARY CONTACT -->
-          <div class="field-group" style="grid-column:span 2;">
-            <label style="color:var(--hosp);font-size:.8rem;margin-top:8px;">SECONDARY CONTACT (Onsite)</label>
-          </div>
-          <div class="field-group">
-            <label>Name</label>
-            <input type="text" id="secondary-name">
-          </div>
-          <div class="field-group">
-            <label>Title</label>
-            <input type="text" id="secondary-title" placeholder="e.g. Onsite">
-          </div>
-          <div class="field-group">
-            <label>Phone</label>
-            <input type="tel" id="secondary-phone">
-          </div>
-          <div class="field-group">
-            <label>Email</label>
-            <input type="email" id="secondary-email">
-          </div>
-
           <!-- INSPECTOR -->
           <div class="field-group">
             <label>Date of Inspection</label>
             <input type="date" id="insp-date">
           </div>
-          <div class="field-group">
-            <label>Inspector(s) Initials</label>
-            <input type="text" id="inspector-initials" placeholder="e.g. R.WILSON/D.ERISMAN">
-          </div>
+          <input type="hidden" id="inspector-initials">
           <div class="field-group">
             <label>Inspector Full Name</label>
             <input type="text" id="inspector-name" value="Alan Antonio">
@@ -989,7 +968,7 @@ canvas#cust-sig-canvas, canvas#sig-canvas {
       <div class="card-header"><span class="icon">🔔</span><span>Fire Alarm Systems Overview</span></div>
       <div class="card-body" style="overflow-x:auto;">
         <table class="dyn-table">
-          <thead><tr><th>Question</th><th style="width:80px;">Y/N/NA</th><th style="width:30px;">#</th><th style="width:80px;">Inspecting?</th><th>Locations / Notes</th></tr></thead>
+          <thead><tr><th>Question</th><th style="width:80px;">Y/N/NA</th><th style="width:55px;">#</th><th style="width:80px;">Inspecting?</th><th>Locations / Notes</th></tr></thead>
           <tbody id="h-ov-fa-tbody">
             <!-- Rows: Fire Alarm System Present? | Fire Dampers Present? | Onsite initiating device types -->
           </tbody>
@@ -1002,7 +981,7 @@ canvas#cust-sig-canvas, canvas#sig-canvas {
       <div class="card-header"><span class="icon">💧</span><span>Fire Suppression Systems Overview</span></div>
       <div class="card-body" style="overflow-x:auto;">
         <table class="dyn-table">
-          <thead><tr><th>Question</th><th style="width:80px;">Y/N/NA</th><th style="width:30px;">#</th><th style="width:80px;">Inspecting?</th><th>Locations / Notes</th></tr></thead>
+          <thead><tr><th>Question</th><th style="width:80px;">Y/N/NA</th><th style="width:55px;">#</th><th style="width:80px;">Inspecting?</th><th>Locations / Notes</th></tr></thead>
           <tbody id="h-ov-sp-tbody">
             <!-- Rows: Wet Systems, Dry Systems, Fire Pump, Test Headers, FDC, PRV Valves,
                        Antifreeze Systems, Standpipes, Deluge Valves, Onsite head types -->
@@ -1016,7 +995,7 @@ canvas#cust-sig-canvas, canvas#sig-canvas {
       <div class="card-header"><span class="icon">⚠️</span><span>Special Hazards Systems</span></div>
       <div class="card-body" style="overflow-x:auto;">
         <table class="dyn-table">
-          <thead><tr><th>Question</th><th style="width:80px;">Y/N/NA</th><th style="width:30px;">#</th><th style="width:80px;">Inspecting?</th><th>Locations / Notes</th></tr></thead>
+          <thead><tr><th>Question</th><th style="width:80px;">Y/N/NA</th><th style="width:55px;">#</th><th style="width:80px;">Inspecting?</th><th>Locations / Notes</th></tr></thead>
           <tbody id="h-ov-special-tbody">
             <!-- Rows: Kitchen Hood Systems, Pre-Action/Clean Agent, VESDA, CO2/Gaseous, Other -->
           </tbody>
@@ -1040,7 +1019,7 @@ canvas#cust-sig-canvas, canvas#sig-canvas {
 
     <div class="btn-row">
       <button class="btn-secondary" onclick="goHospStep('eockey')">← EOC Key Sheet</button>
-      <button class="btn-primary" onclick="goHospStep('fa-results')">Next: FA Results →</button>
+      <button class="btn-primary" onclick="goHospStep('device-detail')">Next: Device Detail →</button>
     </div>
   </div>
 
@@ -1090,7 +1069,7 @@ canvas#cust-sig-canvas, canvas#sig-canvas {
     </div>
 
     <div class="btn-row">
-      <button class="btn-secondary" onclick="goHospStep('sysoverview')">← Overview</button>
+      <button class="btn-secondary" onclick="goHospStep('extinguish')">← Extinguishers</button>
       <button class="btn-primary" onclick="goHospStep('sp-results')">Next: SP Results →</button>
     </div>
   </div>
@@ -1191,7 +1170,7 @@ canvas#cust-sig-canvas, canvas#sig-canvas {
 
     <div class="btn-row">
       <button class="btn-secondary" onclick="goHospStep('fa-results')">← FA Results</button>
-      <button class="btn-primary" onclick="goHospStep('device-detail')">Next: Device Detail →</button>
+      <button class="btn-primary" onclick="goHospStep('defic')">Next: Deficiencies →</button>
     </div>
   </div>
 
@@ -1203,7 +1182,7 @@ canvas#cust-sig-canvas, canvas#sig-canvas {
 
     <!-- Device sub-nav tabs -->
     <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px;" id="h-device-subnav">
-      <button class="pf-btn pass selected" onclick="showDeviceSheet('supervisory')">Supervisory</button>
+      <button class="pf-btn selected" onclick="showDeviceSheet('supervisory')">Supervisory</button>
       <button class="pf-btn" onclick="showDeviceSheet('flow')">Flow/Pressure</button>
       <button class="pf-btn" onclick="showDeviceSheet('tamper')">Tamper</button>
       <button class="pf-btn" onclick="showDeviceSheet('smoke')">Smoke Det.</button>
@@ -1600,7 +1579,7 @@ canvas#cust-sig-canvas, canvas#sig-canvas {
     </div>
 
     <div class="btn-row">
-      <button class="btn-secondary" onclick="goHospStep('sp-results')">← SP Results</button>
+      <button class="btn-secondary" onclick="goHospStep('sysoverview')">← Systems Overview</button>
       <button class="btn-primary" onclick="goHospStep('extinguish')">Next: Extinguishers →</button>
     </div>
   </div>
@@ -1670,7 +1649,7 @@ canvas#cust-sig-canvas, canvas#sig-canvas {
 
     <div class="btn-row">
       <button class="btn-secondary" onclick="goHospStep('device-detail')">← Device Detail</button>
-      <button class="btn-primary" onclick="goHospStep('defic')">Next: Deficiencies →</button>
+      <button class="btn-primary" onclick="goHospStep('fa-results')">Next: FA Results →</button>
     </div>
   </div>
 
@@ -1732,7 +1711,7 @@ canvas#cust-sig-canvas, canvas#sig-canvas {
     </div>
 
     <div class="btn-row">
-      <button class="btn-secondary" onclick="goHospStep('extinguish')">← Extinguishers</button>
+      <button class="btn-secondary" onclick="goHospStep('sp-results')">← SP Results</button>
       <button class="btn-primary" onclick="goHospStep('sign')">Next: Sign &amp; Export →</button>
     </div>
   </div>
@@ -2291,7 +2270,7 @@ function goStep(n) {
   document.getElementById('step-'+n).style.display = 'block';
   document.querySelectorAll('#step-nav .step-tab').forEach(t => { t.classList.toggle('active', +t.dataset.step === n); });
 }
-const HOSP_STEPS = ['prevdefic','panel','eockey','sysoverview','fa-results','sp-results','device-detail','extinguish','defic','sign'];
+const HOSP_STEPS = ['prevdefic','panel','eockey','sysoverview','device-detail','extinguish','fa-results','sp-results','defic','sign'];
 // goHospStep and showDeviceSheet — defined fully below with done-state tracking
 function startHospInspection() {
   activeInspectionSystem = 'hospital'; // enables draftKey() and saveDraftToDrive()
@@ -3054,6 +3033,8 @@ function goHospStep(step) {
     t.classList.toggle('active', t.dataset.hstep === step);
   });
   if (step === 'device-detail') showDeviceSheet('supervisory');
+  // Auto-sync result tables when entering FA/SP results steps
+  if (step === 'fa-results' || step === 'sp-results') syncHospResultTables();
   // Rebuild summary when entering deficiencies step
   if (step === 'defic') rebuildHospDeficList();
   // Rebuild ext summary when entering extinguisher step
@@ -3075,6 +3056,143 @@ function getDeviceTotalCount() {
     n += document.getElementById(id)?.children.length || 0;
   });
   return n;
+}
+
+// ════════════════════════════════════════════════════════════════
+//  RESULT TABLE AUTO-SYNC
+//  Tallies PASS/FAIL/NT/NF from device detail sheets and pushes
+//  totals into the FA and SP result summary rows by key.
+//  Called automatically when entering FA Results or SP Results step.
+// ════════════════════════════════════════════════════════════════
+function syncHospResultTables() {
+  // Helper: count PASS/FAIL/NT/NF across all <select> elements in a tbody
+  function tallyTbody(tbodyId) {
+    const tbody = document.getElementById(tbodyId);
+    if (!tbody) return { total:0, pass:0, fail:0, nt:0, nf:0 };
+    let total=0, pass=0, fail=0, nt=0, nf=0;
+    tbody.querySelectorAll('tr').forEach(row => {
+      const sels = Array.from(row.querySelectorAll('select')).map(s => s.value);
+      const hasFail = sels.some(v => v === 'FAIL');
+      const hasNT   = sels.some(v => v === 'NT');
+      const hasNF   = sels.some(v => v === 'NF');
+      const allPass = sels.length > 0 && sels.every(v => v === 'PASS');
+      total++;
+      if (hasFail)     fail++;
+      else if (allPass) pass++;
+      else if (hasNT)  nt++;
+      else if (hasNF)  nf++;
+    });
+    return { total, pass, fail, nt, nf };
+  }
+
+  // FA result row key → tbody id(s) to tally
+  const FA_SHEET_MAP = {
+    'SPV': ['h-supervisory-tbody'],
+    'FS':  ['h-flow-tbody'],
+    'TS':  ['h-tamper-tbody'],
+    'SD':  ['h-smoke-tbody'],
+    'HD':  ['h-heat-tbody'],
+    'PS':  ['h-pull-tbody'],
+    'DD':  ['h-duct-tbody'],
+    'ELV': [], // elevator banks — counted separately below
+    'ANN': [], // annunciator grid — counted separately
+    'AHU': ['h-ahu-tbody'],
+  };
+  // A/V devices and door release — all go into their respective sheets
+  // These map to named keys in the result table; we group them
+  const AV_KEY_MAP  = { 'h-av-tbody': ['BL','CH','HN','ST','SP','HSC','SSC'] };
+  const DR_KEY_MAP  = { 'h-door-release-tbody': ['MAG','CA','OT'] };
+
+  // SP result row key → tbody id
+  const SP_SHEET_MAP = {
+    'MD':  ['h-main-drain-tbody'],
+    'FDC': ['h-fdc-tbody'],
+    'HV':  ['h-hose-valve-tbody'],
+    'SHB': ['h-spare-heads-tbody'],
+    'VLV': ['h-valves-tbody'],
+    'HC':  ['h-hydraulic-tbody'],
+    'GA':  ['h-gauges-tbody'],
+    'SDP': ['h-standpipe-tbody'],
+  };
+
+  // Push totals into a result tbody row that has matching key in td[1]
+  function pushToResultRow(tbodyId, key, counts) {
+    const rows = document.querySelectorAll(`#${tbodyId} tr`);
+    for (const row of rows) {
+      if (row.cells[1]?.textContent?.trim() === key) {
+        const inputs = row.querySelectorAll('input[type=number]');
+        if (inputs[0]) inputs[0].value = counts.total || '';
+        if (inputs[1]) inputs[1].value = counts.pass  || '';
+        if (inputs[2]) inputs[2].value = counts.fail  || '';
+        if (inputs[3]) inputs[3].value = counts.nt    || '';
+        if (inputs[4]) inputs[4].value = counts.nf    || '';
+        calcResultRow(inputs[0]);
+        break;
+      }
+    }
+  }
+
+  // Sync FA result table
+  Object.entries(FA_SHEET_MAP).forEach(([key, tbodies]) => {
+    if (!tbodies.length) return;
+    const totals = tbodies.reduce((acc, id) => {
+      const t = tallyTbody(id);
+      return { total: acc.total+t.total, pass: acc.pass+t.pass, fail: acc.fail+t.fail, nt: acc.nt+t.nt, nf: acc.nf+t.nf };
+    }, { total:0, pass:0, fail:0, nt:0, nf:0 });
+    pushToResultRow('h-fa-result-tbody', key, totals);
+  });
+
+  // A/V — distribute all AV rows evenly across the 7 AV keys (or lump into first)
+  // Simpler: put total AV count in the first AV key row, leave others blank
+  const avTotals = tallyTbody('h-av-tbody');
+  pushToResultRow('h-fa-result-tbody', 'BL', avTotals); // all A/V in Bell row as catch-all
+
+  // Door release — lump into MAG row
+  const drTotals = tallyTbody('h-door-release-tbody');
+  pushToResultRow('h-fa-result-tbody', 'MAG', drTotals);
+
+  // Elevator recall — count bank cards, each with primary + secondary operational select
+  const elvBanks = document.querySelectorAll('#h-elevator-banks > div');
+  let elvPass=0, elvFail=0, elvTotal=0;
+  elvBanks.forEach(card => {
+    const sels = card.querySelectorAll('select');
+    sels.forEach(s => {
+      elvTotal++;
+      if (s.value === 'PASS') elvPass++;
+      else if (s.value === 'FAIL') elvFail++;
+    });
+  });
+  pushToResultRow('h-fa-result-tbody', 'ELV', { total:elvTotal, pass:elvPass, fail:elvFail, nt:0, nf:0 });
+
+  // Annunciators — count grid cards
+  const annCount = document.querySelectorAll('#h-annunciator-grid > div').length;
+  let annPass=0, annFail=0;
+  document.querySelectorAll('#h-annunciator-grid > div').forEach(card => {
+    const sel = card.querySelector('select');
+    if (sel?.value === 'PASS') annPass++;
+    else if (sel?.value === 'FAIL') annFail++;
+  });
+  pushToResultRow('h-fa-result-tbody', 'ANN', { total:annCount, pass:annPass, fail:annFail, nt:0, nf:0 });
+
+  // Sync SP result table
+  Object.entries(SP_SHEET_MAP).forEach(([key, tbodies]) => {
+    const totals = tbodies.reduce((acc, id) => {
+      const t = tallyTbody(id);
+      return { total: acc.total+t.total, pass: acc.pass+t.pass, fail: acc.fail+t.fail, nt: acc.nt+t.nt, nf: acc.nf+t.nf };
+    }, { total:0, pass:0, fail:0, nt:0, nf:0 });
+    pushToResultRow('h-sp-result-tbody', key, totals);
+  });
+
+  // Fire extinguishers → FE row in SP results
+  const extRows = document.querySelectorAll('#h-ext-tbody tr');
+  let feTotal=0, fePass=0, feFail=0;
+  extRows.forEach(row => {
+    feTotal++;
+    const pfSel = row.querySelectorAll('select')[3]; // pass/fail select (index 3)
+    if (pfSel?.value === 'PASS') fePass++;
+    else if (pfSel?.value === 'FAIL') feFail++;
+  });
+  pushToResultRow('h-sp-result-tbody', 'FE', { total:feTotal, pass:fePass, fail:feFail, nt:0, nf:0 });
 }
 
 // ════════════════════════════════════════════════════════════════
