@@ -189,7 +189,8 @@ function onPropertySelect() {
   activeInspectionSystem = null;
   document.getElementById('prev-insp-banner').style.display = 'none';
   document.getElementById('prev-insp-summary').textContent = '';
-  document.getElementById('save-systems-row').style.display = 'none';
+  const _saveSystemsRow = document.getElementById('save-systems-row');
+  if (_saveSystemsRow) _saveSystemsRow.style.display = 'none';
 
   // Load saved building system config (local cache — instant)
   const saved = loadBuildingConfig(propName);
@@ -311,7 +312,7 @@ function renderInspectionStartCards() {
   card.style.display = 'block';
 
   const lastBySystem = (_propertyProfile && _propertyProfile.lastInspBySystem) || {};
-  const SYS_ORDER = ['fire-alarm','sprinkler','extinguisher','hood','exit-sign-lighting','fire-pump','standpipe','hydrant','bda','smoke-control','gas-detection','special-suppression','backflow'];
+  const SYS_ORDER = ['fire-alarm','sprinkler','extinguisher','hood','exit-sign-lighting','fire-pump','standpipe','hydrant','bda','smoke-control','gas-detection','special-suppression','backflow','hospital'];
   const ordered = SYS_ORDER.filter(k => activeSystems.has(k));
 
   grid.innerHTML = '';
@@ -355,6 +356,12 @@ function renderInspectionStartCards() {
 function startInspectionForSystem(sysKey) {
   activeInspectionSystem = sysKey;
   syncMainNavDisabled();
+
+  // Hospital TJC/CMS uses its own multi-step inspection flow
+  if (sysKey === 'hospital') {
+    if (typeof startHospInspection === 'function') startHospInspection();
+    return;
+  }
 
   // Hood has multiple hoods per property — prev data is loaded after the
   // identifier is chosen in the picker, so skip loading here.

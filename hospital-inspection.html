@@ -1849,6 +1849,12 @@ canvas#cust-sig-canvas, canvas#sig-canvas {
      are prefixed with 'h' to avoid collision if both are ever
      loaded together. Include inspection-google.js for shared auth.
 ══════════════════════════════════════════════════ -->
+<script src="js/inspection-config.js"></script>
+<script src="js/inspection-utils.js"></script>
+<script src="js/inspection-schedule.js"></script>
+<script src="js/inspection-google.js"></script>
+<script src="js/inspection-drafts.js"></script>
+<script src="js/inspection-hospital-deficiencies.js"></script>
 <script src="https://accounts.google.com/gsi/client"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
@@ -1946,122 +1952,6 @@ const H = {
   draft: null,
 };
 
-// ─── EOC CHECKLIST DATA ─────────────────────────
-const EOC_CHECKLIST = [
-  // EC.02.03.05 — Fire Alarm Testing and Inspection
-  {std:'EC.02.03.05 EP 1', item:'Supervisory Signals (except duct detectors)', freq:'Quarterly'},
-  {std:'EC.02.03.05 EP 2', item:'Water flow devices', freq:'Quarterly'},
-  {std:'EC.02.03.05 EP 2', item:'Tamper switches', freq:'Quarterly'},
-  {std:'EC.02.03.05 EP 3', item:'Duct, heat, smoke detectors, pull boxes, elect. releasing devices', freq:'Annually'},
-  {std:'EC.02.03.05 EP 4', item:'Notification devices (audible & visual)', freq:'Annually'},
-  {std:'EC.02.03.05 EP 5', item:'Emergency services notification transmission equipment', freq:'Quarterly'},
-  {std:'EC.02.03.05 EP 6', item:'Fire pump(s) tested under no-load conditions', freq:'Weekly'},
-  {std:'EC.02.03.05 EP 7', item:'Water storage tank high & low level alarms', freq:'Semi-annually'},
-  {std:'EC.02.03.05 EP 8', item:'Water storage tank low water temp alarms (cold weather only)', freq:'Monthly'},
-  {std:'EC.02.03.05 EP 9', item:'Sprinkler systems main drain tests on all risers', freq:'Quarterly'},
-  {std:'EC.02.03.05 EP 10', item:'Fire department connections inspected', freq:'Quarterly'},
-  {std:'EC.02.03.05 EP 11', item:'Fire pump(s) tested annually underflow', freq:'Annually'},
-  {std:'EC.02.03.05 EP 12', item:'Standpipe systems tested with water flow (NFPA 25)', freq:'Five years'},
-  {std:'EC.02.03.05 EP 13', item:'Kitchen auto extinguishing systems inspected (no discharge reqd)', freq:'Semi-annually'},
-  {std:'EC.02.03.05 EP 14', item:'Gaseous extinguishing systems inspected (no discharge reqd)', freq:'Annually'},
-  {std:'EC.02.03.05 EP 15', item:'Portable fire extinguishers inspected monthly', freq:'Monthly'},
-  {std:'EC.02.03.05 EP 16', item:'Portable fire extinguishers maintained annually', freq:'Annually'},
-  {std:'EC.02.03.05 EP 17', item:'Fire hoses hydro tested 5 yrs after install, every 3 yrs after that', freq:'5 yrs / 3yrs'},
-  {std:'EC.02.03.05 EP 18', item:'Smoke & fire dampers tested (fusible links removed when applicable)', freq:'Six years'},
-  {std:'EC.02.03.05 EP 19', item:'Smoke detection shutdown devices for HVAC tested', freq:'Annually'},
-  {std:'EC.02.03.05 EP 20', item:'All horizontal & vertical roller & slider doors tested', freq:'Annually'},
-  {std:'EC.02.03.05',       item:'Visual inspection of Initiating and Indicating devices', freq:'Semi-annually'},
-  // LS.01.02.01 — ILSM
-  {std:'LS.01.02.01 EP 3', item:'ILSM policy developed and in place', freq:'N/A'},
-  {std:'LS.01.02.01 EP 3', item:'Criteria for evaluating deficiencies & hazards to determine when ILSMs apply', freq:'N/A'},
-  {std:'LS.01.02.01 EP 3', item:'The organization implements ILSMs as defined in its policy', freq:'As applicable'},
-  // EC.02.05.07 — Emergency Power
-  {std:'EC.02.05.07 EP 1', item:'Battery powered lights tested @ 30 days for 30 sec. and annually 1.5 hrs', freq:'Monthly'},
-  {std:'EC.02.05.07 EP 2', item:'Annually for 1.5 hrs', freq:'Annually'},
-  {std:'EC.02.05.07 EP 3', item:'Stored Emerg. Pow. Sup. Sys. (SEPSS) for Life Safety tested 5 min.', freq:'Quarterly'},
-  {std:'EC.02.05.07 EP 3', item:'Annually @ full load for 60% of its class or rating for recharge', freq:'Annually'},
-  {std:'EC.02.05.07 EP 4,5', item:'Generators tested 12x/yr cont. 30 min. under load ≥30% of nameplate rating', freq:'Monthly'},
-  {std:'EC.02.05.07 EP 6', item:'Transfer switches 12x/yr', freq:'Monthly'},
-  {std:'EC.02.05.07 EP 7', item:'Emergency generator test for a minimum of 4 continuous hours', freq:'3 years'},
-  // EC.02.05.09 — Medical Gas
-  {std:'EC.02.05.09 EP 1', item:'Review maintenance program and testing documentation', freq:'Set by policy'},
-  {std:'EC.02.05.09 EP 2', item:'Review installation and modification of med gas test results for: cross-connection, purity & pressure', freq:'As applicable'},
-  {std:'EC.02.05.09 EP 3', item:'Med gas supply and zone valves are accessible and clearly labeled', freq:'Ongoing'},
-];
-
-// ─── FA KEY SHEET DATA ───────────────────────────
-const FA_KEY_DEVICES = [
-  {device:'Supervisory Signal Devices',     key:'SPV', interval:'Quarterly',      code:'NFPA 72 (2010) 14.3.1/14.4.5', activity:'14.4.2', ep:'1'},
-  {device:'Water Flow Devices',             key:'FS',  interval:'Semi-Annually',  code:'NFPA 25 (2011) 14.4.4',         activity:'14.4.2', ep:'2'},
-  {device:'Pressure Switch Devices',        key:'PRS', interval:'Semi-Annually',  code:'NFPA 25 (2011) 14.4.5',         activity:'14.4.2', ep:'2'},
-  {device:'Valve Tamper Switches',          key:'TS',  interval:'Semi-Annually',  code:'NFPA 25 (2011) 14.4.5',         activity:'14.4.2', ep:'2'},
-  {device:'Low/High Air Devices',           key:'LA/HA',interval:'Quarterly',     code:'NFPA 25 (2011) 14.4.5',         activity:'14.4.2', ep:'2'},
-  {device:'Beam Detectors',                 key:'BD',  interval:'Annually',       code:'NFPA 72 (2010) 14.4.5; 17.14',  activity:'14.4.2', ep:'3'},
-  {device:'Smoke Detectors',                key:'SD',  interval:'Annually',       code:'NFPA 72 (2010) 14.4.5; 17.14',  activity:'14.4.2', ep:'3'},
-  {device:'Smoke/CO2 Combo Detectors',      key:'CBO', interval:'Annually',       code:'NFPA 72 (2010) 14.4.5; 17.14',  activity:'14.4.2', ep:'3'},
-  {device:'Heat Detectors',                 key:'HD',  interval:'Annually',       code:'NFPA 72 (2010) 14.4.5; 17.14',  activity:'14.4.2', ep:'3'},
-  {device:'Manual Pull Stations',           key:'PS',  interval:'Annually',       code:'NFPA 72 (2010) 14.4.5; 17.14',  activity:'14.4.2', ep:'3'},
-  {device:'Duct Detectors',                 key:'DD',  interval:'Annually',       code:'NFPA 72 (2010) 14.4.5; 17.14',  activity:'14.4.2', ep:'3'},
-  {device:'CO2 Detectors',                  key:'CO2', interval:'Annually',       code:'NFPA 72 (2010) 14.4.5; 17.14',  activity:'14.4.2', ep:'3'},
-  {device:'Bells',                          key:'BL',  interval:'Annually',       code:'NFPA 72 (2010) 14.3.1/14.4.5',  activity:'14.4.2', ep:'4'},
-  {device:'Chimes',                         key:'CH',  interval:'Annually',       code:'NFPA 72 (2010) 14.3.1/14.4.5',  activity:'14.4.2', ep:'4'},
-  {device:'Horns',                          key:'HN',  interval:'Annually',       code:'NFPA 72 (2010) 14.3.1/14.4.5',  activity:'14.4.2', ep:'4'},
-  {device:'Strobes',                        key:'ST',  interval:'Annually',       code:'NFPA 72 (2010) 14.3.1/14.4.5',  activity:'14.4.2', ep:'4'},
-  {device:'Speakers',                       key:'SP',  interval:'Annually',       code:'NFPA 72 (2010) 14.3.1/14.4.5',  activity:'14.4.2', ep:'4'},
-  {device:'Horn/Strobe Combos',             key:'HSC', interval:'Annually',       code:'NFPA 72 (2010) 14.3.1/14.4.5',  activity:'14.4.2', ep:'4'},
-  {device:'Speaker/Strobe Combos',          key:'SSC', interval:'Annually',       code:'NFPA 72 (2010) 14.3.1/14.4.5',  activity:'14.4.2', ep:'4'},
-  {device:'Mag Door / Releasing Hardware',  key:'MAG', interval:'Annually',       code:'NFPA 72 (2010) 14.3.1/14.4.5',  activity:'14.4.2', ep:'4'},
-  {device:'Off Premise Alarm Notification', key:'OPN', interval:'Quarterly',      code:'NFPA 72 (2010) 14.3.1/14.4.5',  activity:'14.4.2', ep:'5'},
-  {device:'Elevator Recall Banks',          key:'ELV', interval:'Annually',       code:'NFPA 72 (2010) 14.3.1/14.4.5',  activity:'14.4.2', ep:'7'},
-  {device:'Water Tank High & Low Level Alarm',key:'WTA',interval:'Semi-Annually', code:'NFPA 25 (2011) 9.2.4; 9.1.1.2', activity:'',       ep:'8'},
-  {device:'CO2/Gaseous Systems',            key:'GAS', interval:'Semi-Annually',  code:'NFPA 13 (2010) 21.4.1.6(1)',    activity:'',       ep:'14'},
-  {device:'Power Supplies',                 key:'PWR', interval:'Semi-Annually',  code:'NFPA 90A (2010) 6.4.1',         activity:'14.4.2', ep:'10'},
-  {device:'Annunciators',                   key:'ANN', interval:'Annually',       code:'NFPA 90A (2010) 6.4.1',         activity:'14.4.2', ep:'10'},
-  {device:'AHU Shutdown',                   key:'AHU', interval:'Annually',       code:'NFPA 90A (2010) 6.4.1',         activity:'14.4.2', ep:'19'},
-  {device:'Roll Down Fire Doors',           key:'RFD', interval:'Annually',       code:'NFPA 80 (2010) 5.2.14.2',       activity:'14.4.3', ep:'20'},
-  {device:'Sliding Fire Doors',             key:'SLD', interval:'Annually',       code:'NFPA 80 (2010) 5.2.14.2',       activity:'14.4.4', ep:'20'},
-];
-
-// ─── SP KEY SHEET DATA ───────────────────────────
-const SP_KEY_DEVICES = [
-  {device:'Backflow Preventers',            key:'BFP', interval:'Annually',       code:'NFPA 25 (2011) 13-6.2.1',       ep:'9'},
-  {device:'Main Drains',                    key:'MD',  interval:'Annually',       code:'NFPA 25 (2011) 13.2.5',         ep:'9'},
-  {device:'Fire Department Connections',    key:'FDC', interval:'Quarterly',      code:'NFPA 25 (2011) 13.7; 13.1.1.2', ep:'10'},
-  {device:'Hose Valve Connections',         key:'HV',  interval:'Quarterly',      code:'NFPA 25 (2011) 13.7; 13.1.1.2', ep:'10'},
-  {device:'Fire Pumps',                     key:'FP',  interval:'Annually',       code:'NFPA 25 (2011) 8-3.1,8.3.2,8.3.3', ep:'11'},
-  {device:'Standpipes',                     key:'SDP', interval:'5 Years',        code:'NFPA 25 (2011) 6.3.1;6.3.2;6.1.1.2', ep:'12'},
-  {device:'Sprinkler Head',                 key:'SH',  interval:'Annually',       code:'NFPA 25 (2011) 13.2.5',         ep:'14'},
-  {device:'Spare Head Boxes',               key:'SHB', interval:'Annually',       code:'NFPA 25 (2011) 13.2.5',         ep:'14'},
-  {device:'Sprinkler Control Valves',       key:'VLV', interval:'Annually',       code:'NFPA 25 (2011) 13.2.5',         ep:'14'},
-  {device:'Hydraulic Nameplate',            key:'HC',  interval:'Quarterly',      code:'NFPA 25 (2011) 2-7.7',          ep:'14'},
-  {device:'Gauges',                         key:'GA',  interval:'Quarterly',      code:'NFPA 25 (2011) 2-7.7',          ep:'14'},
-  {device:'Antifreeze Systems',             key:'AF',  interval:'Annually',       code:'NFPA 25 (2011) 2-7.7',          ep:'14'},
-  {device:'Dry Valve Systems',              key:'DV',  interval:'Annually',       code:'NFPA 25 (2011) 2-7.7',          ep:'14'},
-  {device:'Deluge Valve Systems',           key:'DLG', interval:'Quarterly',      code:'NFPA 25 (2011) 2-7.7',          ep:'14'},
-  {device:'Standpipe Hoses',               key:'SH',  interval:'3/5 Years',      code:'NFPA 25 (2011) 13.5.2.1',       ep:'17'},
-  {device:'Piping Inspection',              key:'PI',  interval:'5 Years',        code:'NFPA 25 (2011) 14.3.2.1',       ep:''},
-  {device:'Fire Hydrants',                  key:'HYD', interval:'Annually',       code:'NFPA 25 (2011) 7.4.2.1',        ep:''},
-  {device:'Kitchen Extinguishing Systems',  key:'KES', interval:'Semi-Annually',  code:'NFPA 17A (2010) 7.3',           ep:'13'},
-  {device:'Portable Fire Extinguishers (Annual)', key:'FE', interval:'Annually',  code:'NFPA 10 (2010) 7.1.2;7.2.2;7.2.4;7.3.1', ep:'16'},
-  {device:'Portable Fire Extinguishers (Monthly)', key:'FEM', interval:'Monthly', code:'NFPA 10 (2010) 7.1.2;7.2.2;7.2.4;7.3.1', ep:'15'},
-  {device:'Smoke Dampers',                  key:'SDM', interval:'6yr Hosp/4yr Other', code:'NFPA 105 (2010) 6.5.2',      ep:'18'},
-  {device:'Fire Dampers',                   key:'FDM', interval:'6yr Hosp/4yr Other', code:'NFPA 80 (2010) 19.4.1.1',    ep:'18'},
-  {device:'Fire Rated Doors',               key:'FRD', interval:'Annually',       code:'NFPA 80 (2010) 5.2.1',          ep:'20'},
-  {device:'Smoke Rated Doors',              key:'SRD', interval:'Annually',       code:'NFPA 105 (2010) 5.2.1.1',       ep:'20'},
-  {device:'Emergency Lights',               key:'EL',  interval:'Annually/Monthly', code:'NFPA 101 (2012) 7.9.3/7.10.9', ep:'2'},
-  {device:'Exit Signs',                     key:'ES',  interval:'Annually/Monthly', code:'NFPA 101 (2012) 7.9.3/7.10.9', ep:'2'},
-  {device:'Combo Signs/Lights',             key:'LS',  interval:'Annually/Monthly', code:'NFPA 101 (2012) 7.9.3/7.10.9', ep:'2'},
-];
-
-// ─── RECURRING SCHEDULE ROWS ─────────────────────
-const RECURRING_ROWS = [
-  ['Fire Alarm Annual','','Fire Alarm Semi Annual',''],
-  ['Wet Sprinkler Annual','','Dry Valve Annual',''],
-  ['Emergency Light Annual','','Kitchen Hood',''],
-  ['Pre-Action/Clean Agent','','Antifreeze Annual',''],
-  ['Fire Alarm Quarterly','','Fire Pump Annual',''],
-  ['Backflow Preventor Annual','','Portable Extinguisher Annual',''],
-];
 
 // ════════════════════════════════════════════════════════════════
 //  GLOBAL HELPERS — fv/sv available everywhere (also re-used
@@ -2251,392 +2141,122 @@ function toggleDrawer() {
 }
 
 // ════════════════════════════════════════════════════════════════
-//  GOOGLE DRIVE / OAUTH2 INTEGRATION
-//  Mirrors the pattern used by js/inspection-google.js in the
-//  main inspection app. Uses the API Key + OAuth Client ID entered
-//  in the connection drawer.
-//
-//  Drive folder structure expected:
-//    FLPS Inspection Reports/       ← PDF uploads go here
-//    FLPS Inspection History/       ← JSON inspection records
-//    FLPS Property Profiles/        ← per-property JSON
-//
-//  Sheets:  one Google Sheet named "FLPS Properties" with columns:
-//    A: property_id  B: name  C: address  D: city_state_zip
-//    E: contact_name  F: contact_email  G: client_company
-//    H: systems (JSON array)  I: notes
+//  GOOGLE AUTH & PROPERTY LOADING
+//  Uses shared infrastructure from inspection-google.js:
+//    accessToken, tokenClient, googleFetch(), loadSheet(),
+//    buildDropdown(), filterPropDropdown(), clearPropSearch()
+//  Hospital-specific overrides below: initGoogle (drawer UX),
+//  onPropertySelect (hospital field IDs), searchPreviousInspection.
 // ════════════════════════════════════════════════════════════════
 
-const GDrive = {
-  apiKey:       '',
-  clientId:     '',
-  accessToken:  '',
-  tokenExpiry:  0,
-  folderId_reports:  '',
-  folderId_history:  '',
-  folderId_profiles: '',
-  propertiesSheetId: '',
-  properties: [],        // [{id, name, address, ...}]
-  ready: false,
-};
-
-// ── Persist credentials across reloads ──────────────────────────
-function loadSavedCredentials() {
-  try {
-    const saved = JSON.parse(localStorage.getItem('flps_hosp_creds') || '{}');
-    if (saved.apiKey)   { document.getElementById('api-key').value   = saved.apiKey;   GDrive.apiKey   = saved.apiKey; }
-    if (saved.clientId) { document.getElementById('client-id').value = saved.clientId; GDrive.clientId = saved.clientId; }
-    if (saved.accessToken && saved.tokenExpiry > Date.now()) {
-      GDrive.accessToken = saved.accessToken;
-      GDrive.tokenExpiry = saved.tokenExpiry;
-    }
-  } catch(e) {}
-}
-
-function saveCredentials() {
-  localStorage.setItem('flps_hosp_creds', JSON.stringify({
-    apiKey:       GDrive.apiKey,
-    clientId:     GDrive.clientId,
-    accessToken:  GDrive.accessToken,
-    tokenExpiry:  GDrive.tokenExpiry,
-  }));
-}
-
-// ── Main entry point called by Connect button ────────────────────
-async function initGoogle() {
-  const apiKey   = document.getElementById('api-key').value.trim();
-  const clientId = document.getElementById('client-id').value.trim();
-
-  if (!apiKey || !clientId) {
-    showToast('Please enter both API Key and OAuth Client ID');
-    return;
-  }
-  GDrive.apiKey   = apiKey;
-  GDrive.clientId = clientId;
-
-  setConnStatus('warn', '⏳ Connecting…');
-  try {
-    await requestOAuthToken();
-    await ensureDriveFolders();
-    await loadProperties();
-    GDrive.ready = true;
-    setConnStatus('ok', '✓ Connected');
-    toggleDrawer(); // close drawer
-    saveCredentials();
-    showToast('✅ Google Drive connected');
-    populatePropertyDropdown();
-  } catch(e) {
-    setConnStatus('warn', 'Not connected');
-    showToast('❌ Connection failed: ' + (e.message || e));
-    console.error('Google init error:', e);
-  }
-}
-
+// ── Hospital connection status pill ─────────────────────────────
 function setConnStatus(state, label) {
   const el = document.getElementById('conn-status');
   el.textContent = label;
   el.className = 'conn-status-pill ' + state;
 }
 
-// ── OAuth2 token via Google Identity Services popup ──────────────
-function requestOAuthToken() {
-  return new Promise((resolve, reject) => {
-    if (GDrive.accessToken && GDrive.tokenExpiry > Date.now() + 60000) {
-      return resolve(GDrive.accessToken);
-    }
-    if (typeof google === 'undefined' || !google.accounts) {
-      return reject(new Error('Google Identity Services script not loaded'));
-    }
-    const tokenClient = google.accounts.oauth2.initTokenClient({
-      client_id: GDrive.clientId,
-      scope: [
-        'https://www.googleapis.com/auth/drive.file',
-        'https://www.googleapis.com/auth/drive.readonly',
-        'https://www.googleapis.com/auth/spreadsheets.readonly',
-      ].join(' '),
-      callback: (resp) => {
-        if (resp.error) return reject(new Error(resp.error));
-        GDrive.accessToken = resp.access_token;
-        GDrive.tokenExpiry = Date.now() + (resp.expires_in || 3600) * 1000;
-        resolve(resp.access_token);
-      },
-      error_callback: (err) => reject(new Error(err.message || 'OAuth error')),
-    });
-    tokenClient.requestAccessToken({ prompt: 'consent' });
-  });
-}
-
-// ── Low-level authenticated fetch helpers ───────────────────────
-async function driveGet(url) {
-  const sep = url.includes('?') ? '&' : '?';
-  const resp = await fetch(url + sep + 'key=' + GDrive.apiKey, {
-    headers: { Authorization: 'Bearer ' + GDrive.accessToken }
-  });
-  if (!resp.ok) throw new Error(`Drive GET failed ${resp.status}: ${await resp.text()}`);
-  return resp.json();
-}
-
-async function drivePost(url, body, method='POST', contentType='application/json') {
-  const resp = await fetch(url, {
-    method,
-    headers: {
-      Authorization: 'Bearer ' + GDrive.accessToken,
-      'Content-Type': contentType,
-    },
-    body: contentType === 'application/json' ? JSON.stringify(body) : body,
-  });
-  if (!resp.ok) throw new Error(`Drive ${method} failed ${resp.status}: ${await resp.text()}`);
-  return resp.json();
-}
-
-// ── Find or create a Drive folder by name under a parent ─────────
-async function findOrCreateFolder(name, parentId) {
-  const q = `name='${name}' and mimeType='application/vnd.google-apps.folder' and trashed=false` +
-            (parentId ? ` and '${parentId}' in parents` : '');
-  const list = await driveGet(`https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q)}&fields=files(id,name)`);
-  if (list.files && list.files.length > 0) return list.files[0].id;
-  // Create
-  const meta = { name, mimeType: 'application/vnd.google-apps.folder' };
-  if (parentId) meta.parents = [parentId];
-  const created = await drivePost('https://www.googleapis.com/drive/v3/files', meta);
-  return created.id;
-}
-
-// ── Ensure the three FLPS folders exist ─────────────────────────
-async function ensureDriveFolders() {
-  GDrive.folderId_reports  = await findOrCreateFolder('FLPS Inspection Reports',  null);
-  GDrive.folderId_history  = await findOrCreateFolder('FLPS Inspection History',  null);
-  GDrive.folderId_profiles = await findOrCreateFolder('FLPS Property Profiles',   null);
-}
-
-// ── Load properties from the "FLPS Properties" sheet ────────────
-async function loadProperties() {
-  // Find the spreadsheet
-  const q = `name='FLPS Properties' and mimeType='application/vnd.google-apps.spreadsheet' and trashed=false`;
-  const list = await driveGet(`https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q)}&fields=files(id,name)`);
-  if (!list.files || !list.files.length) {
-    GDrive.properties = [];
-    return; // no sheet yet — that's OK
-  }
-  GDrive.propertiesSheetId = list.files[0].id;
-  // Read values
-  const range = 'Sheet1!A2:I500';
-  const data  = await driveGet(
-    `https://sheets.googleapis.com/v4/spreadsheets/${GDrive.propertiesSheetId}/values/${range}`
-  );
-  GDrive.properties = (data.values || []).map(row => ({
-    id:          row[0] || '',
-    name:        row[1] || '',
-    address:     row[2] || '',
-    cityStateZip:row[3] || '',
-    contactName: row[4] || '',
-    contactEmail:row[5] || '',
-    company:     row[6] || '',
-    systems:     safeParseJSON(row[7], []),
-    notes:       row[8] || '',
-  })).filter(p => p.id);
-}
-
-function safeParseJSON(str, fallback) {
-  try { return JSON.parse(str); } catch(e) { return fallback; }
-}
-
-// ── Populate the property dropdown ──────────────────────────────
-function populatePropertyDropdown() {
-  const sel = document.getElementById('property-select');
-  sel.innerHTML = '<option value="">— Select a property —</option>';
-  GDrive.properties.forEach(p => {
-    const opt = document.createElement('option');
-    opt.value = p.id;
-    opt.textContent = p.name + (p.address ? ` — ${p.address}` : '');
-    sel.appendChild(opt);
-  });
-  // Show/update search if there are properties
-  if (GDrive.properties.length) {
-    document.getElementById('prop-search').placeholder = `🔍 Search ${GDrive.properties.length} properties…`;
-  }
-}
-
-// ── Property search filter ───────────────────────────────────────
-function filterPropDropdown(query) {
-  const sel   = document.getElementById('property-select');
-  const clear = document.getElementById('prop-search-clear');
-  clear.style.display = query ? 'block' : 'none';
-  const q = query.toLowerCase();
-  Array.from(sel.options).forEach(opt => {
-    if (!opt.value) { opt.style.display = 'block'; return; }
-    opt.style.display = opt.textContent.toLowerCase().includes(q) ? 'block' : 'none';
-  });
-}
-
-function clearPropSearch() {
-  document.getElementById('prop-search').value = '';
-  document.getElementById('prop-search-clear').style.display = 'none';
-  filterPropDropdown('');
-}
-
-// ── Auto-fill fields when a property is selected ─────────────────
-function onPropertySelect() {
-  const sel   = document.getElementById('property-select');
-  const propId = sel.value;
-  if (!propId) return;
-  const prop = GDrive.properties.find(p => p.id === propId);
-  if (!prop) return;
-  document.getElementById('property-name').value    = prop.name;
-  document.getElementById('service-address').value  = prop.address;
-  document.getElementById('city-state-zip').value   = prop.cityStateZip;
-  document.getElementById('primary-name').value     = prop.contactName;
-  document.getElementById('primary-email').value    = prop.contactEmail;
-  document.getElementById('client-company').value   = prop.company;
-  // Pre-select systems if stored
-  if (prop.systems && prop.systems.length) {
-    document.querySelectorAll('.sys-toggle').forEach(el => {
-      el.classList.toggle('active', prop.systems.includes(el.dataset.sys));
-    });
-    updateHospStartButton();
-  }
-  // Search Drive for previous inspection
-  searchPreviousInspection(propId);
-}
-
-// ── Search Drive for a previous inspection for this property ─────
-async function searchPreviousInspection(propId) {
-  if (!GDrive.ready || !GDrive.folderId_history) return;
-  const banner = document.getElementById('prev-insp-banner');
-  banner.style.display = 'none';
+// ── Connect button handler — overrides shared initGoogle ─────────
+// Uses shared tokenClient/accessToken/SCOPES/loadSheet from inspection-google.js
+// but keeps hospital's drawer UX and showToast.
+function initGoogle() {
+  const apiKey   = document.getElementById('api-key').value.trim();
+  const clientId = document.getElementById('client-id').value.trim();
+  if (!apiKey || !clientId) { showToast('Please enter both API Key and OAuth Client ID'); return; }
+  localStorage.setItem('flips_api_key',   apiKey);
+  localStorage.setItem('flips_client_id', clientId);
+  setConnStatus('warn', '⏳ Connecting…');
   try {
-    const q = `'${GDrive.folderId_history}' in parents and name contains '${propId}' and trashed=false`;
-    const list = await driveGet(
-      `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q)}&orderBy=createdTime desc&pageSize=5&fields=files(id,name,createdTime)`
+    tokenClient = google.accounts.oauth2.initTokenClient({
+      client_id: clientId,
+      scope: SCOPES,
+      callback: async (resp) => {
+        if (resp.error) { setConnStatus('warn', 'Not connected'); showToast('❌ Auth error: ' + resp.error); return; }
+        accessToken = resp.access_token;
+        localStorage.setItem('flips_access_token', accessToken);
+        localStorage.setItem('flips_token_expiry', Date.now() + 55 * 60 * 1000);
+        setConnStatus('ok', '✓ Connected');
+        toggleDrawer();
+        await loadSheet();
+        showToast('✅ Google connected');
+      },
+      error_callback: (err) => { setConnStatus('warn', 'Not connected'); showToast('OAuth error: ' + (err.message || err)); }
+    });
+    tokenClient.requestAccessToken({ prompt: '' });
+  } catch(e) { setConnStatus('warn', 'Not connected'); showToast('Connection failed: ' + e.message); }
+}
+
+// ── Property select — overrides shared onPropertySelect ──────────
+// Uses clientData populated by shared loadSheet()/buildDropdown().
+// Fills hospital-specific field IDs (primary-name, primary-email, etc.)
+function onPropertySelect() {
+  const propName = document.getElementById('property-select').value;
+  if (!propName || !clientData[propName]) return;
+  const d = clientData[propName];
+  const fill = (id, ...keys) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    for (const k of keys) {
+      const match = Object.keys(d).find(h => h.includes(k));
+      if (match && d[match]) { el.value = d[match]; return; }
+    }
+    el.value = '';
+  };
+  const addrKey  = Object.keys(d).find(h => h.includes('service address') || h.includes('address'));
+  const rawAddr  = addrKey ? (d[addrKey] || '') : '';
+  const addrParts = rawAddr.split(/\r\n|\r|\n|\u2028|\u2029/).map(s => s.trim()).filter(Boolean);
+  const pnEl = document.getElementById('property-name');
+  if (pnEl) pnEl.value = propName.split(/\r\n|\r|\n/)[0].trim() || propName;
+  const saEl  = document.getElementById('service-address');
+  const cszEl = document.getElementById('city-state-zip');
+  if (saEl)  saEl.value  = addrParts[0] || rawAddr;
+  if (addrParts.length >= 2 && cszEl) cszEl.value = addrParts[addrParts.length - 1];
+  else fill('city-state-zip', 'city', 'zip');
+  fill('client-company', 'management', 'client', 'company');
+  fill('primary-name',   'property manager', 'contact name');
+  fill('primary-email',  'contact email', 'email', 'e-mail');
+  const banner = document.getElementById('prev-insp-banner');
+  if (banner) banner.style.display = 'none';
+  updateHospStartButton();
+  if (accessToken) searchPreviousInspection(propName);
+}
+
+// ── Search Drive history folder for most recent hospital inspection ──
+async function searchPreviousInspection(propKey) {
+  const banner = document.getElementById('prev-insp-banner');
+  if (banner) banner.style.display = 'none';
+  try {
+    const folderRes  = await googleFetch(
+      `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(
+        `name='FLPS Inspection History' and mimeType='application/vnd.google-apps.folder' and trashed=false`
+      )}&fields=files(id)`
     );
-    if (!list.files || !list.files.length) return;
-    const latest = list.files[0];
-    // Download the JSON record
-    const rec = await driveGet(`https://www.googleapis.com/drive/v3/files/${latest.id}?alt=media`);
-    const date = rec.inspDate || latest.createdTime?.substring(0,10) || '—';
+    const folderJson = await folderRes.json();
+    if (!folderJson.files || !folderJson.files.length) return;
+    const histFolderId = folderJson.files[0].id;
+    const slug = propKey.replace(/[^a-zA-Z0-9]/g, '_').slice(0, 40);
+    const listRes  = await googleFetch(
+      `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(
+        `'${histFolderId}' in parents and name contains '${slug}' and trashed=false`
+      )}&orderBy=createdTime desc&pageSize=5&fields=files(id,name,createdTime)`
+    );
+    const listJson = await listRes.json();
+    if (!listJson.files || !listJson.files.length) return;
+    const latest = listJson.files[0];
+    const recRes  = await googleFetch(`https://www.googleapis.com/drive/v3/files/${latest.id}?alt=media`);
+    const rec = await recRes.json();
+    const date = rec.inspDate || latest.createdTime?.substring(0, 10) || '—';
     const insp = rec.inspectorName || rec.inspectorInitials || '—';
     const type = rec.reportType || '—';
-    // Show banner
-    document.getElementById('prev-insp-summary').textContent =
-      ` ${date}  |  ${insp}  |  ${type}`;
-    banner.style.display = 'block';
-    // Stash deficiencies for the prev defic step
+    const summary = document.getElementById('prev-insp-summary');
+    if (summary) summary.textContent = ` ${date}  |  ${insp}  |  ${type}`;
+    if (banner) banner.style.display = 'block';
     if (rec.deficiencies && rec.deficiencies.length) {
       H.prevDefic = rec.deficiencies;
-      // Show the prevdefic tab
       document.querySelectorAll('[data-hstep="prevdefic"]').forEach(t => t.style.display = 'flex');
     }
   } catch(e) {
     console.warn('Previous inspection search failed:', e.message);
-  }
-}
-
-// ── Upload PDF to Drive ──────────────────────────────────────────
-async function uploadPDFToDrive(pdfBlob, filename) {
-  if (!GDrive.ready || !GDrive.folderId_reports) return null;
-  const meta = JSON.stringify({ name: filename, parents: [GDrive.folderId_reports] });
-  const form = new FormData();
-  form.append('metadata', new Blob([meta], { type: 'application/json' }));
-  form.append('file', pdfBlob);
-  const resp = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
-    method: 'POST',
-    headers: { Authorization: 'Bearer ' + GDrive.accessToken },
-    body: form,
-  });
-  if (!resp.ok) throw new Error('PDF upload failed: ' + resp.status);
-  return resp.json();
-}
-
-// ── Save inspection JSON record to Drive ─────────────────────────
-async function saveInspectionRecord(record) {
-  if (!GDrive.ready || !GDrive.folderId_history) return null;
-  const propId = record.propertyId || 'unknown';
-  const dt     = (record.inspDate || new Date().toISOString().substring(0,10)).replace(/-/g,'');
-  const name   = `${propId}_${dt}_TJC.json`;
-  const blob   = new Blob([JSON.stringify(record, null, 2)], { type: 'application/json' });
-  const meta   = JSON.stringify({ name, parents: [GDrive.folderId_history] });
-  const form   = new FormData();
-  form.append('metadata', new Blob([meta], { type: 'application/json' }));
-  form.append('file', blob);
-  const resp = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
-    method: 'POST',
-    headers: { Authorization: 'Bearer ' + GDrive.accessToken },
-    body: form,
-  });
-  if (!resp.ok) throw new Error('Record save failed: ' + resp.status);
-  return resp.json();
-}
-
-// ── Build inspection record object from current form state ───────
-function buildInspectionRecord() {
-  return {
-    propertyId:       document.getElementById('property-select')?.value || '',
-    propertyName:     fv('property-name'),
-    serviceAddress:   fv('service-address'),
-    cityStateZip:     fv('city-state-zip'),
-    inspDate:         fv('insp-date'),
-    reportType:       H.reportType,
-    inspectorName:    fv('h-sig-name'),
-    inspectorInitials:fv('inspector-initials'),
-    jobNumber:        fv('job-number'),
-    overallStatus:    H.overallStatus,
-    deficiencies:     Array.from(document.querySelectorAll('#h-defic-tbody tr')).map(row => {
-      const ins = row.querySelectorAll('input');
-      return { text: ins[0]?.value||'', severity: row.querySelector('select')?.value||'' };
-    }).filter(d => d.text),
-    batteries:        Array.from(document.querySelectorAll('#h-battery-tbody tr')).map(row => {
-      const ins = row.querySelectorAll('input');
-      return { size: ins[0]?.value||'', type: ins[1]?.value||'', count: ins[2]?.value||'', locations: ins[3]?.value||'' };
-    }),
-    notes:            Array.from(document.querySelectorAll('#h-notes-tbody tr')).map(row =>
-      row.querySelector('input')?.value||'').filter(Boolean),
-    savedAt: new Date().toISOString(),
-  };
-}
-
-// ── Patched hospSaveAndDownload — now also saves to Drive ─────────
-async function hospSaveAndDownload() {
-  const sigWarn = document.getElementById('h-sig-warning');
-  if (!H.inspSig) {
-    sigWarn.textContent = 'Please sign before generating the report.';
-    sigWarn.classList.add('visible');
-    return;
-  }
-  sigWarn.classList.remove('visible');
-  saveDraft();
-
-  const status = document.getElementById('h-pdf-status');
-  status.textContent = '⏳ Generating PDF…';
-
-  try {
-    // 1) Generate PDF
-    const pdfDoc  = buildHospPDF(true); // returns doc when second arg truthy
-    const pdfBlob = pdfDoc.output('blob');
-    const propName = fv('property-name').replace(/\s+/g,'_') || 'Hospital';
-    const dt       = fv('insp-date').replace(/-/g,'') || new Date().toISOString().substring(0,10).replace(/-/g,'');
-    const filename = `FLPS_TJC_${propName}_${dt}.pdf`;
-
-    // 2) Download to device
-    pdfDoc.save(filename);
-    status.textContent = '✅ PDF downloaded.';
-
-    // 3) Upload to Drive (non-blocking — show progress)
-    if (GDrive.ready) {
-      status.textContent += ' ⏳ Saving to Drive…';
-      try {
-        const [pdfFile, recFile] = await Promise.all([
-          uploadPDFToDrive(pdfBlob, filename),
-          saveInspectionRecord(buildInspectionRecord()),
-        ]);
-        status.textContent = `✅ PDF downloaded & saved to Drive (${filename})`;
-      } catch(driveErr) {
-        status.textContent += ` ⚠ Drive save failed: ${driveErr.message}`;
-      }
-    }
-    document.getElementById('h-new-insp-btn-wrap').style.display = 'block';
-  } catch(e) {
-    status.textContent = '❌ Error: ' + e.message;
-    console.error(e);
   }
 }
 function toggleSys(el) { el.classList.toggle('active'); updateHospStartButton(); }
@@ -2666,6 +2286,7 @@ function goStep(n) {
 const HOSP_STEPS = ['prevdefic','panel','eockey','sysoverview','fa-results','sp-results','device-detail','extinguish','defic','sign'];
 // goHospStep and showDeviceSheet — defined fully below with done-state tracking
 function startHospInspection() {
+  activeInspectionSystem = 'hospital'; // enables draftKey() and saveDraftToDrive()
   [1,2,4].forEach(i => document.getElementById('step-'+i).style.display='none');
   document.getElementById('step-nav').style.display = 'none';
   document.getElementById('hosp-step-nav').style.display = 'flex';
@@ -2689,7 +2310,7 @@ function initHospData() {
   // Populate EOC checklist table
   const tbody = document.getElementById('h-eoc-checklist-tbody');
   if(tbody && !tbody.children.length) {
-    EOC_CHECKLIST.forEach(row => {
+    EOC_CHECKLIST.forEach(row => {  // defined in inspection-config.js
       const tr = document.createElement('tr');
       tr.innerHTML = `<td style="font-size:.7rem;color:var(--slate);">${row.std}</td><td>${row.item}</td><td style="font-size:.75rem;">${row.freq}</td><td><input type="date" style="border:1px solid var(--border);border-radius:4px;padding:3px 5px;font-size:.75rem;font-family:inherit;"></td>`;
       tbody.appendChild(tr);
@@ -2698,7 +2319,7 @@ function initHospData() {
   // Populate FA key sheet
   const faBody = document.getElementById('h-fa-key-tbody');
   if(faBody && !faBody.children.length) {
-    FA_KEY_DEVICES.forEach(d => {
+    HOSP_FA_KEY_DEVICES.forEach(d => {  // defined in inspection-config.js
       const tr = document.createElement('tr');
       tr.innerHTML = `<td class="left" style="font-weight:600;">${d.device} <span style="font-size:.7rem;color:var(--slate);">(${d.key})</span></td>
         <td><input type="number" min="0" placeholder="0" style="width:55px;" oninput="updateResultSummary()"></td>
@@ -2712,7 +2333,7 @@ function initHospData() {
   // Populate SP key sheet
   const spBody = document.getElementById('h-sp-key-tbody');
   if(spBody && !spBody.children.length) {
-    SP_KEY_DEVICES.forEach(d => {
+    HOSP_SP_KEY_DEVICES.forEach(d => {  // defined in inspection-config.js
       const tr = document.createElement('tr');
       tr.innerHTML = `<td class="left" style="font-weight:600;">${d.device} <span style="font-size:.7rem;color:var(--slate);">(${d.key})</span></td>
         <td><input type="number" min="0" placeholder="0" style="width:55px;"></td>
@@ -2726,7 +2347,7 @@ function initHospData() {
   // Populate recurring table
   const recBody = document.getElementById('h-recurring-tbody');
   if(recBody && !recBody.children.length) {
-    RECURRING_ROWS.forEach(row => {
+    HOSP_RECURRING_ROWS.forEach(row => {  // defined in inspection-config.js
       const tr = document.createElement('tr');
       tr.innerHTML = `<td style="font-weight:600;">${row[0]}</td><td><input type="text" placeholder="e.g. JULY" style="width:100%"></td><td style="font-weight:600;">${row[2]}</td><td><input type="text" placeholder="e.g. JAN" style="width:100%"></td>`;
       recBody.appendChild(tr);
@@ -2905,8 +2526,8 @@ function getDeviceCols(sheet, type) {
   const typ = `<td><input type="text" value="${type}" style="width:100%;"></td>`;
   const loc = `<td><input type="text" placeholder="Location…" style="width:100%;"></td>`;
   const addr = `<td><input type="text" placeholder="L1-M001" style="width:100%;"></td>`;
-  const vis = `<td><select style="width:100%;"><option value="">—</option><option>PASS</option><option>FAIL</option><option>NT</option><option>NF</option></select></td>`;
-  const func = `<td><select style="width:100%;"><option value="">—</option><option>PASS</option><option>FAIL</option><option>NT</option><option>NF</option></select></td>`;
+  const vis = `<td><select style="width:100%;" onchange="rebuildHospDeficList()"><option value="">—</option><option>PASS</option><option>FAIL</option><option>NT</option><option>NF</option></select></td>`;
+  const func = `<td><select style="width:100%;" onchange="rebuildHospDeficList()"><option value="">—</option><option>PASS</option><option>FAIL</option><option>NT</option><option>NF</option></select></td>`;
   const note = `<td><input type="text" style="width:100%;"></td>`;
   const del = `<td><button class="del-btn" onclick="this.closest('tr').remove();updateCount('${sheet}')">✕</button></td>`;
 
@@ -2920,7 +2541,7 @@ function getDeviceCols(sheet, type) {
     case 'standpipe': return flr+typ+loc+vis+`<td><input type="text" placeholder="UNK" style="width:100%;"></td><td><input type="number" placeholder="6" style="width:100%;"></td>`+note+del;
     case 'valves':    return flr+typ+loc+vis+func+`<td><input type="text" placeholder="OS&Y" style="width:100%;"></td>`+note+del;
     case 'gauges':    return flr+typ+loc+vis+func+`<td><input type="text" placeholder="2023" style="width:100%;"></td>`+note+del;
-    case 'hydraulic': return flr+typ+loc+vis+`<td><select style="width:100%;"><option value="">—</option><option>PASS</option><option>FAIL</option></select></td>`+note+del;
+    case 'hydraulic': return flr+typ+loc+vis+`<td><select style="width:100%;" onchange="rebuildHospDeficList()"><option value="">—</option><option>PASS</option><option>FAIL</option></select></td>`+note+del;
     case 'ahu':       return flr+typ+loc+vis+func+note+del;
     default:          return flr+typ+loc+addr+vis+func+note+del;
   }
@@ -3079,11 +2700,12 @@ function addHDeficRow() {
   tr.innerHTML = `<td>${n}</td>
     <td><input type="text" style="width:100%" placeholder="Describe deficiency and proposed solution…"></td>
     <td><input type="text" style="width:100%"></td>
-    <td><select style="width:100%;"><option value="">—</option><option>Non Critical</option><option>Critical</option><option>Life Safety</option></select></td>
+    <td><select style="width:100%;">${(typeof HOSP_SEV_OPTS !== 'undefined' ? HOSP_SEV_OPTS : ['','Life Safety','Critical','Non Critical']).map(o => `<option>${o}</option>`).join('')}</select></td>
     <td><input type="date" style="width:100%"></td>
     <td><input type="text" style="width:100%"></td>
-    <td><button class="del-btn" onclick="this.closest('tr').remove()">✕</button></td>`;
+    <td><button class="del-btn" onclick="this.closest('tr').remove();rebuildHospDeficList()">✕</button></td>`;
   tbody.appendChild(tr);
+  rebuildHospDeficList();
 }
 
 function addHNoteRow() {
@@ -3281,57 +2903,7 @@ function syncSpDefic(id) {
   rebuildHospDeficList();
 }
 
-// ════════════════════════════════════════════════════════════════
-//  DEFICIENCY LIST SYNC — collects FAILs from all device sheets
-// ════════════════════════════════════════════════════════════════
-function rebuildHospDeficList() {
-  const list   = [];
-  // From sprinkler checklist N answers
-  Object.values(SP_CHECKLIST).flat().forEach(item => {
-    const noteEl = document.getElementById('sp-defic-note-' + item.id);
-    const rowEl  = document.querySelector(`[data-id="${item.id}"]`);
-    if (rowEl && rowEl.dataset.val === 'N' && noteEl && noteEl.value.trim()) {
-      list.push(noteEl.value.trim());
-    }
-  });
-  // From explicit defic table
-  document.querySelectorAll('#h-defic-tbody tr td:nth-child(2) input').forEach(inp => {
-    if (inp.value.trim()) list.push(inp.value.trim());
-  });
-  const pill = document.getElementById('h-defic-count-pill');
-  const listEl = document.getElementById('h-defic-list');
-  const banner = document.getElementById('h-defic-summary');
-  if (pill) pill.textContent = list.length;
-  if (listEl) listEl.innerHTML = list.map(t => `<div class="defic-item">⚠ ${t}</div>`).join('');
-  if (banner) banner.classList.toggle('has-defics', list.length > 0);
-}
-
-function rebuildHospDeficList() {
-  const list   = [];
-  // From sprinkler checklist N answers (all sections including dry/5yr)
-  const allSpItems = [
-    ...Object.values(SP_CHECKLIST).flat(),
-    ...SP_DRY_ITEMS,
-    ...SP_5YR_ITEMS,
-  ];
-  allSpItems.forEach(item => {
-    const noteEl = document.getElementById('sp-defic-note-' + item.id);
-    const rowEl  = document.querySelector(`[data-id="${item.id}"]`);
-    if (rowEl && rowEl.dataset.val === 'N' && noteEl && noteEl.value.trim()) {
-      list.push(noteEl.value.trim());
-    }
-  });
-  // From explicit defic table rows
-  document.querySelectorAll('#h-defic-tbody tr td:nth-child(2) input').forEach(inp => {
-    if (inp.value.trim()) list.push(inp.value.trim());
-  });
-  const pill   = document.getElementById('h-defic-count-pill');
-  const listEl = document.getElementById('h-defic-list');
-  const banner = document.getElementById('h-defic-summary');
-  if (pill)   pill.textContent = list.length;
-  if (listEl) listEl.innerHTML = list.map(t => `<div class="defic-item">⚠ ${t}</div>`).join('');
-  if (banner) banner.classList.toggle('has-defics', list.length > 0);
-}
+// rebuildHospDeficList is defined in js/inspection-hospital-deficiencies.js
 
 // ════════════════════════════════════════════════════════════════
 //  EXTINGUISHER SUMMARY AUTO-POPULATION
@@ -3525,7 +3097,7 @@ document.addEventListener('scroll', () => { _lastScrollY = window.scrollY; }, { 
 const DRAFT_KEY = 'flps_hosp_draft';
 
 function collectFormState() {
-  const state = { ts: Date.now(), fields: {}, systems: [], recurring: [], notes: [], defic: [], batteries: [] };
+  const state = { ts: Date.now(), savedAt: new Date().toISOString(), fields: {}, systems: [], recurring: [], notes: [], defic: [], batteries: [] };
   // Simple text/select/date inputs
   document.querySelectorAll('#app input[id], #app select[id], #app textarea[id]').forEach(el => {
     if (el.id) state.fields[el.id] = el.value;
@@ -3546,6 +3118,10 @@ function saveDraft() {
     const state = collectFormState();
     localStorage.setItem(DRAFT_KEY, JSON.stringify(state));
     showToast('💾 Draft saved');
+    // Background Drive backup — uses shared saveDraftToDrive from inspection-drafts.js
+    if (typeof saveDraftToDrive === 'function') {
+      saveDraftToDrive(state, DRAFT_KEY).catch(() => {});
+    }
   } catch(e) {
     showToast('Could not save draft: ' + e.message);
   }
@@ -3592,6 +3168,10 @@ function drawDataUrlToCanvas(canvasId, dataUrl) {
 
 function discardDraft() {
   localStorage.removeItem(DRAFT_KEY);
+  // Also clear Drive backup — uses shared clearDraftFromDrive from inspection-drafts.js
+  if (typeof clearDraftFromDrive === 'function') {
+    clearDraftFromDrive(DRAFT_KEY).catch(() => {});
+  }
   showToast('Draft discarded');
 }
 
@@ -4675,20 +4255,18 @@ document.addEventListener('DOMContentLoaded', () => {
   // Update start button
   updateHospStartButton();
 
-  // Load saved Google credentials and silently reconnect if token still valid
-  loadSavedCredentials();
-  if (GDrive.apiKey && GDrive.clientId && GDrive.accessToken && GDrive.tokenExpiry > Date.now() + 60000) {
-    ensureDriveFolders()
-      .then(() => loadProperties())
-      .then(() => {
-        GDrive.ready = true;
-        setConnStatus('ok', '✓ Connected');
-        populatePropertyDropdown();
-      })
-      .catch(() => {
-        GDrive.accessToken = '';
-        setConnStatus('warn', 'Not connected');
-      });
+  // Restore saved credentials and silently reconnect if token still valid
+  // Uses same localStorage keys as inspection-google.js (flips_api_key, etc.)
+  const _savedApiKey   = localStorage.getItem('flips_api_key');
+  const _savedClientId = localStorage.getItem('flips_client_id');
+  const _savedToken    = localStorage.getItem('flips_access_token');
+  const _savedExpiry   = parseInt(localStorage.getItem('flips_token_expiry') || '0');
+  if (_savedApiKey)   document.getElementById('api-key').value   = _savedApiKey;
+  if (_savedClientId) document.getElementById('client-id').value = _savedClientId;
+  if (_savedToken && _savedExpiry > Date.now() + 60000) {
+    accessToken = _savedToken;
+    setConnStatus('ok', '✓ Connected');
+    loadSheet();
   }
 
   // Ensure draft modal exists and check for saved drafts
