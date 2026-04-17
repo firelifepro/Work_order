@@ -69,7 +69,7 @@ async function loadSheet(forceRefresh = false) {
       }
     } catch(_) {}
   }
-  document.getElementById('prop-loading').style.display = 'block';
+  document.getElementById('prop-loading')?.style && (document.getElementById('prop-loading').style.display = 'block');
   try {
     const metaRes = await googleFetch(`https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}?fields=sheets.properties`);
     if (!metaRes.ok) throw new Error('Sheet error ' + metaRes.status);
@@ -97,7 +97,7 @@ async function loadSheet(forceRefresh = false) {
   } catch(e) {
     setStatus('⚠ ' + e.message, 'err');
   } finally {
-    document.getElementById('prop-loading').style.display = 'none';
+    document.getElementById('prop-loading')?.style && (document.getElementById('prop-loading').style.display = 'none');
   }
 }
 

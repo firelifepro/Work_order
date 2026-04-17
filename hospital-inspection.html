@@ -2217,8 +2217,16 @@ function onPropertySelect() {
   fill('primary-email',  'contact email', 'email', 'e-mail');
   const banner = document.getElementById('prev-insp-banner');
   if (banner) banner.style.display = 'none';
+
+  // Set account number for per-property draft keys (shared _currentPropertyAcct from inspection-config.js)
+  const acctHeader = Object.keys(d).find(h => h.includes('acct') || h.includes('account'));
+  _currentPropertyAcct = (acctHeader && d[acctHeader]) ? d[acctHeader].trim() : '';
+
   updateHospStartButton();
   if (accessToken) searchPreviousInspection(propName);
+
+  // Check for a saved draft for this specific property now that we know who it is
+  checkForDraft();
 }
 
 // ── Search Drive history folder for most recent hospital inspection ──
@@ -3094,7 +3102,12 @@ document.addEventListener('scroll', () => { _lastScrollY = window.scrollY; }, { 
 // ════════════════════════════════════════════════════════════════
 //  DRAFT — localStorage save / restore
 // ════════════════════════════════════════════════════════════════
-const DRAFT_KEY = 'flps_hosp_draft';
+// Per-property draft key — uses shared draftKey() which combines _currentPropertyAcct + system.
+// Falls back to a static key if called before a property is selected.
+function hospDraftKey() {
+  const propKey = (_currentPropertyAcct || '').replace(/[^a-zA-Z0-9_-]/g, '_');
+  return propKey ? `flips_draft_${propKey}_hospital` : 'flps_hosp_draft_unknown';
+}
 
 function collectFormState() {
   const state = { ts: Date.now(), savedAt: new Date().toISOString(), fields: {}, systems: [], recurring: [], notes: [], defic: [], batteries: [] };
@@ -3116,11 +3129,11 @@ function collectFormState() {
 function saveDraft() {
   try {
     const state = collectFormState();
-    localStorage.setItem(DRAFT_KEY, JSON.stringify(state));
+    localStorage.setItem(hospDraftKey(), JSON.stringify(state));
     showToast('💾 Draft saved');
     // Background Drive backup — uses shared saveDraftToDrive from inspection-drafts.js
     if (typeof saveDraftToDrive === 'function') {
-      saveDraftToDrive(state, DRAFT_KEY).catch(() => {});
+      saveDraftToDrive(state, hospDraftKey()).catch(() => {});
     }
   } catch(e) {
     showToast('Could not save draft: ' + e.message);
@@ -3129,7 +3142,7 @@ function saveDraft() {
 
 function loadDraft() {
   try {
-    const raw = localStorage.getItem(DRAFT_KEY);
+    const raw = localStorage.getItem(hospDraftKey());
     if (!raw) return false;
     const state = JSON.parse(raw);
     // Restore simple fields
@@ -3167,10 +3180,10 @@ function drawDataUrlToCanvas(canvasId, dataUrl) {
 }
 
 function discardDraft() {
-  localStorage.removeItem(DRAFT_KEY);
+  localStorage.removeItem(hospDraftKey());
   // Also clear Drive backup — uses shared clearDraftFromDrive from inspection-drafts.js
   if (typeof clearDraftFromDrive === 'function') {
-    clearDraftFromDrive(DRAFT_KEY).catch(() => {});
+    clearDraftFromDrive(hospDraftKey()).catch(() => {});
   }
   showToast('Draft discarded');
 }
@@ -3193,7 +3206,7 @@ function startNewHospInspection() {
 // ════════════════════════════════════════════════════════════════
 function checkForDraft() {
   try {
-    const raw = localStorage.getItem(DRAFT_KEY);
+    const raw = localStorage.getItem(hospDraftKey());
     if (!raw) return;
     const state = JSON.parse(raw);
     const age = Math.round((Date.now() - state.ts) / 60000);
@@ -4390,9 +4403,8 @@ document.addEventListener('DOMContentLoaded', () => {
     loadSheet();
   }
 
-  // Ensure draft modal exists and check for saved drafts
+  // Ensure draft modal DOM is ready (check happens in onPropertySelect, not here)
   ensureDraftModal();
-  checkForDraft();
 
   // Auto-save draft every 2 minutes
   setInterval(() => {
