@@ -91,6 +91,29 @@ function rebuildHospDeficList() {
     }
   });
 
+  // ── 4. Elevator recall banks ──────────────────────────────────────────────
+  document.querySelectorAll('#h-elevator-banks .h-elevator-bank').forEach(bank => {
+    const loc = Array.from(bank.querySelectorAll('.data-field input[type="text"]'))[1]?.value?.trim() || '';
+    bank.querySelectorAll('select[data-elev-which]').forEach(sel => {
+      if (sel.value !== 'FAIL') return;
+      const which = sel.getAttribute('data-elev-which');
+      const note  = bank.querySelector(`.elev-note-row[data-for="${which}"] input`)?.value?.trim() || '';
+      const label = which === 'primary' ? 'Primary Operational' : 'Secondary Operational';
+      const desc  = `Elevator Recall — ${label}${loc ? ' ' + loc : ''}${note ? ': ' + note : ''}`;
+      list.push({ text: desc, source: 'Elevator Recall' });
+    });
+  });
+
+  // ── 5. Annunciator cards ──────────────────────────────────────────────────
+  document.querySelectorAll('#h-annunciator-grid .h-ann-card').forEach(card => {
+    const sel = card.querySelector('select[data-ann-pf]');
+    if (sel?.value !== 'FAIL') return;
+    const loc  = card.querySelectorAll('.data-field input[type="text"]')[2]?.value?.trim() || '';
+    const note = card.querySelector('input[data-ann-note]')?.value?.trim() || '';
+    const desc = `Annunciator${loc ? ' — ' + loc : ''}${note ? ': ' + note : ''}`;
+    list.push({ text: desc, source: 'Annunciator' });
+  });
+
   // ── Update DOM ────────────────────────────────────────────────────────────
   // Write auto-detected deficiencies as editable rows in the main defic table.
   // Rows marked data-auto are replaced on every call; manual rows are preserved.

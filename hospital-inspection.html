@@ -1458,6 +1458,7 @@ canvas#cust-sig-canvas, canvas#sig-canvas {
                 <th style="width:65px;">(L) Batt Load %</th><th style="width:65px;">(R) Batt Load %</th>
                 <th style="width:50px;">SPVSD?</th><th style="width:70px;">Pass/Fail</th>
                 <th style="width:70px;">Circuit Style</th>
+                <th>Note</th>
                 <th style="width:30px;"></th>
               </tr>
             </thead>
@@ -1575,7 +1576,7 @@ canvas#cust-sig-canvas, canvas#sig-canvas {
         <div class="card-header"><span class="icon">🔩</span><span>Sprinkler Spare Head Box(es) — LS 02.01.35 EP 14</span></div>
         <div class="card-body" style="overflow-x:auto;">
           <table class="dyn-table">
-            <thead><tr><th style="width:40px;">Floor</th><th style="width:60px;">Type</th><th>Location</th><th style="width:60px;">Visual</th><th style="width:70px;">Head Count</th><th style="width:60px;">Head Type</th><th style="width:60px;">Temp °F</th><th style="width:60px;">Response</th><th style="width:30px;">Note</th><th style="width:30px;"></th></tr></thead>
+            <thead><tr><th style="width:40px;">Floor</th><th style="width:70px;">Type</th><th>Location</th><th style="width:70px;">Head Count</th><th style="width:70px;">Head Type</th><th style="width:60px;">Temp °F</th><th style="width:70px;">Response</th><th style="width:60px;">Visual</th><th>Note</th><th style="width:30px;"></th></tr></thead>
             <tbody id="h-spare-heads-tbody"></tbody>
           </table>
           <button class="add-row-btn" onclick="addHSpareHeadRow()">+ Add Spare Head Entry</button>
@@ -2653,8 +2654,8 @@ function addHOffPremRow() {
     <td data-label="Signals Sent"><input type="text" style="width:100%" placeholder="HH:MM:SS"></td>
     <td data-label="Signals Received"><input type="text" style="width:100%" placeholder="HH:MM:SS"></td>
     <td data-label="Time Online"><input type="time" style="width:100%"></td>
-    <td data-label="Pass/Fail"><select style="width:100%;"><option>PASS</option><option>FAIL</option></select></td>
-    <td data-label="Note"><input type="text" style="width:100%"></td>
+    <td data-label="Pass/Fail"><select style="width:100%;" onchange="onDeviceSelectChange(this)"><option>PASS</option><option>FAIL</option></select></td>
+    <td data-label="Note"><input type="text" style="width:100%" oninput="rebuildHospDeficList()"></td>
     <td data-label=""><button class="del-btn" onclick="this.closest('tr').remove()">✕</button></td>`;
   tbody.appendChild(tr);
 }
@@ -2663,21 +2664,39 @@ function addHElevatorBank() {
   const container = document.getElementById('h-elevator-banks');
   const n = container.children.length + 1;
   const div = document.createElement('div');
+  div.className = 'h-elevator-bank';
   div.style.cssText = 'background:white;border:1.5px solid var(--border);border-radius:8px;padding:12px;margin-bottom:10px;';
   div.innerHTML = `<div style="font-size:.8rem;font-weight:700;margin-bottom:8px;color:var(--hosp);">Elevator Bank ${n}</div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-      <div class="data-field"><label>Month/Year</label><input type="text" placeholder="07/24"></div>
-      <div class="data-field"><label>Location / Bank #</label><input type="text" placeholder="Bank ${n}"></div>
-      <div class="data-field"><label>Primary Recall Floor</label><input type="text" placeholder="1ST"></div>
-      <div class="data-field"><label>Primary Operational?</label><select><option>PASS</option><option>FAIL</option></select></div>
-      <div class="data-field"><label>Primary Device Used</label><input type="text" placeholder="Top of Shaft / Fire Fighter Recall"></div>
-      <div class="data-field"><label>Secondary Recall Floor</label><input type="text" placeholder="BSMT"></div>
-      <div class="data-field"><label>Secondary Operational?</label><select><option>PASS</option><option>FAIL</option></select></div>
-      <div class="data-field"><label>Secondary Device Used</label><input type="text" placeholder="Top of Shaft / Fire Fighter Recall"></div>
+      <div class="data-field"><label>Month/Year</label><input type="text" placeholder="07/24…"></div>
+      <div class="data-field"><label>Location / Bank #</label><input type="text" placeholder="Bank ${n}…"></div>
+      <div class="data-field"><label>Primary Recall Floor</label><input type="text" placeholder="1ST…"></div>
+      <div class="data-field"><label>Primary Operational?</label><select data-elev-which="primary" onchange="onElevatorSelectChange(this)"><option>PASS</option><option>FAIL</option></select></div>
+      <div class="data-field"><label>Primary Device Used</label><input type="text" placeholder="Top of Shaft…"></div>
+      <div class="data-field elev-note-row" data-for="primary" style="display:none;"><label>Primary Note</label><input type="text" placeholder="Deficiency note…" oninput="rebuildHospDeficList()"></div>
+      <div class="data-field"><label>Secondary Recall Floor</label><input type="text" placeholder="BSMT…"></div>
+      <div class="data-field"><label>Secondary Operational?</label><select data-elev-which="secondary" onchange="onElevatorSelectChange(this)"><option>PASS</option><option>FAIL</option></select></div>
+      <div class="data-field"><label>Secondary Device Used</label><input type="text" placeholder="Top of Shaft…"></div>
+      <div class="data-field elev-note-row" data-for="secondary" style="display:none;"><label>Secondary Note</label><input type="text" placeholder="Deficiency note…" oninput="rebuildHospDeficList()"></div>
     </div>
-    <button class="del-btn" onclick="this.closest('div').remove();updateHElevCount()" style="margin-top:6px;">✕ Remove Bank</button>`;
+    <button class="del-btn" onclick="this.closest('.h-elevator-bank').remove();updateHElevCount()" style="margin-top:6px;">✕ Remove Bank</button>`;
   container.appendChild(div);
   document.getElementById('h-elev-count').textContent = container.children.length;
+}
+
+function onElevatorSelectChange(sel) {
+  const which = sel.getAttribute('data-elev-which');
+  const bank = sel.closest('.h-elevator-bank');
+  const noteRow = bank?.querySelector(`.elev-note-row[data-for="${which}"]`);
+  const noteInp = noteRow?.querySelector('input');
+  if (sel.value === 'FAIL') {
+    if (noteRow) noteRow.style.display = 'block';
+    if (noteInp) { noteInp.classList.add('fail-note-required'); noteInp.focus(); }
+  } else {
+    if (noteRow) noteRow.style.display = 'none';
+    if (noteInp) noteInp.classList.remove('fail-note-required');
+  }
+  rebuildHospDeficList();
 }
 function updateHElevCount() {
   document.getElementById('h-elev-count').textContent = document.getElementById('h-elevator-banks').children.length;
@@ -2697,8 +2716,9 @@ function addHSubpanelRow() {
     <td data-label="(L) Batt %"><input type="number" placeholder="100…" step="0.01" style="width:100%"></td>
     <td data-label="(R) Batt %"><input type="number" placeholder="100…" step="0.01" style="width:100%"></td>
     <td data-label="SPVSD?"><input type="text" placeholder="—…" style="width:100%"></td>
-    <td data-label="Pass/Fail"><select style="width:100%;"><option value="">—</option><option>PASS</option><option>FAIL</option></select></td>
+    <td data-label="Pass/Fail"><select style="width:100%;" onchange="onDeviceSelectChange(this)"><option value="">—</option><option>PASS</option><option>FAIL</option></select></td>
     <td data-label="Circuit Style"><input type="text" placeholder="SPADE…" style="width:100%"></td>
+    <td data-label="Note"><input type="text" style="width:100%" oninput="rebuildHospDeficList()"></td>
     <td data-label=""><button class="del-btn" onclick="this.closest('tr').remove();updateHSubpanelCount()">✕</button></td>`;
   tbody.appendChild(tr);
   updateHSubpanelCount();
@@ -2711,13 +2731,14 @@ function addHAnnunciatorCard() {
   const grid = document.getElementById('h-annunciator-grid');
   const n = grid.children.length + 1;
   const div = document.createElement('div');
+  div.className = 'h-ann-card';
   div.style.cssText = 'background:white;border:1.5px solid var(--border);border-radius:8px;padding:10px;';
   div.innerHTML = `<div style="font-size:.75rem;font-weight:700;color:var(--hosp);margin-bottom:6px;">Annunciator ${n}</div>
-    <div class="data-field" style="margin-bottom:5px;"><label>Make</label><input type="text" placeholder="Notifier"></div>
-    <div class="data-field" style="margin-bottom:5px;"><label>Model</label><input type="text" placeholder="LCD 80"></div>
+    <div class="data-field" style="margin-bottom:5px;"><label>Make</label><input type="text" placeholder="Notifier…"></div>
+    <div class="data-field" style="margin-bottom:5px;"><label>Model</label><input type="text" placeholder="LCD 80…"></div>
     <div class="data-field" style="margin-bottom:5px;"><label>Location</label><input type="text"></div>
-    <div class="data-field" style="margin-bottom:5px;"><label>Pass/Fail</label><select><option value="">—</option><option>PASS</option><option>FAIL</option></select></div>
-    <div class="data-field"><label>Notes</label><input type="text"></div>
+    <div class="data-field" style="margin-bottom:5px;"><label>Pass/Fail</label><select data-ann-pf onchange="onAnnunciatorSelectChange(this)"><option value="">—</option><option>PASS</option><option>FAIL</option></select></div>
+    <div class="data-field"><label>Notes</label><input type="text" data-ann-note oninput="rebuildHospDeficList()"></div>
     <button class="del-btn" onclick="this.closest('div[style]').remove();updateHAnnCount()" style="margin-top:6px;">✕</button>`;
   grid.appendChild(div);
   document.getElementById('h-annunciator-count').textContent = grid.children.length;
@@ -2726,21 +2747,45 @@ function updateHAnnCount() {
   document.getElementById('h-annunciator-count').textContent = document.getElementById('h-annunciator-grid').children.length;
 }
 
+function onAnnunciatorSelectChange(sel) {
+  const card = sel.closest('.h-ann-card');
+  const noteInp = card?.querySelector('input[data-ann-note]');
+  if (sel.value === 'FAIL') {
+    if (noteInp) { noteInp.classList.add('fail-note-required'); if (!noteInp.value) noteInp.placeholder = 'Deficiency note…'; noteInp.focus(); }
+  } else {
+    if (noteInp) noteInp.classList.remove('fail-note-required');
+  }
+  rebuildHospDeficList();
+}
+
 function addHSpareHeadRow() {
   const tbody = document.getElementById('h-spare-heads-tbody');
   const tr = document.createElement('tr');
   tr.innerHTML = `
     <td data-label="Floor"><input type="text" style="width:100%" value="1"></td>
-    <td data-label="Type"><input type="text" placeholder="SHB…" style="width:100%"></td>
+    <td data-label="Type"><select style="width:100%;" onchange="updateHSpareHeadCounts()"><option>SHB</option><option>PENDT</option><option>UPRHT</option><option>SDWAL</option><option>CNCLD</option></select></td>
     <td data-label="Location"><input type="text" placeholder="Pump Room…" style="width:100%"></td>
-    <td data-label="Visual"><select style="width:100%;"><option>PASS</option><option>FAIL</option></select></td>
     <td data-label="Head Count"><input type="number" style="width:100%"></td>
     <td data-label="Head Type"><select style="width:100%;"><option value="">—</option><option>PENDT</option><option>UPRHT</option><option>SDWAL</option><option>CNCLD</option></select></td>
-    <td data-label="Temp °F"><input type="number" placeholder="155…" style="width:100%"></td>
+    <td data-label="Temp °F"><input type="text" placeholder="155…" style="width:100%"></td>
     <td data-label="Response"><select style="width:100%;"><option value="">—</option><option>QUICK</option><option>STND</option><option>OTHR</option></select></td>
-    <td data-label="Note"><input type="text" style="width:100%"></td>
-    <td data-label=""><button class="del-btn" onclick="this.closest('tr').remove()">✕</button></td>`;
+    <td data-label="Visual"><select style="width:100%;" onchange="onDeviceSelectChange(this)"><option value="">—</option><option>PASS</option><option>FAIL</option></select></td>
+    <td data-label="Note"><input type="text" style="width:100%" oninput="rebuildHospDeficList()"></td>
+    <td data-label=""><button class="del-btn" onclick="this.closest('tr').remove();updateHSpareHeadCounts()">✕</button></td>`;
   tbody.appendChild(tr);
+  updateHSpareHeadCounts();
+}
+
+function updateHSpareHeadCounts() {
+  const counts = { SHB:0, PENDT:0, UPRHT:0, SDWAL:0, CNCLD:0 };
+  document.querySelectorAll('#h-spare-heads-tbody td[data-label="Type"] select').forEach(sel => {
+    if (counts.hasOwnProperty(sel.value)) counts[sel.value]++;
+  });
+  document.getElementById('h-shb-count').textContent   = counts.SHB;
+  document.getElementById('h-pendt-count').textContent = counts.PENDT;
+  document.getElementById('h-uprht-count').textContent = counts.UPRHT;
+  document.getElementById('h-sdwal-count').textContent = counts.SDWAL;
+  document.getElementById('h-cncld-count').textContent = counts.CNCLD;
 }
 
 function addHInventoryRow() {
@@ -3652,7 +3697,47 @@ function _draftModalResume() {
   document.getElementById('draft-modal-overlay').style.display = 'none';
   startHospInspection(); // build all table skeletons before restoring data
   loadDraft();
+  // Re-apply FAIL row visuals and regenerate deficiency list from restored device selects
+  restoreFailVisuals();
+  rebuildHospDeficList();
   showToast('Draft restored');
+}
+
+function restoreFailVisuals() {
+  // Re-scan all device tbodies and re-apply red row / red note highlighting for FAIL rows.
+  // Required after draft restore because onDeviceSelectChange was never fired.
+  const sheets = typeof HOSP_DEVICE_SHEETS !== 'undefined' ? HOSP_DEVICE_SHEETS : [];
+  sheets.forEach(({ key }) => {
+    const tbody = document.getElementById('h-' + key + '-tbody');
+    if (!tbody) return;
+    tbody.querySelectorAll('tr').forEach(row => {
+      const hasFail = Array.from(row.querySelectorAll('select')).some(s => s.value === 'FAIL');
+      row.classList.toggle('device-fail-row', hasFail);
+      if (hasFail) {
+        const textInputs = Array.from(row.querySelectorAll('input[type="text"]'));
+        const noteInput = textInputs[textInputs.length - 1];
+        if (noteInput) noteInput.classList.add('fail-note-required');
+      }
+    });
+  });
+  // Annunciators
+  document.querySelectorAll('#h-annunciator-grid .h-ann-card').forEach(card => {
+    const sel = card.querySelector('select[data-ann-pf]');
+    if (sel?.value === 'FAIL') {
+      const noteInp = card.querySelector('input[data-ann-note]');
+      if (noteInp) noteInp.classList.add('fail-note-required');
+    }
+  });
+  // Elevator banks
+  document.querySelectorAll('#h-elevator-banks .h-elevator-bank').forEach(bank => {
+    bank.querySelectorAll('select[data-elev-which]').forEach(sel => {
+      if (sel.value === 'FAIL') {
+        const which = sel.getAttribute('data-elev-which');
+        const noteInp = bank.querySelector(`.elev-note-row[data-for="${which}"] input`);
+        if (noteInp) noteInp.classList.add('fail-note-required');
+      }
+    });
+  });
 }
 
 function _draftModalShowConfirm(action) {
