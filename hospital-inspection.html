@@ -2973,6 +2973,9 @@ function setSpYNA(btn, id, val, showNote) {
   const group = btn.parentElement;
   group.querySelectorAll('.yna-btn').forEach(b => b.classList.remove('selected'));
   btn.classList.add('selected');
+  // Stamp the selected value onto the row so rebuildHospDeficList can read it
+  const rowEl = document.querySelector('[data-id="' + id + '"]');
+  if (rowEl) rowEl.dataset.val = val;
   const noteRow = document.getElementById('sp-note-row-' + id);
   if (noteRow) noteRow.classList.toggle('visible', val === 'N' && showNote);
   syncSpDefic(id);
@@ -3170,16 +3173,21 @@ function syncHospResultTables() {
     if (!tbody) return { total:0, pass:0, fail:0, nt:0, nf:0 };
     let total=0, pass=0, fail=0, nt=0, nf=0;
     tbody.querySelectorAll('tr').forEach(row => {
-      const sels = Array.from(row.querySelectorAll('select')).map(s => s.value);
+      // Filter to result selects only (those with PASS as an option).
+      // Type dropdowns (SPV/LA/HA etc.) never contain PASS and must be excluded
+      // or allPass will always be false.
+      const sels = Array.from(row.querySelectorAll('select'))
+        .filter(s => Array.from(s.options).some(o => o.text === 'PASS'))
+        .map(s => s.value);
       const hasFail = sels.some(v => v === 'FAIL');
       const hasNT   = sels.some(v => v === 'NT');
       const hasNF   = sels.some(v => v === 'NF');
       const allPass = sels.length > 0 && sels.every(v => v === 'PASS');
       total++;
-      if (hasFail)     fail++;
+      if (hasFail)      fail++;
       else if (allPass) pass++;
-      else if (hasNT)  nt++;
-      else if (hasNF)  nf++;
+      else if (hasNT)   nt++;
+      else if (hasNF)   nf++;
     });
     return { total, pass, fail, nt, nf };
   }
