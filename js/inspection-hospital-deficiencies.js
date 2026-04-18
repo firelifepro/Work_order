@@ -66,11 +66,13 @@ function rebuildHospDeficList() {
       const hasFail = Array.from(row.querySelectorAll('select'))
         .some(s => s.value === 'FAIL');
       if (!hasFail) return;
-      // Use first text input as location, last text input as note
+      // Floor=inputs[0], Location=inputs[1], Note=last input
       const inputs   = Array.from(row.querySelectorAll('input[type="text"]'));
-      const loc      = inputs[0]?.value?.trim() || '';
+      const floor    = inputs[0]?.value?.trim() || '';
+      const loc      = inputs[1]?.value?.trim() || inputs[0]?.value?.trim() || '';
       const note     = inputs[inputs.length - 1]?.value?.trim() || '';
-      const desc     = label + (loc ? ' — ' + loc : '') + (note ? ': ' + note : '');
+      const floorPfx = floor ? `Fl.${floor} ` : '';
+      const desc     = floorPfx + label + (loc ? ' — ' + loc : '') + (note ? ': ' + note : '');
       list.push({ text: desc, source: label });
     });
   });

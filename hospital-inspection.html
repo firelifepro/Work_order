@@ -2585,12 +2585,12 @@ function getDeviceCols(sheet, type) {
   const pf4 = `<select style="width:100%;" onchange="onDeviceSelectChange(this)"><option value="">—</option><option>PASS</option><option>FAIL</option><option>NT</option><option>NF</option></select>`;
   const pf2 = `<select style="width:100%;" onchange="onDeviceSelectChange(this)"><option value="">—</option><option>PASS</option><option>FAIL</option></select>`;
 
-  const flr  = td('Floor',    inp('placeholder="1"'));
+  const flr  = td('Floor',    inp('value="1"'));
   const loc  = td('Location', inp('placeholder="Location…"'));
-  const addr = td('Address',  inp('placeholder="L1-M001"'));
+  const addr = td('Address',  inp('placeholder="e.g. L1-M001…"'));
   const vis  = td('Visual',   pf4);
   const func = td('Functional', pf4);
-  const note = td('Note',     inp());
+  const note = td('Note',     inp('oninput="rebuildHospDeficList()"'));
   const del  = td('',         `<button class="del-btn" onclick="this.closest('tr').remove();updateCount('${sheet}')">✕</button>`);
   const typ  = td('Type',     inp(`value="${type}"`));
 
@@ -2602,15 +2602,15 @@ function getDeviceCols(sheet, type) {
 
   switch(sheet) {
     case 'supervisory': return flr + typeSel(['SPV','LA','HA']) + loc + addr + vis + func + note + del;
-    case 'flow':        return flr + typeSel(['FS','PRS']) + loc + addr + vis + func + td('Time (s)', num('placeholder="0"')) + note + del;
+    case 'flow':        return flr + typeSel(['FS','PRS']) + loc + addr + vis + func + td('Time (s)', num('placeholder="0…"')) + note + del;
     case 'smoke':       return flr + typeSel(['SD','CBO','CO2']) + loc + addr + td('AL/SPV', `<select style="width:100%;"><option>AL</option><option>SPV</option></select>`) + vis + func + note + del;
     case 'av':          return flr + typeSel(['HSC','SSC','HN','ST','SP','BL','CH']) + loc + vis + func + note + del;
     case 'door-release':return flr + typeSel(['MAG','CA','OT']) + loc + vis + func + note + del;
-    case 'fdc':         return flr + typeSel(['FDC','SPRINKLER','STANDPIPE','COMBO']) + loc + vis + func + td('Inlet', inp()) + td('Condition', inp('placeholder="UNK"')) + note + del;
-    case 'hose-valve':  return flr + typ + loc + vis + func + td('Cap Style', inp()) + td('Size', inp('placeholder="2.5"')) + note + del;
-    case 'standpipe':   return flr + typ + loc + vis + td('Condition', inp('placeholder="UNK"')) + td('Size (in)', num('placeholder="6"')) + note + del;
-    case 'valves':      return flr + typ + loc + vis + func + td('Valve Type', inp('placeholder="OS&Y"')) + note + del;
-    case 'gauges':      return flr + typ + loc + vis + func + td('Cert Year', inp('placeholder="2023"')) + note + del;
+    case 'fdc':         return flr + typeSel(['FDC','SPRINKLER','STANDPIPE','COMBO']) + loc + vis + func + td('Inlet', inp()) + td('Condition', inp('placeholder="UNK…"')) + note + del;
+    case 'hose-valve':  return flr + typ + loc + vis + func + td('Cap Style', inp()) + td('Size', inp('placeholder="2.5…"')) + note + del;
+    case 'standpipe':   return flr + typ + loc + vis + td('Condition', inp('placeholder="UNK…"')) + td('Size (in)', num('placeholder="6…"')) + note + del;
+    case 'valves':      return flr + typ + loc + vis + func + td('Valve Type', inp('placeholder="OS&Y…"')) + note + del;
+    case 'gauges':      return flr + typ + loc + vis + func + td('Cert Year', inp('placeholder="2023…"')) + note + del;
     case 'hydraulic':   return flr + typ + loc + vis + td('Legible', pf2) + note + del;
     case 'ahu':         return flr + typ + loc + addr + vis + func + note + del;
     default:            return flr + typ + loc + addr + vis + func + note + del;
@@ -3071,19 +3071,19 @@ function addHExtRow() {
   if (!tbody) return;
   const tr = document.createElement('tr');
   tr.innerHTML = `
-    <td data-label="Floor"><input type="text" style="width:100%"></td>
-    <td data-label="Location"><input type="text" style="width:100%"></td>
+    <td data-label="Floor"><input type="text" value="1" style="width:100%"></td>
+    <td data-label="Location"><input type="text" placeholder="Location…" style="width:100%"></td>
     <td data-label="Mount"><select style="width:100%;"><option>HK</option><option>FK</option><option>CAB.</option><option>NM</option></select></td>
     <td data-label="Cabinet"><select style="width:100%;"><option value="">—</option><option>YES TO ALL</option><option>NO MALLET</option><option>NO GLASS</option><option>NO SIGN</option><option>NA</option></select></td>
-    <td data-label="Mfg Date"><input type="number" placeholder="2022" style="width:100%"></td>
-    <td data-label="Size"><input type="number" placeholder="10" style="width:100%"></td>
+    <td data-label="Mfg Date"><input type="number" placeholder="2022…" style="width:100%"></td>
+    <td data-label="Size"><input type="number" value="10" style="width:100%"></td>
     <td data-label="Type"><select style="width:100%;"><option>ABC</option><option>K CLASS</option><option>CO2</option><option>HALOTRON</option><option>FE36</option><option>HALON</option><option>FOAM</option><option>BC</option><option>CLASS D</option></select></td>
     <td data-label="Pass/Fail/NF"><select style="width:100%;"><option value="">—</option><option>PASS</option><option>FAIL</option><option>NF</option></select></td>
-    <td data-label="6-Yr Due"><input type="number" placeholder="2028" style="width:100%"></td>
-    <td data-label="Hydro Due"><input type="number" placeholder="2034" style="width:100%"></td>
+    <td data-label="6-Yr Due"><input type="number" placeholder="2028…" style="width:100%"></td>
+    <td data-label="Hydro Due"><input type="number" placeholder="2034…" style="width:100%"></td>
     <td data-label="Recharge?"><select style="width:100%;"><option value="">—</option><option>YES</option><option>NO</option></select></td>
     <td data-label="New Unit?"><select style="width:100%;"><option value="">—</option><option>YES</option><option>NO</option></select></td>
-    <td data-label="Note"><input type="text" style="width:100%"></td>
+    <td data-label="Note"><input type="text" placeholder="Note…" style="width:100%" oninput="rebuildHospDeficList()"></td>
     <td data-label=""><button class="del-btn" onclick="this.closest('tr').remove();updateHExtCount();rebuildExtSummary();">✕</button></td>`;
   // Rebuild summary on any change
   tr.querySelectorAll('input,select').forEach(el => {
