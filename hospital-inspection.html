@@ -2628,8 +2628,30 @@ function onDeviceSelectChange(sel) {
 
 function updateCount(sheet) {
   const tbody = document.getElementById('h-'+sheet+'-tbody');
+  if (!tbody) return;
+  // Sheets with split-type counts
+  if (sheet === 'flow') {
+    let fs = 0, prs = 0;
+    tbody.querySelectorAll('tr').forEach(row => {
+      const t = row.querySelector('td[data-label="Type"] select')?.value;
+      if (t === 'FS') fs++; else if (t === 'PRS') prs++;
+    });
+    const fEl = document.getElementById('h-flow-fs-count');  if (fEl)  fEl.textContent  = fs;
+    const pEl = document.getElementById('h-flow-prs-count'); if (pEl)  pEl.textContent  = prs;
+    return;
+  }
+  if (sheet === 'smoke') {
+    let sd = 0, cbo = 0;
+    tbody.querySelectorAll('tr').forEach(row => {
+      const t = row.querySelector('td[data-label="Type"] select')?.value;
+      if (t === 'SD') sd++; else if (t === 'CBO' || t === 'CO2') cbo++;
+    });
+    const sEl = document.getElementById('h-smoke-sd-count');  if (sEl)  sEl.textContent  = sd;
+    const cEl = document.getElementById('h-smoke-cbo-count'); if (cEl)  cEl.textContent  = cbo;
+    return;
+  }
   const el = document.getElementById('h-'+sheet+'-count');
-  if(tbody && el) el.textContent = tbody.children.length;
+  if (el) el.textContent = tbody.children.length;
 }
 
 function addHMainDrainRow() {
@@ -3488,7 +3510,8 @@ const _DRAFT_TBODY_IDS = [
   'h-heat-tbody','h-pull-tbody','h-duct-tbody','h-av-tbody',
   'h-door-release-tbody','h-fdc-tbody','h-hose-valve-tbody','h-standpipe-tbody',
   'h-spare-heads-tbody','h-valves-tbody','h-gauges-tbody','h-hydraulic-tbody',
-  'h-ahu-tbody','h-offprem-tbody','h-ext-tbody','h-defic-tbody','h-notes-tbody',
+  'h-ahu-tbody','h-offprem-tbody','h-subpanel-tbody','h-inventory-tbody',
+  'h-ext-tbody','h-defic-tbody','h-notes-tbody','h-battery-tbody',
   'h-main-drain-tbody','h-fa-result-tbody','h-sp-result-tbody',
   'h-eoc-checklist-tbody','h-recurring-tbody',
   'h-ov-fa-tbody','h-ov-sp-tbody','h-ov-special-tbody','h-35yr-tbody',
@@ -3501,17 +3524,24 @@ function serializeTbodies() {
     const el = document.getElementById(id);
     if (!el || !el.children.length) return;
     const clone = el.cloneNode(true);
-    // Stamp current .value into the value attribute so innerHTML preserves it
+    // Stamp input values from the ORIGINAL (cloneNode preserves input.value correctly)
     clone.querySelectorAll('input, textarea').forEach(inp => {
       inp.setAttribute('value', inp.value);
     });
-    clone.querySelectorAll('select').forEach(sel => {
-      sel.setAttribute('data-restore-val', sel.value);
+    // IMPORTANT: cloneNode does NOT preserve programmatically-set select.value.
+    // Read values from original elements by index, then stamp onto clone.
+    const origSels  = Array.from(el.querySelectorAll('select'));
+    const cloneSels = Array.from(clone.querySelectorAll('select'));
+    origSels.forEach((origSel, i) => {
+      if (cloneSels[i]) cloneSels[i].setAttribute('data-restore-val', origSel.value);
     });
-    // Stamp pf-btn selected states
-    clone.querySelectorAll('.pf-btn').forEach(btn => {
-      if (btn.classList.contains('selected')) btn.setAttribute('data-sel', '1');
-      else btn.removeAttribute('data-sel');
+    // Stamp pf-btn / yna-btn selected states from originals
+    const origBtns  = Array.from(el.querySelectorAll('.pf-btn, .yna-btn'));
+    const cloneBtns = Array.from(clone.querySelectorAll('.pf-btn, .yna-btn'));
+    origBtns.forEach((origBtn, i) => {
+      if (!cloneBtns[i]) return;
+      if (origBtn.classList.contains('selected')) cloneBtns[i].setAttribute('data-sel', '1');
+      else cloneBtns[i].removeAttribute('data-sel');
     });
     out[id] = clone.innerHTML;
   });
@@ -3528,8 +3558,8 @@ function restoreTbodies(tbodyMap) {
       sel.value = sel.getAttribute('data-restore-val');
       sel.removeAttribute('data-restore-val');
     });
-    // Restore pf-btn selected states
-    el.querySelectorAll('.pf-btn[data-sel]').forEach(btn => {
+    // Restore pf-btn / yna-btn selected states
+    el.querySelectorAll('.pf-btn[data-sel], .yna-btn[data-sel]').forEach(btn => {
       btn.classList.add('selected');
       btn.removeAttribute('data-sel');
     });
@@ -3693,10 +3723,58 @@ function showDraftModal(prop, ageStr) {
   overlay.style.display = 'flex';
 }
 
+function restoreAllCounts() {
+  // Simple tbody-row counts
+  const SHEET_COUNTS = [
+    ['supervisory', 'h-supervisory-count'],
+    ['tamper',      'h-tamper-count'],
+    ['heat',        'h-heat-count'],
+    ['pull',        'h-pull-count'],
+    ['duct',        'h-duct-count'],
+    ['fdc',         'h-fdc-count'],
+    ['hose-valve',  'h-hv-count'],
+    ['standpipe',   'h-sdp-count'],
+    ['valves',      'h-vlv-count'],
+    ['gauges',      'h-ga-count'],
+    ['hydraulic',   'h-hc-count'],
+    ['ahu',         'h-ahu-count'],
+  ];
+  SHEET_COUNTS.forEach(([sheet, countId]) => {
+    const tbody = document.getElementById('h-' + sheet + '-tbody');
+    const el    = document.getElementById(countId);
+    if (tbody && el) el.textContent = tbody.children.length;
+  });
+  // Flow — split by type select
+  const flowRows = document.querySelectorAll('#h-flow-tbody tr');
+  let fs = 0, prs = 0;
+  flowRows.forEach(row => {
+    const t = row.querySelector('td[data-label="Type"] select')?.value;
+    if (t === 'FS') fs++; else if (t === 'PRS') prs++;
+  });
+  const fsFl = document.getElementById('h-flow-fs-count');  if (fsFl) fsFl.textContent = fs;
+  const prsFl = document.getElementById('h-flow-prs-count'); if (prsFl) prsFl.textContent = prs;
+  // Smoke — split by type select
+  const smokeRows = document.querySelectorAll('#h-smoke-tbody tr');
+  let sd = 0, cbo = 0;
+  smokeRows.forEach(row => {
+    const t = row.querySelector('td[data-label="Type"] select')?.value;
+    if (t === 'SD') sd++; else if (t === 'CBO' || t === 'CO2') cbo++;
+  });
+  const sdEl  = document.getElementById('h-smoke-sd-count');  if (sdEl)  sdEl.textContent  = sd;
+  const cboEl = document.getElementById('h-smoke-cbo-count'); if (cboEl) cboEl.textContent = cbo;
+  // Subpanel, ext, spare heads
+  updateHSubpanelCount();
+  updateHExtCount();
+  updateHSpareHeadCounts();
+  // Elevator banks and annunciators are card-based (not tbodies) — counts already
+  // persisted in the DOM via h-elev-count / h-annunciator-count; no action needed.
+}
+
 function _draftModalResume() {
   document.getElementById('draft-modal-overlay').style.display = 'none';
   startHospInspection(); // build all table skeletons before restoring data
   loadDraft();
+  restoreAllCounts();
   // Re-apply FAIL row visuals and regenerate deficiency list from restored device selects
   restoreFailVisuals();
   rebuildHospDeficList();
