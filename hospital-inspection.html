@@ -2818,11 +2818,22 @@ function addHInventoryRow() {
     <td data-label="Type"><input type="text" style="width:100%"></td>
     <td data-label="Location"><input type="text" style="width:100%"></td>
     <td data-label="Address"><input type="text" style="width:100%"></td>
-    <td data-label="Add/Remove"><select style="width:100%;"><option value="">—</option><option>ADDED</option><option>REMOVED</option></select></td>
-    <td data-label="Pass/Fail"><select style="width:100%;"><option value="">—</option><option>PASS</option><option>FAIL</option><option>NA</option></select></td>
-    <td data-label="Note"><input type="text" style="width:100%"></td>
-    <td data-label=""><button class="del-btn" onclick="this.closest('tr').remove()">✕</button></td>`;
+    <td data-label="Add/Remove"><select style="width:100%;" onchange="updateHInventoryCounts()"><option value="">—</option><option>ADDED</option><option>REMOVED</option></select></td>
+    <td data-label="Pass/Fail"><select style="width:100%;" onchange="onDeviceSelectChange(this)"><option value="">—</option><option>PASS</option><option>FAIL</option><option>NA</option></select></td>
+    <td data-label="Note"><input type="text" style="width:100%" oninput="rebuildHospDeficList()"></td>
+    <td data-label=""><button class="del-btn" onclick="this.closest('tr').remove();updateHInventoryCounts()">✕</button></td>`;
   tbody.appendChild(tr);
+  updateHInventoryCounts();
+}
+
+function updateHInventoryCounts() {
+  let added = 0, removed = 0;
+  document.querySelectorAll('#h-inventory-tbody td[data-label="Add/Remove"] select').forEach(sel => {
+    if (sel.value === 'ADDED') added++;
+    else if (sel.value === 'REMOVED') removed++;
+  });
+  const aEl = document.getElementById('h-inv-added');   if (aEl) aEl.textContent = added;
+  const rEl = document.getElementById('h-inv-removed'); if (rEl) rEl.textContent = removed;
 }
 
 // addHExtRow — defined fully below with change-listener and summary rebuild
@@ -3518,6 +3529,71 @@ const _DRAFT_TBODY_IDS = [
   'h-fa-key-tbody','h-sp-key-tbody',
 ];
 
+// Card-container IDs that hold dynamically added cards (elevator banks, annunciators)
+// and the sprinkler detail blocks whose yna-btn states must be persisted.
+const _DRAFT_CONTAINER_IDS = [
+  'h-elevator-banks',
+  'h-annunciator-grid',
+  'h-sp-dry-block',
+  'h-sp-5yr-block',
+];
+
+function serializeContainers() {
+  const out = {};
+  _DRAFT_CONTAINER_IDS.forEach(id => {
+    const el = document.getElementById(id);
+    if (!el || !el.children.length) return;
+    const clone = el.cloneNode(true);
+    clone.querySelectorAll('input, textarea').forEach(inp => inp.setAttribute('value', inp.value));
+    const origSels  = Array.from(el.querySelectorAll('select'));
+    const cloneSels = Array.from(clone.querySelectorAll('select'));
+    origSels.forEach((s, i) => { if (cloneSels[i]) cloneSels[i].setAttribute('data-restore-val', s.value); });
+    const origBtns  = Array.from(el.querySelectorAll('.pf-btn, .yna-btn'));
+    const cloneBtns = Array.from(clone.querySelectorAll('.pf-btn, .yna-btn'));
+    origBtns.forEach((b, i) => {
+      if (!cloneBtns[i]) return;
+      if (b.classList.contains('selected')) cloneBtns[i].setAttribute('data-sel', '1');
+      else cloneBtns[i].removeAttribute('data-sel');
+    });
+    // Sprinkler detail: stamp data-val on inspect-row divs
+    const origRows  = Array.from(el.querySelectorAll('.inspect-row'));
+    const cloneRows = Array.from(clone.querySelectorAll('.inspect-row'));
+    origRows.forEach((r, i) => { if (cloneRows[i]) cloneRows[i].dataset.val = r.dataset.val || ''; });
+    // Elevator/Ann: stamp note-row visibility
+    const origNoteRows  = Array.from(el.querySelectorAll('.elev-note-row'));
+    const cloneNoteRows = Array.from(clone.querySelectorAll('.elev-note-row'));
+    origNoteRows.forEach((r, i) => { if (cloneNoteRows[i]) cloneNoteRows[i].setAttribute('data-vis', r.style.display); });
+    out[id] = clone.innerHTML;
+  });
+  return out;
+}
+
+function restoreContainers(containerMap) {
+  Object.entries(containerMap || {}).forEach(([id, html]) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.innerHTML = html;
+    el.querySelectorAll('select[data-restore-val]').forEach(sel => {
+      sel.value = sel.getAttribute('data-restore-val');
+      sel.removeAttribute('data-restore-val');
+    });
+    el.querySelectorAll('.pf-btn[data-sel], .yna-btn[data-sel]').forEach(btn => {
+      btn.classList.add('selected');
+      btn.removeAttribute('data-sel');
+    });
+    // Restore elev-note-row visibility
+    el.querySelectorAll('.elev-note-row[data-vis]').forEach(row => {
+      row.style.display = row.getAttribute('data-vis') || 'none';
+      row.removeAttribute('data-vis');
+    });
+  });
+  // Update counts that depend on the restored cards
+  updateHElevCount();
+  updateHAnnCount();
+  updateHSpareHeadCounts();
+  updateHInventoryCounts();
+}
+
 function serializeTbodies() {
   const out = {};
   _DRAFT_TBODY_IDS.forEach(id => {
@@ -3615,8 +3691,9 @@ function collectFormState() {
     const inputs = row.querySelectorAll('input[type="number"]');
     state.keySheet.sp.push({ key: m[1], current: inputs[0]?.value || '', previous: inputs[1]?.value || '' });
   });
-  // Serialize all dynamic table contents
-  state.tbodies = serializeTbodies();
+  // Serialize all dynamic table contents and card containers
+  state.tbodies     = serializeTbodies();
+  state.containers  = serializeContainers();
   return state;
 }
 
@@ -3658,8 +3735,9 @@ function loadDraft() {
     // Restore sig onto canvas if present
     if (state.inspSig) drawDataUrlToCanvas('sig-canvas', state.inspSig);
     if (state.custSig) drawDataUrlToCanvas('cust-sig-canvas', state.custSig);
-    // Restore all dynamic table rows
+    // Restore all dynamic table rows and card containers
     restoreTbodies(state.tbodies);
+    restoreContainers(state.containers);
     // Sync pre/post checklist button visuals from their restored hidden inputs
     syncChkYNAVisuals();
     updateHospStartButton();
@@ -3762,10 +3840,11 @@ function restoreAllCounts() {
   });
   const sdEl  = document.getElementById('h-smoke-sd-count');  if (sdEl)  sdEl.textContent  = sd;
   const cboEl = document.getElementById('h-smoke-cbo-count'); if (cboEl) cboEl.textContent = cbo;
-  // Subpanel, ext, spare heads
+  // Subpanel, ext, spare heads, inventory
   updateHSubpanelCount();
   updateHExtCount();
   updateHSpareHeadCounts();
+  updateHInventoryCounts();
   // Elevator banks and annunciators are card-based (not tbodies) — counts already
   // persisted in the DOM via h-elev-count / h-annunciator-count; no action needed.
 }
