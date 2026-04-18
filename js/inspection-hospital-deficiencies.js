@@ -91,7 +91,19 @@ function rebuildHospDeficList() {
     }
   });
 
-  // ── 4. Elevator recall banks ──────────────────────────────────────────────
+  // ── 4. Failed batteries ───────────────────────────────────────────────────
+  document.querySelectorAll('#h-battery-tbody tr').forEach(row => {
+    const inputs = Array.from(row.querySelectorAll('input[type="text"], input:not([type])'));
+    const size   = inputs[0]?.value?.trim() || '';
+    const type   = inputs[1]?.value?.trim() || '';
+    const locs   = inputs[2]?.value?.trim() || '';
+    const note   = inputs[3]?.value?.trim() || '';
+    if (!size && !type && !locs && !note) return;
+    const desc = `Failed Battery${size ? ' ' + size + 'AH' : ''}${type ? ' ' + type : ''}${locs ? ' — ' + locs : ''}${note ? ': ' + note : ''}`;
+    list.push({ text: desc, source: 'Battery' });
+  });
+
+  // ── 5. Elevator recall banks ─────────────────────────────────────────────
   document.querySelectorAll('#h-elevator-banks .h-elevator-bank').forEach(bank => {
     const loc = Array.from(bank.querySelectorAll('.data-field input[type="text"]'))[1]?.value?.trim() || '';
     bank.querySelectorAll('select[data-elev-which]').forEach(sel => {

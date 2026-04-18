@@ -1720,7 +1720,7 @@ canvas#cust-sig-canvas, canvas#sig-canvas {
       <div class="card-header"><span class="icon">🔋</span><span>Failed Batteries (If Applicable)</span></div>
       <div class="card-body" style="overflow-x:auto;">
         <table class="dyn-table">
-          <thead><tr><th style="width:80px;">Size (AH)</th><th style="width:80px;">Type</th><th style="width:60px;">Count</th><th>Locations</th><th style="width:30px;"></th></tr></thead>
+          <thead><tr><th style="width:80px;">Size (AH)</th><th style="width:80px;">Type</th><th style="width:60px;">Count</th><th>Locations</th><th>Note</th><th style="width:30px;"></th></tr></thead>
           <tbody id="h-battery-tbody"></tbody>
         </table>
         <button class="add-row-btn" onclick="addHBatteryRow()">+ Add Failed Battery</button>
@@ -2846,12 +2846,15 @@ function updateHExtCount() {
 function addHBatteryRow() {
   const tbody = document.getElementById('h-battery-tbody');
   const tr = document.createElement('tr');
-  tr.innerHTML = `<td><input type="text" placeholder="18" style="width:100%"></td>
-    <td><input type="text" placeholder="SPADE" style="width:100%"></td>
-    <td><input type="number" placeholder="2" style="width:100%"></td>
-    <td><input type="text" style="width:100%"></td>
-    <td><button class="del-btn" onclick="this.closest('tr').remove()">✕</button></td>`;
+  tr.innerHTML = `
+    <td data-label="Size (AH)"><input type="text" placeholder="18…" style="width:100%"></td>
+    <td data-label="Type"><input type="text" placeholder="SPADE…" style="width:100%"></td>
+    <td data-label="Count"><input type="number" placeholder="2…" style="width:100%"></td>
+    <td data-label="Locations"><input type="text" style="width:100%"></td>
+    <td data-label="Note"><input type="text" placeholder="Deficiency note…" style="width:100%" oninput="rebuildHospDeficList()"></td>
+    <td data-label=""><button class="del-btn" onclick="this.closest('tr').remove();rebuildHospDeficList()">✕</button></td>`;
   tbody.appendChild(tr);
+  rebuildHospDeficList();
 }
 
 function addHDeficRow() {
@@ -3536,6 +3539,12 @@ const _DRAFT_CONTAINER_IDS = [
   'h-annunciator-grid',
   'h-sp-dry-block',
   'h-sp-5yr-block',
+  'h-sp-pre-block',
+  'h-sp-fdc-block',
+  'h-sp-valve-block',
+  'h-sp-heads-block',
+  'h-sp-pipe-block',
+  'h-sp-drain-block',
 ];
 
 function serializeContainers() {
@@ -3677,6 +3686,13 @@ function collectFormState() {
   // Signatures
   state.inspSig = H.inspSig;
   state.custSig = H.custSig;
+  // Photos — serialize as [{src, caption}]
+  state.photos = [];
+  document.querySelectorAll('#h-photo-grid .photo-thumb').forEach(thumb => {
+    const src     = thumb.querySelector('img')?.src || '';
+    const caption = thumb.querySelector('textarea')?.value || '';
+    if (src) state.photos.push({ src, caption });
+  });
   // Key sheet counts (for "Previous #" in future inspections)
   state.keySheet = { fa: [], sp: [] };
   document.querySelectorAll('#h-fa-key-tbody tr').forEach(row => {
@@ -3735,6 +3751,22 @@ function loadDraft() {
     // Restore sig onto canvas if present
     if (state.inspSig) drawDataUrlToCanvas('sig-canvas', state.inspSig);
     if (state.custSig) drawDataUrlToCanvas('cust-sig-canvas', state.custSig);
+    // Restore photos
+    const photoGrid = document.getElementById('h-photo-grid');
+    if (photoGrid && Array.isArray(state.photos)) {
+      photoGrid.innerHTML = '';
+      state.photos.forEach(({ src, caption }) => {
+        if (!src) return;
+        const wrap = document.createElement('div');
+        wrap.className = 'photo-thumb';
+        wrap.innerHTML = `<img src="${src}">
+          <textarea placeholder="Caption…" rows="2"></textarea>
+          <button class="photo-del" onclick="this.closest('.photo-thumb').remove();updatePhotoCount()">✕</button>`;
+        wrap.querySelector('textarea').value = caption || '';
+        photoGrid.appendChild(wrap);
+      });
+      updatePhotoCount();
+    }
     // Restore all dynamic table rows and card containers
     restoreTbodies(state.tbodies);
     restoreContainers(state.containers);
