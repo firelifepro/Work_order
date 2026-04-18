@@ -2647,14 +2647,15 @@ function addHMainDrainRow() {
 function addHOffPremRow() {
   const tbody = document.getElementById('h-offprem-tbody');
   const tr = document.createElement('tr');
-  tr.innerHTML = `<td><input type="text" style="width:100%" placeholder="e.g. Denver Fire"></td>
-    <td><input type="time" style="width:100%"></td>
-    <td><input type="text" style="width:100%" placeholder="HH:MM:SS"></td>
-    <td><input type="text" style="width:100%" placeholder="HH:MM:SS"></td>
-    <td><input type="time" style="width:100%"></td>
-    <td><select style="width:100%;"><option>PASS</option><option>FAIL</option></select></td>
-    <td><input type="text" style="width:100%"></td>
-    <td><button class="del-btn" onclick="this.closest('tr').remove()">✕</button></td>`;
+  tr.innerHTML = `
+    <td data-label="Monitoring Company"><input type="text" style="width:100%" placeholder="e.g. Denver Fire"></td>
+    <td data-label="Time Offline"><input type="time" style="width:100%"></td>
+    <td data-label="Signals Sent"><input type="text" style="width:100%" placeholder="HH:MM:SS"></td>
+    <td data-label="Signals Received"><input type="text" style="width:100%" placeholder="HH:MM:SS"></td>
+    <td data-label="Time Online"><input type="time" style="width:100%"></td>
+    <td data-label="Pass/Fail"><select style="width:100%;"><option>PASS</option><option>FAIL</option></select></td>
+    <td data-label="Note"><input type="text" style="width:100%"></td>
+    <td data-label=""><button class="del-btn" onclick="this.closest('tr').remove()">✕</button></td>`;
   tbody.appendChild(tr);
 }
 
@@ -2685,19 +2686,20 @@ function updateHElevCount() {
 function addHSubpanelRow() {
   const tbody = document.getElementById('h-subpanel-tbody');
   const tr = document.createElement('tr');
-  tr.innerHTML = `<td><input type="text" placeholder="Location" style="width:100%"></td>
-    <td><input type="text" placeholder="Wheelock" style="width:100%"></td>
-    <td><input type="text" placeholder="PS12/248" style="width:100%"></td>
-    <td><input type="text" placeholder="UNK" style="width:100%"></td>
-    <td><input type="number" placeholder="7" style="width:100%"></td>
-    <td><input type="number" placeholder="0" style="width:100%"></td>
-    <td><input type="date" style="width:100%"></td>
-    <td><input type="number" placeholder="100" step="0.01" style="width:100%"></td>
-    <td><input type="number" placeholder="100" step="0.01" style="width:100%"></td>
-    <td><input type="text" placeholder="—" style="width:100%"></td>
-    <td><select style="width:100%;"><option value="">—</option><option>PASS</option><option>FAIL</option></select></td>
-    <td><input type="text" placeholder="SPADE" style="width:100%"></td>
-    <td><button class="del-btn" onclick="this.closest('tr').remove();updateHSubpanelCount()">✕</button></td>`;
+  tr.innerHTML = `
+    <td data-label="Location"><input type="text" placeholder="Location…" style="width:100%"></td>
+    <td data-label="Make"><input type="text" placeholder="Wheelock…" style="width:100%"></td>
+    <td data-label="Model"><input type="text" placeholder="PS12/248…" style="width:100%"></td>
+    <td data-label="Panel/Circuit"><input type="text" placeholder="UNK…" style="width:100%"></td>
+    <td data-label="AH"><input type="number" placeholder="7…" style="width:100%"></td>
+    <td data-label="Avail. NACS"><input type="number" placeholder="0…" style="width:100%"></td>
+    <td data-label="Install Date"><input type="date" style="width:100%"></td>
+    <td data-label="(L) Batt %"><input type="number" placeholder="100…" step="0.01" style="width:100%"></td>
+    <td data-label="(R) Batt %"><input type="number" placeholder="100…" step="0.01" style="width:100%"></td>
+    <td data-label="SPVSD?"><input type="text" placeholder="—…" style="width:100%"></td>
+    <td data-label="Pass/Fail"><select style="width:100%;"><option value="">—</option><option>PASS</option><option>FAIL</option></select></td>
+    <td data-label="Circuit Style"><input type="text" placeholder="SPADE…" style="width:100%"></td>
+    <td data-label=""><button class="del-btn" onclick="this.closest('tr').remove();updateHSubpanelCount()">✕</button></td>`;
   tbody.appendChild(tr);
   updateHSubpanelCount();
 }
@@ -2727,30 +2729,32 @@ function updateHAnnCount() {
 function addHSpareHeadRow() {
   const tbody = document.getElementById('h-spare-heads-tbody');
   const tr = document.createElement('tr');
-  tr.innerHTML = `<td><input type="text" style="width:100%"></td>
-    <td><input type="text" placeholder="SHB" style="width:100%"></td>
-    <td><input type="text" placeholder="Pump Room" style="width:100%"></td>
-    <td><select><option>PASS</option><option>FAIL</option></select></td>
-    <td><input type="number" style="width:100%"></td>
-    <td><select><option value="">—</option><option>PENDT</option><option>UPRHT</option><option>SDWAL</option><option>CNCLD</option></select></td>
-    <td><input type="number" placeholder="155" style="width:100%"></td>
-    <td><select><option value="">—</option><option>QUICK</option><option>STND</option><option>OTHR</option></select></td>
-    <td><input type="text" style="width:100%"></td>
-    <td><button class="del-btn" onclick="this.closest('tr').remove()">✕</button></td>`;
+  tr.innerHTML = `
+    <td data-label="Floor"><input type="text" style="width:100%" value="1"></td>
+    <td data-label="Type"><input type="text" placeholder="SHB…" style="width:100%"></td>
+    <td data-label="Location"><input type="text" placeholder="Pump Room…" style="width:100%"></td>
+    <td data-label="Visual"><select style="width:100%;"><option>PASS</option><option>FAIL</option></select></td>
+    <td data-label="Head Count"><input type="number" style="width:100%"></td>
+    <td data-label="Head Type"><select style="width:100%;"><option value="">—</option><option>PENDT</option><option>UPRHT</option><option>SDWAL</option><option>CNCLD</option></select></td>
+    <td data-label="Temp °F"><input type="number" placeholder="155…" style="width:100%"></td>
+    <td data-label="Response"><select style="width:100%;"><option value="">—</option><option>QUICK</option><option>STND</option><option>OTHR</option></select></td>
+    <td data-label="Note"><input type="text" style="width:100%"></td>
+    <td data-label=""><button class="del-btn" onclick="this.closest('tr').remove()">✕</button></td>`;
   tbody.appendChild(tr);
 }
 
 function addHInventoryRow() {
   const tbody = document.getElementById('h-inventory-tbody');
   const tr = document.createElement('tr');
-  tr.innerHTML = `<td><input type="text" style="width:100%"></td>
-    <td><input type="text" style="width:100%"></td>
-    <td><input type="text" style="width:100%"></td>
-    <td><input type="text" style="width:100%"></td>
-    <td><select style="width:100%;"><option value="">—</option><option>ADDED</option><option>REMOVED</option></select></td>
-    <td><select style="width:100%;"><option value="">—</option><option>PASS</option><option>FAIL</option><option>NA</option></select></td>
-    <td><input type="text" style="width:100%"></td>
-    <td><button class="del-btn" onclick="this.closest('tr').remove()">✕</button></td>`;
+  tr.innerHTML = `
+    <td data-label="Floor"><input type="text" style="width:100%" value="1"></td>
+    <td data-label="Type"><input type="text" style="width:100%"></td>
+    <td data-label="Location"><input type="text" style="width:100%"></td>
+    <td data-label="Address"><input type="text" style="width:100%"></td>
+    <td data-label="Add/Remove"><select style="width:100%;"><option value="">—</option><option>ADDED</option><option>REMOVED</option></select></td>
+    <td data-label="Pass/Fail"><select style="width:100%;"><option value="">—</option><option>PASS</option><option>FAIL</option><option>NA</option></select></td>
+    <td data-label="Note"><input type="text" style="width:100%"></td>
+    <td data-label=""><button class="del-btn" onclick="this.closest('tr').remove()">✕</button></td>`;
   tbody.appendChild(tr);
 }
 
