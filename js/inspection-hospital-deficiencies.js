@@ -126,6 +126,22 @@ function rebuildHospDeficList() {
     list.push({ text: desc, source: 'Annunciator' });
   });
 
+  // ── 6. Extinguisher unit failures ────────────────────────────────────────
+  if (typeof extUnitCount !== 'undefined') {
+    for (let _i = 1; _i <= extUnitCount; _i++) {
+      if (!document.getElementById('ext-unit-row-' + _i)) continue;
+      const pf = document.getElementById('u-pf-' + _i)?.value || '';
+      if (pf !== 'FAIL') continue;
+      const flr  = document.getElementById('u-flr-'    + _i)?.value?.trim() || '';
+      const loc  = document.getElementById('u-loc-'    + _i)?.value?.trim() || '';
+      const type = document.getElementById('u-type-'   + _i)?.value?.trim() || '';
+      const note = document.getElementById('u-defic-txt-' + _i)?.value?.trim() || '';
+      const flrPfx = flr ? `Fl.${flr} ` : '';
+      const desc = `${flrPfx}Extinguisher${type ? ' (' + type + ')' : ''}${loc ? ' — ' + loc : ''}${note ? ': ' + note : ''}`;
+      list.push({ text: desc, source: 'Extinguisher' });
+    }
+  }
+
   // ── Update DOM ────────────────────────────────────────────────────────────
   // Write auto-detected deficiencies as editable rows in the main defic table.
   // Rows marked data-auto are replaced on every call; manual rows are preserved.

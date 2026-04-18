@@ -26,6 +26,14 @@
   /* hospital accent — deep teal to distinguish from plain fire alarm */
   --hosp:   #0f766e;
   --hosp2:  #14b8a6;
+
+  /* shared with inspection.css — required for ext/stat/sum/qa CSS */
+  --navy3:     #1e304a;
+  --light:     #f1f5f9;
+  --pass-bg:   #f0fdf4;
+  --fail-bg:   #fef2f2;
+  --pass-ring: #16a34a;
+  --fail-ring: #dc2626;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -465,6 +473,47 @@ canvas#cust-sig-canvas, canvas#sig-canvas {
   .overall-status-group { flex-direction: column; }
   .data-row { flex-wrap: wrap; }
 }
+
+/* ── EXTINGUISHER TABLE ── */
+.ext-table{width:100%;border-collapse:collapse;font-size:.78rem;margin-top:6px;}
+.ext-table th{background:var(--navy3);color:white;padding:6px 8px;font-weight:600;font-size:.7rem;text-transform:uppercase;letter-spacing:.04em;}
+.ext-table td{padding:6px 6px;border-bottom:1px solid var(--border);vertical-align:middle;}
+.ext-table input,.ext-table select{border:1px solid var(--border);border-radius:4px;padding:4px 6px;font-size:.78rem;font-family:inherit;width:100%;background:white;outline:none;}
+.ext-table .pf-btn{padding:3px 7px;font-size:.68rem;min-width:36px;}
+.ext-table .pf-group{gap:3px;}
+.ext-yn-btn{border:1.5px solid var(--border);border-radius:5px;padding:3px 12px;font-size:.78rem;font-weight:700;cursor:pointer;font-family:inherit;background:white;color:var(--slate);transition:all .12s;}
+.ext-yn-btn.active{border-color:var(--red);background:var(--fail-bg);color:var(--red);}
+input.no-spin::-webkit-inner-spin-button,input.no-spin::-webkit-outer-spin-button{-webkit-appearance:none;margin:0;}
+input.no-spin{-moz-appearance:textfield;appearance:textfield;}
+.ext-action-row td{background:var(--light);border-top:none!important;padding:4px 8px 8px;}
+/* ── STAT BOXES ── */
+.stat-box{background:#f8fafc;border:1.5px solid var(--border);border-radius:8px;padding:10px 14px;display:flex;align-items:center;justify-content:space-between;}
+.stat-box .stat-label{font-size:.72rem;font-weight:700;color:var(--slate);text-transform:uppercase;letter-spacing:.05em;}
+.stat-box .stat-val{font-size:1.4rem;font-weight:700;color:var(--navy);}
+/* ── SUM TABLE ── */
+.sum-table{width:100%;border-collapse:collapse;font-size:.76rem;}
+.sum-table th{background:var(--navy3);color:white;padding:6px 8px;font-size:.64rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;text-align:center;}
+.sum-table th.left{text-align:left;}
+.sum-table td{padding:5px 6px;border-bottom:1px solid var(--border);border-right:1px solid var(--border);vertical-align:middle;text-align:center;}
+.sum-table td.row-label{text-align:left;font-weight:700;font-size:.76rem;background:#f8fafc;white-space:nowrap;}
+.sum-table td:last-child{border-right:none;}
+.sum-table tr:last-child td{border-bottom:none;}
+.sum-table input[type=number]{border:1px solid var(--border);border-radius:4px;padding:3px 6px;font-size:.78rem;font-family:inherit;width:60px;background:white;outline:none;text-align:center;}
+.sum-table input[type=text]{border:1px solid var(--border);border-radius:4px;padding:3px 6px;font-size:.78rem;font-family:inherit;width:100%;background:white;outline:none;}
+/* ── QA TABLE ── */
+.qa-table{width:100%;border-collapse:collapse;font-size:.8rem;}
+.qa-table th{background:var(--navy3);color:white;padding:7px 9px;font-size:.68rem;font-weight:700;text-transform:uppercase;text-align:left;}
+.qa-table td{padding:7px 8px;border-bottom:1px solid var(--border);vertical-align:middle;}
+.qa-table tr:nth-child(even) td{background:#f8fafc;}
+.qa-table td.q-cell{font-size:.8rem;font-weight:500;}
+.qa-table select,.qa-table input[type=text]{border:1px solid var(--border);border-radius:4px;padding:4px 7px;font-size:.78rem;font-family:inherit;background:white;outline:none;}
+/* ── EXT PF PASS/FAIL BUTTON COLORS ── */
+.pf-btn.pass{border-color:var(--pass-ring);color:var(--pass-ring);}
+.pf-btn.fail{border-color:var(--fail-ring);color:var(--fail-ring);}
+.pf-btn.pass.selected{background:var(--pass-bg);box-shadow:0 0 0 2px var(--pass-ring);color:var(--pass-ring);}
+.pf-btn.fail.selected{background:var(--fail-bg);box-shadow:0 0 0 2px var(--fail-ring);color:var(--fail-ring);}
+/* ── SYS SECTION DIVIDER (used in ext summary) ── */
+.sys-section{font-size:.7rem;font-weight:700;color:var(--blue);text-transform:uppercase;letter-spacing:.08em;margin:14px 0 8px;padding-bottom:4px;border-bottom:1.5px solid #bfdbfe;}
 </style>
 </head>
 <body>
@@ -1656,51 +1705,87 @@ canvas#cust-sig-canvas, canvas#sig-canvas {
   ══════════════════════════════════════════════ -->
   <div id="step-hosp-extinguish" style="display:none;">
 
+    <!-- UNIT INVENTORY -->
     <div class="card">
-      <div class="card-header"><span class="icon">🧯</span><span>Fire Extinguisher Inspection — EC.02.03.05 EP 16</span></div>
+      <div class="card-header"><span class="icon">🧯</span><span>Portable Fire Extinguishers — EC.02.03.05 EP 16</span></div>
       <div class="card-body" style="overflow-x:auto;">
         <p style="font-size:.78rem;color:var(--slate);margin-bottom:10px;">
-          ABC units: service required every 6 years (alternating 6yr and hydrostatic). K-Class and specialty: 5-year hydrostatic.
+          ABC units: service required every 6 years (alternating 6-year maintenance and hydrostatic test). K-Class and specialty: 5-year hydrostatic.
         </p>
-        <table class="h-ext-card-table" id="h-ext-table">
+        <div style="display:flex;gap:10px;margin-bottom:12px;">
+          <div class="stat-box" style="flex:1;"><span class="stat-label">Total Units</span><span class="stat-val" id="ext-stat-total">0</span></div>
+          <div class="stat-box" style="flex:1;background:var(--pass-bg);border-color:var(--pass-ring);"><span class="stat-label" style="color:var(--green);">Pass</span><span class="stat-val" style="color:var(--green);" id="ext-stat-pass">0</span></div>
+          <div class="stat-box" style="flex:1;background:var(--fail-bg);border-color:var(--fail-ring);"><span class="stat-label" style="color:var(--red);">Fail</span><span class="stat-val" style="color:var(--red);" id="ext-stat-fail">0</span></div>
+        </div>
+        <table class="ext-table" id="ext-table" style="width:100%;border-collapse:collapse;">
           <thead>
             <tr>
-              <th>Floor</th><th>Location</th><th>Mount</th><th>Cabinet</th>
-              <th>Mfg Date</th><th>Size</th><th>Type</th><th>Pass/Fail/NF</th>
-              <th>6-Yr Due</th><th>Hydro Due</th><th>Recharge?</th><th>New Unit?</th>
-              <th>Note</th><th></th>
+              <th style="width:38px;">FLR</th>
+              <th>Location</th>
+              <th style="width:100px;">Mount</th>
+              <th style="width:90px;">Cabinet Missing?</th>
+              <th style="width:62px;">MFG Yr</th>
+              <th style="width:72px;">Size(lb)</th>
+              <th style="width:100px;">Type</th>
+              <th style="width:26px;"></th>
             </tr>
           </thead>
-          <tbody id="h-ext-tbody"></tbody>
+          <tbody id="ext-tbody"></tbody>
         </table>
-        <button class="add-row-btn" onclick="addHExtRow()">+ Add Extinguisher</button>
-        <div style="margin-top:8px;font-size:.75rem;color:var(--slate);">Unit Count: <strong id="h-ext-count">0</strong></div>
+        <button class="add-row-btn" onclick="addExtUnitRow();saveDraft();">+ Add Extinguisher</button>
       </div>
     </div>
 
-    <!-- EXTINGUISHER DEFICIENCY SUMMARY -->
+    <!-- SERVICES DUE NOW SUMMARY -->
     <div class="card">
-      <div class="card-header"><span class="icon">📊</span><span>Extinguisher Deficiency Summary Sheet</span></div>
-      <div class="card-body" style="overflow-x:auto;">
-        <div style="margin-bottom:10px;">
-          <span style="font-size:.82rem;font-weight:700;">Total Extinguishers on Report: </span>
-          <span id="h-ext-total" style="font-size:1.1rem;font-weight:800;color:var(--hosp);">0</span>
+      <div class="card-header"><span class="icon">📊</span><span>Services Due Now Summary</span></div>
+      <div class="card-body">
+        <div style="display:flex;align-items:center;gap:16px;margin-bottom:14px;">
+          <div class="stat-box" style="flex:0 0 auto;min-width:200px;">
+            <span class="stat-label">Total Extinguishers on Report</span>
+            <span class="stat-val" id="ext-sum-total">0</span>
+          </div>
         </div>
-        <table class="dyn-table" id="h-ext-summary-table">
-          <thead><tr><th class="left">Extinguisher Type</th><th>6-Year Maint</th><th>Hydrostatic</th><th>Recharge</th><th>New Unit</th><th style="min-width:120px;">Notes</th></tr></thead>
-          <tbody id="h-ext-summary-tbody">
-            <!-- JS auto-populates from ext data: ABC-2.5LB, ABC-5LB, ABC-10LB, ABC-20LB, ABC-30LB,
-                 CO2 (NA 6yr), K Class (NA 6yr), Halon, Halotron, FE36, Foam (NA 6yr), BC, Class D, Other -->
-          </tbody>
+
+        <div class="sys-section">Specific Services Due Now</div>
+        <div style="overflow-x:auto;">
+          <table class="sum-table" id="ext-svc-table">
+            <thead>
+              <tr>
+                <th class="left" style="width:130px;">Extinguisher Type</th>
+                <th>6-Year Maint</th>
+                <th>Hydrostatic</th>
+                <th>Recharge</th>
+                <th>New Unit</th>
+                <th style="min-width:140px;">Notes</th>
+              </tr>
+            </thead>
+            <tbody id="ext-svc-tbody"></tbody>
+          </table>
+        </div>
+
+        <div class="sys-section">Units Not Found During This Inspection</div>
+        <div class="field-grid cols-3" style="gap:10px;">
+          <div class="field-group"><label>Cabinet Mallets Missing</label><input type="number" id="ext-nf-mallets" min="0" placeholder="0"></div>
+          <div class="field-group"><label>Location Signage Missing</label><input type="number" id="ext-nf-signage" min="0" placeholder="0"></div>
+          <div class="field-group"><label>Cabinet Glass (list size)</label><input type="text" id="ext-nf-glass" placeholder="e.g. 2× 4×8"></div>
+        </div>
+
+        <div class="sys-section">Total Services Due Now</div>
+        <div class="field-grid" style="gap:10px;">
+          <div class="field-group"><label>Total Services Due (auto-calculated)</label><input type="number" id="ext-total-svc-due" min="0" placeholder="0" readonly style="background:#f8fafc;"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- INSPECTION VERIFICATION QUESTIONS -->
+    <div class="card">
+      <div class="card-header"><span class="icon">✅</span><span>Inspection Verification Questions</span></div>
+      <div class="card-body">
+        <table class="qa-table">
+          <thead><tr><th>Question</th><th style="width:130px;">Answer</th></tr></thead>
+          <tbody id="ext-qa-tbody"></tbody>
         </table>
-        <div style="margin-top:12px;" class="field-grid cols-3">
-          <div class="field-group"><label>Cabinet Mallets Missing</label><input type="number" id="h-ext-nf-mallets" min="0" placeholder="0"></div>
-          <div class="field-group"><label>Location Signage Missing</label><input type="number" id="h-ext-nf-signage" min="0" placeholder="0"></div>
-          <div class="field-group"><label>Cabinet Glass (list size)</label><input type="text" id="h-ext-nf-glass" placeholder="e.g. 2× 4×8"></div>
-        </div>
-        <div style="margin-top:10px;" class="field-grid cols-1">
-          <div class="field-group"><label>Total Services Due Now</label><input type="number" id="h-ext-total-svc" readonly style="background:#f8fafc;font-size:1.1rem;font-weight:700;"></div>
-        </div>
       </div>
     </div>
 
@@ -1881,6 +1966,7 @@ canvas#cust-sig-canvas, canvas#sig-canvas {
 <script src="js/inspection-schedule.js"></script>
 <script src="js/inspection-google.js"></script>
 <script src="js/inspection-drafts.js"></script>
+<script src="js/inspection-panels.js"></script>
 <script src="js/inspection-hospital-deficiencies.js"></script>
 <script src="https://accounts.google.com/gsi/client"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -2836,13 +2922,6 @@ function updateHInventoryCounts() {
   const rEl = document.getElementById('h-inv-removed'); if (rEl) rEl.textContent = removed;
 }
 
-// addHExtRow — defined fully below with change-listener and summary rebuild
-function updateHExtCount() {
-  const count = document.getElementById('h-ext-tbody').children.length;
-  document.getElementById('h-ext-count').textContent = count;
-  document.getElementById('h-ext-total').textContent = count;
-}
-
 function addHBatteryRow() {
   const tbody = document.getElementById('h-battery-tbody');
   const tr = document.createElement('tr');
@@ -3069,107 +3148,15 @@ function syncSpDefic(id) {
 
 // rebuildHospDeficList is defined in js/inspection-hospital-deficiencies.js
 
-// ════════════════════════════════════════════════════════════════
-//  EXTINGUISHER SUMMARY AUTO-POPULATION
-//  Reads the ext tbody rows and builds the deficiency summary
-//  sheet grouped by type, counting services due
-// ════════════════════════════════════════════════════════════════
-const EXT_TYPES_ORDER = [
-  'ABC - 2.5LB','ABC - 5LB','ABC - 10LB','ABC - 20LB','ABC - 30LB',
-  'CO2','K CLASS','HALON','HALOTRON','FE36','FOAM','BC','CLASS D','OTHER',
-];
-// Which types have no 6-year maintenance (only hydrostatic)
-const EXT_NO_6YR = new Set(['CO2','K CLASS','WATER CANNON','WATER MIST','FOAM']);
-
-function rebuildExtSummary() {
-  const rows = Array.from(document.querySelectorAll('#h-ext-tbody tr'));
-
-  // Tally by type
-  const tally = {}; // type -> {sixYr, hydro, recharge, newUnit}
-  EXT_TYPES_ORDER.forEach(t => { tally[t] = { sixYr:0, hydro:0, recharge:0, newUnit:0 }; });
-
-  const today = new Date();
-  const thisYear = today.getFullYear();
-
-  rows.forEach(row => {
-    const sels = row.querySelectorAll('select');
-    const ins  = row.querySelectorAll('input');
-    // select indices: 0=mount, 1=cabinet, 2=type, 3=pass/fail, 4=recharge, 5=newUnit
-    const rawType    = sels[2]?.options[sels[2].selectedIndex]?.text || 'ABC';
-    const pf         = sels[3]?.options[sels[3].selectedIndex]?.text || '';
-    const needRecharge = sels[4]?.options[sels[4].selectedIndex]?.text === 'YES';
-    const needNew      = sels[5]?.options[sels[5].selectedIndex]?.text === 'YES';
-    // Map raw type to our category keys
-    const typeKey = EXT_TYPES_ORDER.find(k => rawType.toUpperCase().includes(k.replace(' - ','').replace('LB','').trim().toUpperCase()))
-                    || 'OTHER';
-    if (!tally[typeKey]) tally[typeKey] = { sixYr:0, hydro:0, recharge:0, newUnit:0 };
-
-    // 6-year due: read the "6-Yr Due" input (index 4 of number inputs)
-    const sixYrDue = parseInt(ins[4]?.value) || 0;
-    const hydroDue = parseInt(ins[5]?.value) || 0;
-
-    if (sixYrDue && sixYrDue <= thisYear && !EXT_NO_6YR.has(typeKey)) tally[typeKey].sixYr++;
-    if (hydroDue && hydroDue <= thisYear) tally[typeKey].hydro++;
-    if (needRecharge) tally[typeKey].recharge++;
-    if (needNew)      tally[typeKey].newUnit++;
-  });
-
-  // Rebuild summary tbody
-  const tbody = document.getElementById('h-ext-summary-tbody');
-  if (!tbody) return;
-  tbody.innerHTML = '';
-  let totalServices = 0;
-
-  EXT_TYPES_ORDER.forEach(type => {
-    const t = tally[type] || { sixYr:0, hydro:0, recharge:0, newUnit:0 };
-    const rowTotal = t.sixYr + t.hydro + t.recharge + t.newUnit;
-    totalServices += rowTotal;
-    const tr = document.createElement('tr');
-    const na = EXT_NO_6YR.has(type) ? 'NA' : (t.sixYr || '');
-    tr.innerHTML = `
-      <td style="font-weight:600;">${type}</td>
-      <td style="text-align:center;${EXT_NO_6YR.has(type)?'color:var(--slate);font-style:italic;':t.sixYr?'color:var(--red);font-weight:700;':''}">${EXT_NO_6YR.has(type)?'NA':t.sixYr||''}</td>
-      <td style="text-align:center;${t.hydro?'color:var(--red);font-weight:700;':''}">${t.hydro||''}</td>
-      <td style="text-align:center;${t.recharge?'color:var(--red);font-weight:700;':''}">${t.recharge||''}</td>
-      <td style="text-align:center;${t.newUnit?'color:var(--red);font-weight:700;':''}">${t.newUnit||''}</td>
-      <td><input type="text" style="width:100%;border:1px solid var(--border);border-radius:4px;padding:3px 5px;font-size:.75rem;" placeholder="Notes…"></td>`;
-    tbody.appendChild(tr);
-  });
-
-  const totalEl = document.getElementById('h-ext-total-svc');
-  if (totalEl) totalEl.value = totalServices || '';
-}
-
-// Hook ext summary rebuild into ext row add/remove
-const _origAddHExtRow = window.addHExtRow;
-function addHExtRow() {
-  const tbody = document.getElementById('h-ext-tbody');
-  if (!tbody) return;
-  const tr = document.createElement('tr');
-  tr.innerHTML = `
-    <td data-label="Floor"><input type="text" value="1" style="width:100%"></td>
-    <td data-label="Location"><input type="text" placeholder="Location…" style="width:100%"></td>
-    <td data-label="Mount"><select style="width:100%;"><option>HK</option><option>FK</option><option>CAB.</option><option>NM</option></select></td>
-    <td data-label="Cabinet"><select style="width:100%;"><option value="">—</option><option>YES TO ALL</option><option>NO MALLET</option><option>NO GLASS</option><option>NO SIGN</option><option>NA</option></select></td>
-    <td data-label="Mfg Date"><input type="number" placeholder="2022…" style="width:100%"></td>
-    <td data-label="Size"><input type="number" value="10" style="width:100%"></td>
-    <td data-label="Type"><select style="width:100%;"><option>ABC</option><option>K CLASS</option><option>CO2</option><option>HALOTRON</option><option>FE36</option><option>HALON</option><option>FOAM</option><option>BC</option><option>CLASS D</option></select></td>
-    <td data-label="Pass/Fail/NF"><select style="width:100%;"><option value="">—</option><option>PASS</option><option>FAIL</option><option>NF</option></select></td>
-    <td data-label="6-Yr Due"><input type="number" placeholder="2028…" style="width:100%"></td>
-    <td data-label="Hydro Due"><input type="number" placeholder="2034…" style="width:100%"></td>
-    <td data-label="Recharge?"><select style="width:100%;"><option value="">—</option><option>YES</option><option>NO</option></select></td>
-    <td data-label="New Unit?"><select style="width:100%;"><option value="">—</option><option>YES</option><option>NO</option></select></td>
-    <td data-label="Note"><input type="text" placeholder="Note…" style="width:100%" oninput="rebuildHospDeficList()"></td>
-    <td data-label=""><button class="del-btn" onclick="this.closest('tr').remove();updateHExtCount();rebuildExtSummary();">✕</button></td>`;
-  // Rebuild summary on any change
-  tr.querySelectorAll('input,select').forEach(el => {
-    el.addEventListener('change', () => { updateHExtCount(); rebuildExtSummary(); });
-  });
-  tbody.appendChild(tr);
-  updateHExtCount();
-  rebuildExtSummary();
-  saveDraft();
-}
+// Hook setExtPF (from inspection-panels.js) to also rebuild the hospital
+// deficiency list whenever ext pass/fail state changes.
+window.addEventListener('DOMContentLoaded', () => {
+  const _baseSetExtPF = window.setExtPF;
+  window.setExtPF = function(btn, n, val) {
+    if (typeof _baseSetExtPF === 'function') _baseSetExtPF(btn, n, val);
+    if (typeof rebuildHospDeficList === 'function') rebuildHospDeficList();
+  };
+});
 
 // ════════════════════════════════════════════════════════════════
 //  DEVICE SUB-NAV — active state highlight when switching sheets
@@ -3220,8 +3207,15 @@ function goHospStep(step) {
   if (step === 'fa-results' || step === 'sp-results') syncHospResultTables();
   // Rebuild summary when entering deficiencies step
   if (step === 'defic') rebuildHospDeficList();
-  // Rebuild ext summary when entering extinguisher step
-  if (step === 'extinguish') rebuildExtSummary();
+  // Build/refresh ext summary when entering extinguisher step
+  if (step === 'extinguish') {
+    updateExtStats();
+    if (!document.getElementById('ext-svc-tbody')?.children.length) {
+      buildExtSvcTable();
+      buildExtQATable();
+    }
+    autoFillExtSvcFromUnits();
+  }
   // Scroll to top
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
@@ -3371,15 +3365,15 @@ function syncHospResultTables() {
     pushToResultRow('h-sp-result-tbody', key, totals);
   });
 
-  // Fire extinguishers → FE row in SP results
-  const extRows = document.querySelectorAll('#h-ext-tbody tr');
+  // Fire extinguishers → FE row in SP results (reads from new ext-unit-row-N system)
   let feTotal=0, fePass=0, feFail=0;
-  extRows.forEach(row => {
+  for (let _i = 1; _i <= extUnitCount; _i++) {
+    if (!document.getElementById('ext-unit-row-' + _i)) continue;
     feTotal++;
-    const pfSel = row.querySelectorAll('select')[3]; // pass/fail select (index 3)
-    if (pfSel?.value === 'PASS') fePass++;
-    else if (pfSel?.value === 'FAIL') feFail++;
-  });
+    const pfVal = document.getElementById('u-pf-' + _i)?.value || '';
+    if (pfVal === 'PASS') fePass++;
+    else if (pfVal === 'FAIL') feFail++;
+  }
   pushToResultRow('h-sp-result-tbody', 'FE', { total:feTotal, pass:fePass, fail:feFail, nt:0, nf:0 });
 }
 
@@ -3525,7 +3519,7 @@ const _DRAFT_TBODY_IDS = [
   'h-door-release-tbody','h-fdc-tbody','h-hose-valve-tbody','h-standpipe-tbody',
   'h-spare-heads-tbody','h-valves-tbody','h-gauges-tbody','h-hydraulic-tbody',
   'h-ahu-tbody','h-offprem-tbody','h-subpanel-tbody','h-inventory-tbody',
-  'h-ext-tbody','h-defic-tbody','h-notes-tbody','h-battery-tbody',
+  'ext-tbody','h-defic-tbody','h-notes-tbody','h-battery-tbody',
   'h-main-drain-tbody','h-fa-result-tbody','h-sp-result-tbody',
   'h-eoc-checklist-tbody','h-recurring-tbody',
   'h-ov-fa-tbody','h-ov-sp-tbody','h-ov-special-tbody','h-35yr-tbody',
@@ -3770,6 +3764,11 @@ function loadDraft() {
     // Restore all dynamic table rows and card containers
     restoreTbodies(state.tbodies);
     restoreContainers(state.containers);
+    // Restore extUnitCount from saved ext-tbody rows and re-apply pf button states
+    const _unitIds = Array.from(document.querySelectorAll('#ext-tbody tr[id^="ext-unit-row-"]'))
+      .map(r => parseInt(r.id.replace('ext-unit-row-', ''))).filter(n => !isNaN(n));
+    extUnitCount = _unitIds.length ? Math.max(..._unitIds) : 0;
+    _unitIds.forEach(n => { if (typeof _restoreExtBtns === 'function') _restoreExtBtns(n); });
     // Sync pre/post checklist button visuals from their restored hidden inputs
     syncChkYNAVisuals();
     updateHospStartButton();
@@ -3874,7 +3873,7 @@ function restoreAllCounts() {
   const cboEl = document.getElementById('h-smoke-cbo-count'); if (cboEl) cboEl.textContent = cbo;
   // Subpanel, ext, spare heads, inventory
   updateHSubpanelCount();
-  updateHExtCount();
+  if (typeof updateExtStats === 'function') updateExtStats();
   updateHSpareHeadCounts();
   updateHInventoryCounts();
   // Elevator banks and annunciators are card-based (not tbodies) — counts already
@@ -4819,8 +4818,24 @@ function buildHospPDF(returnDoc) {
   doc.text(`STATUS — ADDED: ${addedCount}   REMOVED: ${removedCount}`, ML, curY + 4); curY += 8;
 
   // PAGES 32+: FIRE EXTINGUISHER INSPECTION RESULTS (33 per page)
-  const extRows = Array.from(document.querySelectorAll('#h-ext-tbody tr'));
-  if (extRows.length) {
+  // Collect all ext unit data from the new ext-unit-row-N / ext-action-row-N system
+  const _extUnits = [];
+  for (let _ei = 1; _ei <= extUnitCount; _ei++) {
+    if (!document.getElementById('ext-unit-row-' + _ei)) continue;
+    _extUnits.push({
+      flr:     document.getElementById('u-flr-'    + _ei)?.value || '',
+      loc:     document.getElementById('u-loc-'    + _ei)?.value || '',
+      mount:   document.getElementById('u-mount-'  + _ei)?.value || '',
+      mfg:     document.getElementById('u-mfg-'    + _ei)?.value || '',
+      size:    document.getElementById('u-size-'   + _ei)?.value || '',
+      type:    document.getElementById('u-type-'   + _ei)?.value || '',
+      pf:      document.getElementById('u-pf-'     + _ei)?.value || '',
+      hydro:   document.getElementById('u-hydro-'  + _ei)?.value || '',
+      recharge:document.getElementById('u-recharge-'+ _ei)?.value || '',
+      newunit: document.getElementById('u-newunit-'+ _ei)?.value || '',
+    });
+  }
+  if (_extUnits.length) {
     // Key/info page first
     newPage('Fire Extinguisher Information & Key — EC.02.03.05 EP 16');
     subHeader('Inspection Results Key and Information');
@@ -4834,10 +4849,10 @@ function buildHospPDF(returnDoc) {
     tableHeader([{label:'Item',w:CW*0.35},{label:'Detail',w:CW*0.65}]);
     keyInfo.forEach(([l, v], i) => tableRow([{w:CW*0.35},{w:CW*0.65}], [l, v], i%2===0));
     curY += 5;
-    subHeader('Extinguisher Deficiency Summary');
+    subHeader('Services Due Now Summary');
     const extSumCols = [{label:'Type',w:CW*0.2},{label:'6-Year Maint',w:CW*0.16},{label:'Hydrostatic',w:CW*0.16},{label:'Recharge',w:CW*0.16},{label:'New Unit',w:CW*0.16},{label:'Notes',w:CW*0.16}];
     tableHeader(extSumCols);
-    document.querySelectorAll('#h-ext-summary-tbody tr').forEach((row, i) => {
+    document.querySelectorAll('#ext-svc-tbody tr').forEach((row, i) => {
       const cells = row.querySelectorAll('td');
       const vals = Array.from(cells).map(c => c.querySelector('input')?.value || c.textContent?.trim() || '');
       tableRow(extSumCols.map(c=>({w:c.w})), vals.slice(0, 6), i%2===0);
@@ -4845,38 +4860,34 @@ function buildHospPDF(returnDoc) {
     curY += 4;
     // Summary totals
     doc.setFont('helvetica','bold'); doc.setFontSize(7); doc.setTextColor(...DARK);
-    doc.text(`TOTAL EXTINGUISHERS ON REPORT: ${extRows.length}`, ML, curY + 4); curY += 8;
+    doc.text(`TOTAL EXTINGUISHERS ON REPORT: ${_extUnits.length}`, ML, curY + 4); curY += 8;
     // Missing items
-    const mallets = fv('h-ext-nf-mallets');
-    const signage = fv('h-ext-nf-signage');
-    const glass   = fv('h-ext-nf-glass');
+    const mallets = fv('ext-nf-mallets');
+    const signage = fv('ext-nf-signage');
+    const glass   = fv('ext-nf-glass');
     if (mallets || signage || glass) {
       doc.text(`Cabinet Mallets Missing: ${mallets||0}   Location Signage Missing: ${signage||0}   Cabinet Glass: ${glass||'—'}`, ML, curY + 4);
       curY += 8;
     }
 
     // Extinguisher detail pages — 33 rows per page
-    const extCols = [{label:'Floor',w:CW*0.06},{label:'Location',w:CW*0.22},{label:'Mount',w:CW*0.07},{label:'Cabinet OK?',w:CW*0.1},{label:'Mfg Date',w:CW*0.07},{label:'Size',w:CW*0.06},{label:'Type',w:CW*0.07},{label:'P/F/NF',w:CW*0.07},{label:'6-Yr Due',w:CW*0.07},{label:'Hydro Due',w:CW*0.07},{label:'Recharge?',w:CW*0.07},{label:'New Unit?',w:CW*0.07}];
-    for (let start = 0; start < extRows.length; start += 33) {
+    const extCols = [{label:'Floor',w:CW*0.06},{label:'Location',w:CW*0.22},{label:'Mount',w:CW*0.07},{label:'Cabinet',w:CW*0.1},{label:'MFG Yr',w:CW*0.07},{label:'Size',w:CW*0.06},{label:'Type',w:CW*0.07},{label:'P/F',w:CW*0.07},{label:'Hydro Due',w:CW*0.09},{label:'Recharge',w:CW*0.08},{label:'New Unit',w:CW*0.11}];
+    for (let start = 0; start < _extUnits.length; start += 33) {
       newPage('Annual — Fire Extinguisher Inspection Results — EC.02.03.05 EP 16');
       tableHeader(extCols);
-      extRows.slice(start, start + 33).forEach((row, i) => {
-        const ins = row.querySelectorAll('input');
-        const sls = row.querySelectorAll('select');
+      _extUnits.slice(start, start + 33).forEach((u, i) => {
+        // Cabinet: combine cab flags
+        const cabBits = [];
+        if (document.getElementById('u-cab-m-' + (start+i+1))?.value === 'Y') cabBits.push('Mallet');
+        if (document.getElementById('u-cab-g-' + (start+i+1))?.value === 'Y') cabBits.push('Glass');
+        if (document.getElementById('u-cab-s-' + (start+i+1))?.value === 'Y') cabBits.push('Sign');
         tableRow(extCols.map(c=>({w:c.w})),
-          [ins[0]?.value||'', ins[1]?.value||'',
-           sls[0]?.options[sls[0].selectedIndex]?.text||'',
-           sls[1]?.options[sls[1].selectedIndex]?.text||'',
-           ins[2]?.value||'', ins[3]?.value||'',
-           sls[2]?.options[sls[2].selectedIndex]?.text||'',
-           sls[3]?.options[sls[3].selectedIndex]?.text||'',
-           ins[4]?.value||'', ins[5]?.value||'',
-           sls[4]?.options[sls[4].selectedIndex]?.text||'',
-           sls[5]?.options[sls[5].selectedIndex]?.text||''], i%2===0);
+          [u.flr, u.loc, u.mount, cabBits.join('/') || '—', u.mfg, u.size, u.type, u.pf, u.hydro, u.recharge==='Y'?'YES':'', u.newunit==='Y'?'YES':''],
+          i%2===0);
       });
-      if (start + 33 >= extRows.length) {
+      if (start + 33 >= _extUnits.length) {
         doc.setFont('helvetica','bold'); doc.setFontSize(6.5); doc.setTextColor(...DARK);
-        doc.text(`UNIT COUNT: ${extRows.length}`, ML, curY + 4); curY += 8;
+        doc.text(`UNIT COUNT: ${_extUnits.length}`, ML, curY + 4); curY += 8;
       }
     }
   }
