@@ -315,14 +315,13 @@ async function buildHospPDF() {
     curY += h + 1;
   };
 
-  // ── Inline label + editable field on one row ──
+  // ── Inline label + editable field on one row (fixed 90pt label column for alignment) ──
+  const INLINE_LBL_W = 90;
   const inlineRow = (label, val) => {
     const rowH = 15;
     checkPage(rowH + 2);
-    const lblStr = label + ':';
-    const lblW = hFont.widthOfTextAtSize(lblStr, 8) + 6;
-    page.drawText(lblStr, { x: ML+3, y: ty(rowH, 5), size: 8, font: hFont, color: navy });
-    mkField(val, ML + lblW, ry(rowH), PW - lblW, rowH, 8);
+    page.drawText(label + ':', { x: ML + 3, y: ty(rowH, 5), size: 8, font: hFont, color: navy });
+    mkField(val, ML + INLINE_LBL_W, ry(rowH), PW - INLINE_LBL_W, rowH, 8);
     curY += rowH + 2;
   };
 
@@ -455,19 +454,21 @@ async function buildHospPDF() {
 
   // Building/property info
   secHdr('Building / Property Information');
-  dataRow([{ label: 'BUILDING/PROPERTY NAME', val: fv('property-name'), w: PW }], 12, 8, 2);
+  gap(5);
+  dataRow([{ label: 'BUILDING/PROPERTY NAME', val: fv('property-name'), w: PW }], 12, 8, 4);
   dataRow([
     { label: 'STREET ADDRESS', val: fv('service-address'), w: PW * 0.6 },
     { label: 'CITY, STATE, ZIP', val: fv('city-state-zip'), w: PW * 0.4 },
-  ], 12, 8, 2);
+  ], 12, 8, 4);
   dataRow([
     { label: 'JURISDICTION', val: fv('jurisdiction'), w: PW * 0.5 },
     { label: 'DATE PERFORMED', val: fv('insp-date'), w: PW * 0.5 },
-  ], 12, 8, 2);
+  ], 12, 8, 4);
   gap(4);
 
   // Site contacts
   secHdr('Site Contact Information');
+  gap(5);
   const halfW = PW / 2 - 3;
   // Header row
   page.drawRectangle({ x: ML,           y: ry(16), width: halfW, height: 16, color: midnav });
@@ -475,6 +476,7 @@ async function buildHospPDF() {
   page.drawRectangle({ x: ML+halfW+6,   y: ry(16), width: halfW, height: 16, color: midnav });
   page.drawText('SECONDARY CONTACT', { x: ML+halfW+10, y: ty(16,5.5), size: 8.5, font: hFont, color: white });
   curY += 17;
+  gap(5);
   const contFields = [
     ['NAME',  'primary-name',  'secondary-name'],
     ['TITLE', 'primary-title', 'secondary-title'],
@@ -482,12 +484,12 @@ async function buildHospPDF() {
     ['EMAIL', 'primary-email', 'secondary-email'],
   ];
   contFields.forEach(([label, id1, id2]) => {
-    checkPage(26);
+    checkPage(30);
     page.drawText(label+':', { x: ML+3, y: ty(9, 7), size: 7, font: hFont, color: navy });
     page.drawText(label+':', { x: ML+halfW+9, y: ty(9, 7), size: 7, font: hFont, color: navy });
     mkField(fv(id1), ML, ry(23), halfW, 14, 8);
     mkField(fv(id2), ML+halfW+6, ry(23), halfW, 14, 8);
-    curY += 26;
+    curY += 30;
   });
   gap(6);
 
@@ -512,13 +514,23 @@ async function buildHospPDF() {
     '\u2022 DOOR RELEASING RELAYS FUNCTIONAL TESTING (IF APPLICABLE) (ANNUAL ONLY/FUNCTIONAL).',
     '\u2022 DOCUMENTATION OF SYSTEM TESTING AND WHEN APPLICABLE GENERATION OF SYSTEM DEFICIENCIES REPORT.',
   ];
-  const nfpaBlockH = nfpaLines.length * 10 + 12;
+  // Pre-wrap all NFPA lines to the box width
+  const nfpaMaxW = PW - 20;
+  const nfpaWrapped = nfpaLines.flatMap(ln => {
+    const isBullet = ln.startsWith('\u2022');
+    const textW    = isBullet ? nfpaMaxW - 8 : nfpaMaxW;
+    const textStr  = isBullet ? ln.slice(2) : ln; // strip bullet for wrapping
+    const wrapped  = wrap(textStr, 7.5, textW);
+    return wrapped.map((wl, wi) => ({ text: wl, bullet: isBullet && wi === 0, indent: isBullet && wi > 0 }));
+  });
+  const nfpaBlockH = nfpaWrapped.length * 10 + 12;
   checkPage(nfpaBlockH);
   page.drawRectangle({ x: ML, y: ry(nfpaBlockH), width: PW, height: nfpaBlockH, color: lgray, borderColor: sky, borderWidth: 0.3 });
   let nfpaY = ry(nfpaBlockH) + nfpaBlockH - 11;
-  nfpaLines.forEach(ln => {
-    const indent = ln.startsWith('\u2022') ? ML + 10 : ML + 6;
-    page.drawText(ln, { x: indent, y: nfpaY, size: 7.5, font: ln.startsWith('\u2022') ? rFont : hFont, color: blk });
+  nfpaWrapped.forEach(({ text, bullet, indent }) => {
+    const x = bullet ? ML + 6 : indent ? ML + 14 : ML + 6;
+    if (bullet) page.drawText('\u2022', { x: ML + 6, y: nfpaY, size: 7.5, font: rFont, color: blk });
+    page.drawText(text, { x: bullet ? ML + 14 : x, y: nfpaY, size: 7.5, font: bullet ? rFont : rFont, color: blk });
     nfpaY -= 10;
   });
   curY += nfpaBlockH + 4;
@@ -1325,11 +1337,14 @@ async function buildHospPDF() {
   }
 
   // Signatures
-  checkPage(60);
+  checkPage(80);
   secHdr('Signatures');
+  gap(6);
   const sigH = 40, sigW = PW / 2 - 6;
-  page.drawText('INSPECTOR SIGNATURE:', { x: ML, y: ty(sigH) + sigH + 3, size: 8.5, font: hFont, color: navy });
-  page.drawText('CUSTOMER SIGNATURE (Optional):', { x: ML+PW/2+10, y: ty(sigH) + sigH + 3, size: 8.5, font: hFont, color: navy });
+  // Draw labels at current curY, then advance, then draw sig boxes
+  page.drawText('INSPECTOR SIGNATURE:', { x: ML, y: ty(10, 7), size: 8.5, font: hFont, color: navy });
+  page.drawText('CUSTOMER SIGNATURE (Optional):', { x: ML+PW/2+10, y: ty(10, 7), size: 8.5, font: hFont, color: navy });
+  curY += 12;
   if (H.inspSig) {
     try {
       const b64 = H.inspSig.split(',')[1];
@@ -1352,11 +1367,12 @@ async function buildHospPDF() {
   } else {
     mkField('', ML+PW/2+8, ry(sigH), sigW, sigH, 9);
   }
-  curY += sigH + 4;
+  curY += sigH + 6;
   dataRow([
     { label: 'INSPECTOR PRINT NAME', val: fv('h-sig-name'),      w: PW/2 },
     { label: 'CUSTOMER PRINT NAME',  val: fv('h-cust-sig-name'), w: PW/2 },
-  ], 12, 8, 2);
+  ], 12, 8, 4);
+  gap(4);
   dataRow([
     { label: 'INSPECTOR DATE', val: fv('h-sig-date'),      w: PW/2 },
     { label: 'CUSTOMER DATE',  val: fv('h-cust-sig-date'), w: PW/2 },
