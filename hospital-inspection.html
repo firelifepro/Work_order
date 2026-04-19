@@ -2478,8 +2478,13 @@ function startHospInspection() {
   initHospData();
   const lastHosp = _propertyProfile?.lastInspBySystem?.hospital;
   if (lastHosp) {
-    if (lastHosp.devices)      restoreHospDevices(lastHosp.devices);
-    if (lastHosp.extinguishers) restoreHospExtinguishers(lastHosp.extinguishers);
+    _suppressDraftSave = true;
+    try {
+      if (lastHosp.devices)       restoreHospDevices(lastHosp.devices);
+      if (lastHosp.extinguishers) restoreHospExtinguishers(lastHosp.extinguishers);
+    } finally {
+      _suppressDraftSave = false;
+    }
   }
   goHospStep('panel');
 }
@@ -4002,7 +4007,9 @@ function collectFormState() {
   return state;
 }
 
+let _suppressDraftSave = false;
 function saveDraft() {
+  if (_suppressDraftSave) return;
   try {
     const state = collectFormState();
     localStorage.setItem(hospDraftKey(), JSON.stringify(state));
