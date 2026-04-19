@@ -542,7 +542,35 @@ async function findPropertyProfileFile(propName) {
     if (!res.ok) return null;
     const json = await res.json();
     const files = json.files || [];
-    return files.length > 0 ? files[0] : null;
+    if (files.length > 0) return files[0];
+
+    // Fallback: search by filename (handles manually-uploaded profiles without appProperties)
+    const acctSlug = _currentPropertyAcct ? _currentPropertyAcct.replace(/[^a-zA-Z0-9]/g, '_') : '';
+    const nameSlug = propName.replace(/[^a-zA-Z0-9]/g, '_').slice(0, 60);
+    const nameVariants = [
+      acctSlug ? `FLPS_Profile_${acctSlug}_${nameSlug}.json` : null,
+      `FLPS_Profile_${nameSlug}.json`,
+    ].filter(Boolean).filter((v, i, a) => a.indexOf(v) === i);
+    console.log('[findPropertyProfileFile] trying filename fallback:', nameVariants, 'in folder:', folderId);
+    // Search in folder first, then Drive-wide as last resort
+    for (const scope of ['folder', 'drive']) {
+      for (const fname of nameVariants) {
+        const safeN = fname.replace(/'/g, "\\'");
+        const qn = scope === 'folder'
+          ? `"${folderId}" in parents and trashed=false and name='${safeN}'`
+          : `trashed=false and name='${safeN}'`;
+        const r2 = await googleFetch(
+          `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(qn)}` +
+          `&fields=files(id,name,appProperties,modifiedTime)&orderBy=modifiedTime+desc&pageSize=5` +
+          `&includeItemsFromAllDrives=true&supportsAllDrives=true&corpora=allDrives`
+        );
+        if (!r2.ok) continue;
+        const j2 = await r2.json();
+        console.log(`[findPropertyProfileFile] ${scope} search for "${fname}":`, j2.files?.length ?? 0, 'results');
+        if (j2.files && j2.files.length > 0) return j2.files[0];
+      }
+    }
+    return null;
   } catch(e) {
     console.warn('[findPropertyProfileFile] error:', e.message);
     return null;
