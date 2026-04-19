@@ -234,12 +234,18 @@ async function buildHospPDF() {
     if (title) secHdr(title);
   };
 
-  // ── Section header (navy bar) ──
+  // ── Section header (navy bar) — wraps long titles to second line ──
   const secHdr = (text) => {
-    checkPage(21);
-    page.drawRectangle({ x: ML, y: ry(19), width: PW, height: 19, color: navy });
-    page.drawText(text.toUpperCase(), { x: ML+4, y: ty(19, 6), size: 9.5, font: hFont, color: white });
-    curY += 21;
+    const txt   = text.toUpperCase();
+    const lines = wrap(txt, 9.5, PW - 10);
+    const hdrH  = lines.length > 1 ? 28 : 19;
+    checkPage(hdrH + 2);
+    page.drawRectangle({ x: ML, y: ry(hdrH), width: PW, height: hdrH, color: navy });
+    lines.forEach((ln, li) => {
+      const lineY = ry(hdrH) + hdrH - 13 - li * 11;
+      page.drawText(ln, { x: ML+4, y: lineY, size: 9.5, font: hFont, color: white });
+    });
+    curY += hdrH + 2;
   };
 
   // ── Sub-header (sky bar) ──
@@ -599,21 +605,22 @@ async function buildHospPDF() {
     { label: 'Current Totals',              w: PW * 0.10 },
     { label: 'Previous Totals',             w: PW * 0.10 },
     { label: 'Test/Inspection Interval',    w: PW * 0.16 },
-    { label: 'Code Publication',            w: PW * 0.22 },
-    { label: 'Activity: Freq.',             w: PW * 0.08 },
+    { label: 'Code Publication',            w: PW * 0.18 },
+    { label: 'Activity: Freq.',             w: PW * 0.12 },
     { label: 'EP LS #',                     w: PW * 0.06 },
   ];
   tblHdr(kCols);
   document.querySelectorAll('#h-fa-key-tbody tr').forEach(row => {
     const cells    = row.querySelectorAll('td');
+    const inps     = row.querySelectorAll('input');
     const fullCode = cells[4]?.textContent?.trim() || '';
     const m        = fullCode.match(/^(.+?\(\d{4}\))\s+(.*)$/);
     const codePub  = m ? m[1].trim() : fullCode;
     const codeAct  = m ? m[2].trim() : '';
     tblRow(kCols, [
       cells[0]?.textContent?.trim() || '',
-      row.querySelector('input:nth-of-type(1)')?.value || '',
-      row.querySelector('input:nth-of-type(2)')?.value || '',
+      inps[0]?.value || '',
+      inps[1]?.value || '',
       cells[3]?.textContent?.trim() || '',
       codePub,
       codeAct,
@@ -628,14 +635,15 @@ async function buildHospPDF() {
   tblHdr(kCols);
   document.querySelectorAll('#h-sp-key-tbody tr').forEach(row => {
     const cells    = row.querySelectorAll('td');
+    const inps     = row.querySelectorAll('input');
     const fullCode = cells[4]?.textContent?.trim() || '';
     const m        = fullCode.match(/^(.+?\(\d{4}\))\s+(.*)$/);
     const codePub  = m ? m[1].trim() : fullCode;
     const codeAct  = m ? m[2].trim() : '';
     tblRow(kCols, [
       cells[0]?.textContent?.trim() || '',
-      row.querySelector('input:nth-of-type(1)')?.value || '',
-      row.querySelector('input:nth-of-type(2)')?.value || '',
+      inps[0]?.value || '',
+      inps[1]?.value || '',
       cells[3]?.textContent?.trim() || '',
       codePub,
       codeAct,
@@ -795,11 +803,11 @@ async function buildHospPDF() {
      {label:'Time (sec)',w:PW*0.12},{label:'Note',w:PW*0.10}],
     [inp(0), selOpt(0), inp(1), inp(2), selOpt(1), selOpt(2), inp(3), inp(4)], 5);
 
-  // PAGE 10: TAMPER SWITCHES
+  // PAGE 10: TAMPER SWITCHES  (Type is a text input, not select)
   devicePage('Tamper Switches (Supervisory) — EC.02.03.05 EP 02', 'h-tamper-tbody',
     [{label:'Floor',w:PW*0.09},{label:'Type',w:PW*0.10},{label:'Location',w:PW*0.38},
      {label:'Address',w:PW*0.15},{label:'Visual',w:PW*0.14},{label:'Functional',w:PW*0.14}],
-    [inp(0), selOpt(0), inp(1), inp(2), selOpt(1), selOpt(2)], 5);
+    [inp(0), inp(1), inp(2), inp(3), selOpt(0), selOpt(1)], 5);
 
   // PAGES 11+: SMOKE DETECTORS (30/page)
   const smokeAlSel = (row) => { const el = row.querySelectorAll('select')[1]; return el?.options[el.selectedIndex]?.text || 'AL'; };
@@ -808,23 +816,23 @@ async function buildHospPDF() {
      {label:'Address',w:PW*0.14},{label:'AL/SPV',w:PW*0.09},{label:'Visual',w:PW*0.14},{label:'Functional',w:PW*0.16}],
     [inp(0), selOpt(0), inp(1), inp(2), smokeAlSel, selOpt(2), selOpt(3)], 6, 30);
 
-  // PAGE 12: HEAT DETECTORS
+  // PAGE 12: HEAT DETECTORS  (Type is a text input, not select)
   devicePage('Heat Detectors — EC.02.03.05 EP 03', 'h-heat-tbody',
     [{label:'Floor',w:PW*0.09},{label:'Type',w:PW*0.10},{label:'Location',w:PW*0.38},
      {label:'Address',w:PW*0.15},{label:'Visual',w:PW*0.14},{label:'Functional',w:PW*0.14}],
-    [inp(0), selOpt(0), inp(1), inp(2), selOpt(1), selOpt(2)], 5);
+    [inp(0), inp(1), inp(2), inp(3), selOpt(0), selOpt(1)], 5);
 
-  // PAGES 13+: MANUAL PULL STATIONS
+  // PAGES 13+: MANUAL PULL STATIONS  (Type is a text input, not select)
   pagedDevicePage('Manual Pull Stations — EC.02.03.05 EP 03', 'h-pull-tbody',
     [{label:'Floor',w:PW*0.09},{label:'Type',w:PW*0.10},{label:'Location',w:PW*0.38},
      {label:'Address',w:PW*0.15},{label:'Visual',w:PW*0.14},{label:'Functional',w:PW*0.14}],
-    [inp(0), selOpt(0), inp(1), inp(2), selOpt(1), selOpt(2)], 5, 30);
+    [inp(0), inp(1), inp(2), inp(3), selOpt(0), selOpt(1)], 5, 30);
 
-  // PAGE 14: DUCT DETECTORS
+  // PAGE 14: DUCT DETECTORS  (Type is a text input, not select)
   devicePage('Duct Detectors — EC.02.03.05 EP 03', 'h-duct-tbody',
     [{label:'Floor',w:PW*0.09},{label:'Type',w:PW*0.10},{label:'Location',w:PW*0.38},
      {label:'Address',w:PW*0.15},{label:'Visual',w:PW*0.14},{label:'Functional',w:PW*0.14}],
-    [inp(0), selOpt(0), inp(1), inp(2), selOpt(1), selOpt(2)], 5);
+    [inp(0), inp(1), inp(2), inp(3), selOpt(0), selOpt(1)], 5);
 
   // PAGES 15+: AUDIO/VISUAL
   pagedDevicePage('Audio/Visual Notification — EC.02.03.05 EP 04', 'h-av-tbody',
@@ -868,7 +876,7 @@ async function buildHospPDF() {
   const bankCards = document.querySelectorAll('#h-elevator-banks > div');
   const elvCols = [
     { label: '',                     w: PW*0.35 },
-    { label: 'Month/Year',           w: PW*0.15 },
+    { label: 'Recall Floor',         w: PW*0.15 },
     { label: 'Operational?',         w: PW*0.20 },
     { label: 'Device Used for Recall', w: PW*0.30 },
   ];
@@ -876,10 +884,16 @@ async function buildHospPDF() {
     checkPage(50);
     const ins  = card.querySelectorAll('input');
     const sels = card.querySelectorAll('select');
-    subHdr(`Elevator Recall Bank — ${ins[1]?.value || ('Bank ' + (bi+1))}   (${ins[0]?.value || ''})`);
+    // ins[0]=Month/Year, ins[1]=Location/Bank#, ins[2]=Primary Recall Floor,
+    // ins[3]=Primary Device Used, ins[4]=Primary Note (hidden), ins[5]=Secondary Recall Floor,
+    // ins[6]=Secondary Device Used, ins[7]=Secondary Note (hidden)
+    const bankNum  = bi + 1;
+    const bankLoc  = ins[1]?.value || `Bank ${bankNum}`;
+    const bankMoYr = ins[0]?.value || '';
+    subHdr(`Elevator Recall Bank ${bankNum} — Location / Bank #: ${bankLoc}  (${bankMoYr})`);
     tblHdr(elvCols);
     tblRow(elvCols, ['PRIMARY RECALL FLOOR',   ins[2]?.value||'1ST',  sels[0]?.options[sels[0].selectedIndex]?.text||'', ins[3]?.value||''], 2);
-    tblRow(elvCols, ['SECONDARY RECALL FLOOR', ins[4]?.value||'BSMT', sels[1]?.options[sels[1].selectedIndex]?.text||'', ins[5]?.value||''], 2);
+    tblRow(elvCols, ['SECONDARY RECALL FLOOR', ins[5]?.value||'BSMT', sels[1]?.options[sels[1].selectedIndex]?.text||'', ins[6]?.value||''], 2);
     gap(4);
   });
   checkPage(14);
@@ -933,7 +947,7 @@ async function buildHospPDF() {
       const sls  = card.querySelectorAll('select');
       page.drawRectangle({ x: cx, y: ry(13), width: hw, height: 13, color: midnav });
       page.drawText('ANNUNCIATOR', { x: cx+4, y: ty(13,4), size: 8.5, font: hFont, color: white });
-      curY += 14;
+      curY += 18; // 14 for header + 4 padding before first label
       [['MAKE', ins[0]?.value||''], ['MODEL', ins[1]?.value||''],
        ['LOCATION', ins[2]?.value||''], ['PASS/FAIL', sls[0]?.options[sls[0].selectedIndex]?.text||''],
        ['NOTES', ins[3]?.value||'']].forEach(([l, v]) => {
@@ -998,7 +1012,7 @@ async function buildHospPDF() {
   // PAGE 25: STANDPIPES
   devicePage('Standpipes — LS 02.01.35 EP 14', 'h-standpipe-tbody',
     [{label:'Floor',w:PW*0.08},{label:'Type',w:PW*0.10},{label:'Location',w:PW*0.38},
-     {label:'Visual',w:PW*0.14},{label:'Hydro Year',w:PW*0.16},{label:'Size (in)',w:PW*0.14}],
+     {label:'Visual',w:PW*0.14},{label:'Condition',w:PW*0.16},{label:'Size (in)',w:PW*0.14}],
     [inp(0), inp(1), inp(2), selOpt(0), inp(3), inp(4)], 3);
 
   // PAGE 26: SPARE HEAD BOXES
