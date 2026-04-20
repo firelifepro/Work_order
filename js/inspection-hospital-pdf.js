@@ -145,7 +145,7 @@ async function hospSaveAndDownload() {
     if (pdfBytes) { try { downloadPDF(pdfBytes, filename || 'hospital_inspection.pdf'); } catch(_) {} }
   } finally {
     _suppressDraftSave = false;
-    if (btn) { btn.disabled = false; btn.textContent = '📄 Save & Download PDF'; }
+    if (btn) { btn.disabled = false; btn.textContent = '📄 Close Inspection, Save & Download PDF'; }
   }
 }
 
