@@ -3843,11 +3843,10 @@ const _DRAFT_TBODY_IDS = [
   'h-fa-key-tbody','h-sp-key-tbody',
 ];
 
-// Card-container IDs that hold dynamically added cards (elevator banks, annunciators)
-// and the sprinkler detail blocks whose yna-btn states must be persisted.
+// Card-container IDs for the sprinkler detail blocks whose yna-btn states must be persisted.
+// h-elevator-banks and h-annunciator-grid are intentionally excluded here — they are
+// now handled by restoreHospDevices() via devices.elevators / devices.annunciators.
 const _DRAFT_CONTAINER_IDS = [
-  'h-elevator-banks',
-  'h-annunciator-grid',
   'h-sp-dry-block',
   'h-sp-5yr-block',
   'h-sp-pre-block',
@@ -3962,6 +3961,146 @@ function restoreTbodies(tbodyMap) {
   });
 }
 
+// ─── STRUCTURED TABLE DATA — REPLACES innerHTML DRAFT SERIALIZATION ───────────
+// Instead of saving bulky DOM innerHTML, we save compact structured data and
+// rebuild the DOM on restore using the same functions that created the rows.
+// This cuts draft size by ~5-10x, keeping well inside localStorage quota limits.
+
+// STATIC TABLES: rows created at init time, only values/button-states change.
+// Saves per-row: array of YNA button values (one per .pf-group) + array of
+// input/select values for every element not inside a .pf-group.
+function extractStaticRows(tbodyId) {
+  const tbody = document.getElementById(tbodyId);
+  if (!tbody) return [];
+  return Array.from(tbody.querySelectorAll('tr')).map(tr => {
+    const ynas = [];
+    tr.querySelectorAll('.pf-group').forEach(grp => {
+      const sel = grp.querySelector('.pf-btn.selected, .yna-btn.selected');
+      ynas.push(sel ? sel.textContent.trim() : '');
+    });
+    const inputs = [];
+    tr.querySelectorAll('input, select').forEach(el => {
+      if (!el.closest('.pf-group')) inputs.push(el.value);
+    });
+    return { ynas, inputs };
+  });
+}
+
+function restoreStaticRows(tbodyId, rows) {
+  if (!rows || !rows.length) return;
+  const tbody = document.getElementById(tbodyId);
+  if (!tbody) return;
+  const trs = Array.from(tbody.querySelectorAll('tr'));
+  rows.forEach((row, i) => {
+    const tr = trs[i];
+    if (!tr) return;
+    // Restore YNA/PF button groups
+    const groups = tr.querySelectorAll('.pf-group');
+    (row.ynas || []).forEach((val, j) => {
+      const grp = groups[j];
+      if (!grp || !val) return;
+      grp.querySelectorAll('.pf-btn, .yna-btn').forEach(btn => {
+        btn.classList.toggle('selected', btn.textContent.trim() === val);
+      });
+    });
+    // Restore inputs/selects (those outside pf-groups)
+    const els = [];
+    tr.querySelectorAll('input, select').forEach(el => {
+      if (!el.closest('.pf-group')) els.push(el);
+    });
+    (row.inputs || []).forEach((val, j) => {
+      if (els[j] !== undefined) els[j].value = val;
+    });
+  });
+}
+
+// DEFIC ROWS: manually-added deficiency rows (description + make/model).
+function extractDeficRows() {
+  return Array.from(document.querySelectorAll('#h-defic-tbody tr')).map(tr => {
+    const inp = tr.querySelectorAll('input[type="text"]');
+    return { desc: inp[0]?.value || '', makeModel: inp[1]?.value || '' };
+  });
+}
+function restoreDeficRows(rows) {
+  (rows || []).forEach(row => {
+    addHDeficRow();
+    const tr = document.getElementById('h-defic-tbody')?.lastElementChild;
+    if (!tr) return;
+    const inp = tr.querySelectorAll('input[type="text"]');
+    if (inp[0]) inp[0].value = row.desc      || '';
+    if (inp[1]) inp[1].value = row.makeModel  || '';
+  });
+}
+
+// NOTE ROWS: manually-added note/observation rows.
+function extractNoteRows() {
+  return Array.from(document.querySelectorAll('#h-notes-tbody tr')).map(tr => ({
+    text: tr.querySelector('input[type="text"]')?.value || ''
+  }));
+}
+function restoreNoteRows(rows) {
+  (rows || []).forEach(row => {
+    addHNoteRow();
+    const tr = document.getElementById('h-notes-tbody')?.lastElementChild;
+    if (!tr) return;
+    const inp = tr.querySelector('input[type="text"]');
+    if (inp) inp.value = row.text || '';
+  });
+}
+
+// Static table IDs whose rows are built at init and only need value/state saving.
+// h-fa-result-tbody and h-sp-result-tbody are auto-synced from device counts, but
+// we save them too so any manually-edited NT/NF/notes fields survive the round-trip.
+const _STATIC_TBODY_IDS = [
+  'h-ov-fa-tbody', 'h-ov-sp-tbody', 'h-ov-special-tbody', 'h-35yr-tbody',
+  'h-fa-result-tbody', 'h-sp-result-tbody',
+  'h-eoc-checklist-tbody', 'h-recurring-tbody',
+];
+
+// MAIN EXTRACTOR — replaces serializeTbodies().
+// Uses collectHospDevices() + collectHospExtinguishers() (already compact structured
+// data) for all device tables, and extractStaticRows() for fixed-structure tables.
+function extractTableData() {
+  const staticRows = {};
+  _STATIC_TBODY_IDS.forEach(id => {
+    const rows = extractStaticRows(id);
+    if (rows.length) staticRows[id] = rows;
+  });
+  return {
+    devices:       collectHospDevices(),
+    extinguishers: collectHospExtinguishers(),
+    staticRows,
+    deficRows:     extractDeficRows(),
+    noteRows:      extractNoteRows(),
+  };
+}
+
+// MAIN RESTORER — replaces restoreTbodies() in the new-format draft path.
+function restoreTableData(data) {
+  if (!data) return;
+  // Device tables: structured-data restorers already handle FA sheets, SP sheets,
+  // spare heads, valves, gauges, main drain, battery, inventory, offprem,
+  // subpanel, elevator banks, and annunciator cards.
+  if (data.devices) {
+    restoreHospDevices(data.devices);
+  }
+  // Extinguisher units — addExtUnitRow(prefill) increments extUnitCount and
+  // calls _restoreExtBtns internally when pf is set, so no extra work needed.
+  if (data.extinguishers && data.extinguishers.length) {
+    const tbody = document.getElementById('ext-tbody');
+    if (tbody) tbody.innerHTML = '';
+    extUnitCount = 0;
+    restoreHospExtinguishers(data.extinguishers);
+  }
+  // Static fixed-structure tables (YNA + inputs)
+  Object.entries(data.staticRows || {}).forEach(([id, rows]) => {
+    restoreStaticRows(id, rows);
+  });
+  // Manual deficiency + note rows
+  restoreDeficRows(data.deficRows);
+  restoreNoteRows(data.noteRows);
+}
+
 // Syncs the visual selected state of pre/post checklist pf-btn groups
 // from their corresponding hidden input values (which are restored via fields{}).
 function syncChkYNAVisuals() {
@@ -3997,13 +4136,11 @@ function collectFormState() {
   // Signatures
   state.inspSig = H.inspSig;
   state.custSig = H.custSig;
-  // Photos — serialize as [{src, caption}]
+  // Photos: never stored in localStorage (base64 images blow the quota).
+  // The Drive backup in saveDraft() always receives the full state with photos.
+  // On restore from a local draft, photos are simply absent; the user can
+  // reattach from Drive or device if needed.
   state.photos = [];
-  document.querySelectorAll('#h-photo-grid .photo-thumb').forEach(thumb => {
-    const src     = thumb.querySelector('img')?.src || '';
-    const caption = thumb.querySelector('textarea')?.value || '';
-    if (src) state.photos.push({ src, caption });
-  });
   // Key sheet counts (for "Previous #" in future inspections)
   state.keySheet = { fa: [], sp: [] };
   document.querySelectorAll('#h-fa-key-tbody tr').forEach(row => {
@@ -4018,8 +4155,10 @@ function collectFormState() {
     const inputs = row.querySelectorAll('input[type="number"]');
     state.keySheet.sp.push({ key: m[1], current: inputs[0]?.value || '', previous: inputs[1]?.value || '' });
   });
-  // Serialize all dynamic table contents and card containers
-  state.tbodies     = serializeTbodies();
+  // Structured table data — compact JSON objects instead of raw innerHTML.
+  // ~5-10x smaller than serializeTbodies(). Sprinkler detail blocks still use
+  // innerHTML via serializeContainers() since they are small and fixed-structure.
+  state.tableData   = extractTableData();
   state.containers  = serializeContainers();
   return state;
 }
@@ -4028,20 +4167,19 @@ let _suppressDraftSave = false;
 function saveDraft() {
   if (_suppressDraftSave) return;
   try {
-    const state = collectFormState();
-    // Drive backup always gets the full state (photos included)
+    const state = collectFormState();  // photos always [] — never in localStorage
+    // Drive backup: attach photos (base64 data URLs) only for the Drive copy
     if (typeof saveDraftToDrive === 'function') {
-      saveDraftToDrive(state, hospDraftKey()).catch(() => {});
+      const photos = [];
+      document.querySelectorAll('#h-photo-grid .photo-thumb').forEach(thumb => {
+        const src = thumb.querySelector('img')?.src || '';
+        const caption = thumb.querySelector('textarea')?.value || '';
+        if (src) photos.push({ src, caption });
+      });
+      const driveState = photos.length ? Object.assign({}, state, { photos }) : state;
+      saveDraftToDrive(driveState, hospDraftKey()).catch(() => {});
     }
-    try {
-      localStorage.setItem(hospDraftKey(), JSON.stringify(state));
-    } catch(quotaErr) {
-      // Photos are large — strip them and retry; Drive has the full copy
-      const slim = Object.assign({}, state, { photos: [] });
-      localStorage.setItem(hospDraftKey(), JSON.stringify(slim));
-      showToast('💾 Draft saved (photos backed up to Drive)');
-      return;
-    }
+    localStorage.setItem(hospDraftKey(), JSON.stringify(state));
     showToast('💾 Draft saved');
   } catch(e) {
     showToast('Could not save draft: ' + e.message);
@@ -4072,30 +4210,29 @@ function loadDraft() {
     // Restore sig onto canvas if present
     if (state.inspSig) drawDataUrlToCanvas('sig-canvas', state.inspSig);
     if (state.custSig) drawDataUrlToCanvas('cust-sig-canvas', state.custSig);
-    // Restore photos
+    // Photos: not stored in localStorage (too large). The Drive backup has them.
+    // Clear the grid so no stale photos linger from a prior session.
     const photoGrid = document.getElementById('h-photo-grid');
-    if (photoGrid && Array.isArray(state.photos)) {
-      photoGrid.innerHTML = '';
-      state.photos.forEach(({ src, caption }) => {
-        if (!src) return;
-        const wrap = document.createElement('div');
-        wrap.className = 'photo-thumb';
-        wrap.innerHTML = `<img src="${src}">
-          <textarea placeholder="Caption…" rows="2"></textarea>
-          <button class="photo-del" onclick="this.closest('.photo-thumb').remove();updatePhotoCount()">✕</button>`;
-        wrap.querySelector('textarea').value = caption || '';
-        photoGrid.appendChild(wrap);
-      });
-      updatePhotoCount();
+    if (photoGrid) photoGrid.innerHTML = '';
+    updatePhotoCount();
+    // Restore all dynamic table rows and card containers.
+    // NEW path: state.tableData uses compact structured JSON — restoreTableData()
+    //   calls restoreHospDevices() + restoreHospExtinguishers() (extUnitCount is
+    //   managed inside those functions) plus static-row and defic/note restorers.
+    // OLD path: state.tbodies contains raw innerHTML — backward compat for drafts
+    //   saved before this refactor. Also recover extUnitCount manually for old path.
+    if (state.tableData) {
+      restoreTableData(state.tableData);
+      restoreContainers(state.containers);
+    } else if (state.tbodies) {
+      restoreTbodies(state.tbodies);
+      restoreContainers(state.containers);
+      // Recover extUnitCount from the restored innerHTML rows
+      const _unitIds = Array.from(document.querySelectorAll('#ext-tbody tr[id^="ext-unit-row-"]'))
+        .map(r => parseInt(r.id.replace('ext-unit-row-', ''))).filter(n => !isNaN(n));
+      extUnitCount = _unitIds.length ? Math.max(..._unitIds) : 0;
+      _unitIds.forEach(n => { if (typeof _restoreExtBtns === 'function') _restoreExtBtns(n); });
     }
-    // Restore all dynamic table rows and card containers
-    restoreTbodies(state.tbodies);
-    restoreContainers(state.containers);
-    // Restore extUnitCount from saved ext-tbody rows and re-apply pf button states
-    const _unitIds = Array.from(document.querySelectorAll('#ext-tbody tr[id^="ext-unit-row-"]'))
-      .map(r => parseInt(r.id.replace('ext-unit-row-', ''))).filter(n => !isNaN(n));
-    extUnitCount = _unitIds.length ? Math.max(..._unitIds) : 0;
-    _unitIds.forEach(n => { if (typeof _restoreExtBtns === 'function') _restoreExtBtns(n); });
     // Sync pre/post checklist button visuals from their restored hidden inputs
     syncChkYNAVisuals();
     updateHospStartButton();
