@@ -2774,7 +2774,7 @@ function getDeviceCols(sheet, type) {
     case 'smoke':       return flr + typeSel(['SD','CBO','CO2']) + loc + addr + td('AL/SPV', `<select style="width:100%;"><option>AL</option><option>SPV</option></select>`) + vis + func + note + del;
     case 'av':          return flr + typeSel(['HSC','SSC','HN','ST','SP','BL','CH']) + loc + vis + func + note + del;
     case 'door-release':return flr + typeSel(['MAG','CA','OT']) + loc + vis + func + note + del;
-    case 'fdc':         return flr + typeSel(['FDC','SPRINKLER','STANDPIPE','COMBO']) + loc + vis + func + td('Inlet', inp()) + td('Condition', inp('placeholder="UNK…"')) + note + del;
+    case 'fdc':         return flr + typeSel(['FDC','SPRINKLER','STANDPIPE','COMBO']) + loc + vis + func + td('Cap', inp()) + td('Hydro Year', inp('placeholder="UNK…"')) + note + del;
     case 'hose-valve':  return flr + typ + loc + vis + func + td('Cap Style', inp()) + td('Size', inp('placeholder="2.5…"')) + note + del;
     case 'standpipe':   return flr + typ + loc + vis + td('Condition', inp('placeholder="UNK…"')) + td('Size (in)', num('placeholder="6…"')) + note + del;
     case 'valves':      return flr + typ + loc + vis + func + td('Valve Type', inp('placeholder="OS&Y…"')) + note + del;

@@ -765,11 +765,8 @@ async function buildHospPDF() {
       wrap(q, 7.5, ovLblW - 6).forEach((ln, li) => {
         page.drawText(ln, { x: ML+4, y: ry(h) + h - 7 - li * 8, size: 7.5, font: rFont, color: blk });
       });
-      // YNA cell
-      const ynaColor = yna === 'Y' ? PGREEN : yna === 'N' ? PRED : rowBg;
-      const ynaTc    = (yna === 'Y' || yna === 'N') ? white : blk;
-      page.drawRectangle({ x: ML+ovLblW, y: ry(h), width: ovBtnW, height: h, color: ynaColor, borderColor: sky, borderWidth: 0.3 });
-      if (yna) { const tw = hFont.widthOfTextAtSize(yna, 7.5); page.drawText(yna, { x: ML+ovLblW + ovBtnW/2 - tw/2, y: ty(h,5), size: 7.5, font: hFont, color: ynaTc }); }
+      // YNA cell — editable
+      mkField(yna,   ML+ovLblW,                       ry(h), ovBtnW,  h, 7.5, rowBg);
       // Count, Inspecting, Notes — editable
       mkField(cnt,   ML+ovLblW+ovBtnW,               ry(h), ovCntW,  h, 7.5, rowBg);
       mkField(insp,  ML+ovLblW+ovBtnW+ovCntW,         ry(h), ovInspW, h, 7.5, rowBg);
@@ -1028,7 +1025,7 @@ async function buildHospPDF() {
   // PAGE 23: FDC
   devicePage('Fire Department Connections (FDC) — EC.02.03.05 EP 10', 'h-fdc-tbody',
     [{label:'Floor',w:PW*0.07},{label:'Type',w:PW*0.09},{label:'Location',w:PW*0.32},
-     {label:'Visual',w:PW*0.11},{label:'Functional',w:PW*0.11},{label:'Inlet',w:PW*0.14},{label:'Condition',w:PW*0.16}],
+     {label:'Visual',w:PW*0.11},{label:'Functional',w:PW*0.11},{label:'Cap',w:PW*0.14},{label:'Hydro Year',w:PW*0.16}],
     [inp(0), selOpt(0), inp(1), selOpt(1), selOpt(2), inp(2), inp(3)], 4);
 
   // PAGE 24: HOSE VALVES
