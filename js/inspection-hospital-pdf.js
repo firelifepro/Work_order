@@ -44,6 +44,11 @@ async function hospSaveAndDownload() {
   };
   document.getElementById('h-new-insp-btn-wrap').style.display = 'none';
 
+  // Ensure key sheet Current # inputs are populated from device counts before collecting state.
+  // syncKeyTableFromDeviceCounts() normally fires when entering the eockey step — calling it
+  // here guarantees the counts are fresh even if the user skipped that step.
+  if (typeof syncKeyTableFromDeviceCounts === 'function') syncKeyTableFromDeviceCounts();
+
   // Save current state once before starting, then suppress auto-saves for the duration
   saveDraft();
   _suppressDraftSave = true;
