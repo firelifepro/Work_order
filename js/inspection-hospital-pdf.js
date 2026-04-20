@@ -1094,22 +1094,12 @@ async function buildHospPDF() {
       wrap(item.label, 7.5, spLblW - 6).forEach((ln, li) => {
         page.drawText(ln, { x: ML+4, y: ry(h) + h - 7 - li * 8, size: 7.5, font: rFont, color: blk });
       });
-      // Y / N / NA buttons
+      // Y / N / NA buttons — editable fields (pre-filled with 'X' when selected)
       let bx = ML + spLblW;
       ['Y','N','NA'].forEach(opt => {
         const sel = selBtn === opt;
-        const bg  = sel && opt === 'Y' ? PGREEN : sel && opt === 'N' ? PRED : sel && opt === 'NA' ? sky : rowBg;
-        const tc  = sel && (opt === 'Y' || opt === 'N') ? white : blk;
-        page.drawRectangle({ x: bx, y: ry(h), width: spBtnW, height: h, color: bg, borderColor: sky, borderWidth: 0.3 });
-        if (sel) {
-          const tw = hFont.widthOfTextAtSize('X', 8);
-          page.drawText('X', { x: bx + spBtnW/2 - tw/2, y: ty(h,5), size: 8, font: hFont, color: tc });
-        } else {
-          const f = form.createTextField(fid());
-          f.setText('');
-          f.addToPage(page, { x: bx+1, y: ry(h)+1, width: spBtnW-2, height: h-2, font: rFont });
-          f.setFontSize(8);
-        }
+        const bg  = sel && opt === 'Y' ? PGREEN_LIGHT : sel && opt === 'N' ? PRED_LIGHT : sel && opt === 'NA' ? sky : rowBg;
+        mkField(sel ? 'X' : '', bx, ry(h), spBtnW, h, 8, bg);
         bx += spBtnW;
       });
       // Notes
