@@ -1296,7 +1296,7 @@ input.no-spin{-moz-appearance:textfield;appearance:textfield;}
   <div id="step-hosp-device-detail" style="display:none;">
 
     <!-- Device sub-nav tabs -->
-    <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px;" id="h-device-subnav">
+    <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:6px;align-items:center;" id="h-device-subnav">
       <button class="pf-btn selected" onclick="showDeviceSheet('supervisory')">Supervisory</button>
       <button class="pf-btn" onclick="showDeviceSheet('flow')">Flow/Pressure</button>
       <button class="pf-btn" onclick="showDeviceSheet('tamper')">Tamper</button>
@@ -1320,6 +1320,9 @@ input.no-spin{-moz-appearance:textfield;appearance:textfield;}
       <button class="pf-btn" onclick="showDeviceSheet('gauges')">Gauges</button>
       <button class="pf-btn" onclick="showDeviceSheet('hydraulic')">Hydraulic Plates</button>
       <button class="pf-btn" onclick="showDeviceSheet('inventory')">Inventory Changes</button>
+    </div>
+    <div style="margin-bottom:10px;">
+      <button id="h-pass-all-btn" style="background:#dcfce7;border:1.5px solid var(--green);color:var(--green);padding:6px 14px;border-radius:7px;font-family:inherit;font-size:.78rem;font-weight:700;cursor:pointer;" title="Sets every Visual and Functional dropdown on this page to PASS">✅ Pass All Visual &amp; Functional</button>
     </div>
 
     <!-- ── SUPERVISORY SIGNALS ── -->
@@ -1933,6 +1936,7 @@ input.no-spin{-moz-appearance:textfield;appearance:textfield;}
         <div id="h-sig-warning" class="sig-warning"></div>
         <div class="btn-row">
           <button class="btn-primary" id="h-save-download-btn" onclick="hospSaveAndDownload()">📄 Save &amp; Download PDF</button>
+          <button class="btn-secondary" id="h-preview-pdf-btn" onclick="hospPreviewPDF()" title="Generates and downloads a local PDF preview. Does NOT save to Drive, update the property profile, or close the inspection.">👁 Preview PDF</button>
           <button class="btn-secondary" onclick="goHospStep('defic')">← Back</button>
         </div>
         <div id="h-pdf-status" style="margin-top:10px;font-size:.8rem;color:var(--green);line-height:1.6;"></div>
@@ -2086,10 +2090,31 @@ function _restoreHospFromProfile(last) {
   try {
     if (last.devices)       restoreHospDevices(last.devices);
     if (last.extinguishers && last.extinguishers.length) restoreHospExtinguishers(last.extinguishers);
+    if (last.recurringMonths && last.recurringMonths.length) restoreRecurringMonths(last.recurringMonths);
   } finally {
     _suppressDraftSave = false;
   }
   console.log('[_restoreHospFromProfile] done, ext rows:', document.querySelectorAll('#ext-tbody tr[id^="ext-unit-row-"]').length);
+}
+
+// ── Recurring Months — collect from table and restore to table ──────────────
+function collectRecurringMonths() {
+  const months = [];
+  document.querySelectorAll('#h-recurring-tbody tr').forEach(tr => {
+    const inputs = tr.querySelectorAll('input[type="text"]');
+    months.push([ inputs[0]?.value || '', inputs[1]?.value || '' ]);
+  });
+  return months;
+}
+
+function restoreRecurringMonths(months) {
+  const rows = document.querySelectorAll('#h-recurring-tbody tr');
+  months.forEach((pair, i) => {
+    if (!rows[i]) return;
+    const inputs = rows[i].querySelectorAll('input[type="text"]');
+    if (inputs[0]) inputs[0].value = pair[0] || '';
+    if (inputs[1]) inputs[1].value = pair[1] || '';
+  });
 }
 
 
@@ -3484,6 +3509,23 @@ function showDeviceSheet(name) {
   document.querySelectorAll('#h-device-subnav .pf-btn').forEach(b => {
     b.classList.toggle('selected', b.getAttribute('onclick')?.includes(`'${name}'`));
   });
+  // Show/hide Pass All button based on whether this sheet has Visual+Functional columns
+  const passAllBtn = document.getElementById('h-pass-all-btn');
+  if (passAllBtn) {
+    const hasVF = t && t.querySelector('td[data-label="Visual"], td[data-label="Functional"]');
+    passAllBtn.style.display = hasVF ? '' : 'none';
+    passAllBtn.onclick = () => passAllOnSheet(t);
+  }
+}
+
+function passAllOnSheet(sheetEl) {
+  if (!sheetEl) return;
+  sheetEl.querySelectorAll('td[data-label="Visual"] select, td[data-label="Functional"] select').forEach(sel => {
+    sel.value = 'PASS';
+    onDeviceSelectChange(sel);
+  });
+  saveDraft();
+  showToast('✓ All Visual & Functional set to PASS');
 }
 
 // ════════════════════════════════════════════════════════════════

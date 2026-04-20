@@ -624,16 +624,17 @@ async function updatePropertyProfileAfterSave(data, sysKey) {
   profile.updatedAt = data.inspection.date || todayMT();
   profile.lastInspBySystem = profile.lastInspBySystem || {};
   const inspRecord = {
-    date:         data.inspection.date || todayMT(),
-    inspector:    data.inspection.inspectorName || '',
-    reportType:   data.inspection.reportType || '',
-    status:       data.overallStatus || '',
-    deficiencies: data.deficiencies || [],
-    fieldData:    data.fieldData || {},
-    pfStates:     data.pfStates || {},
-    extinguishers:data.extinguishers || [],
-    devices:      sysKey === 'fire-alarm' ? collectFADeviceRows() : (data.devices || undefined),
-    keySheet:     data.keySheet      || undefined,
+    date:           data.inspection.date || todayMT(),
+    inspector:      data.inspection.inspectorName || '',
+    reportType:     data.inspection.reportType || '',
+    status:         data.overallStatus || '',
+    deficiencies:   data.deficiencies || [],
+    fieldData:      data.fieldData || {},
+    pfStates:       data.pfStates || {},
+    extinguishers:  data.extinguishers || [],
+    devices:        sysKey === 'fire-alarm' ? collectFADeviceRows() : (data.devices || undefined),
+    keySheet:       data.keySheet       || undefined,
+    recurringMonths:data.recurringMonths || undefined,
   };
   profile.lastInspBySystem[sysKey] = inspRecord;
 

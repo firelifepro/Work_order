@@ -98,6 +98,7 @@ async function hospSaveAndDownload() {
             devices:      collectHospDevices(),
             extinguishers: collectHospExtinguishers(),
             keySheet:     formState.keySheet || null,
+            recurringMonths: (typeof collectRecurringMonths === 'function') ? collectRecurringMonths() : [],
           };
           await updatePropertyProfileAfterSave(hospData, 'hospital');
           setStatus('✓ Property profile updated', 'var(--green)');
@@ -145,6 +146,33 @@ async function hospSaveAndDownload() {
   } finally {
     _suppressDraftSave = false;
     if (btn) { btn.disabled = false; btn.textContent = '📄 Save & Download PDF'; }
+  }
+}
+
+// ════════════════════════════════════════════════════════════════
+//  PDF PREVIEW — local download only, no save/Drive/profile changes
+// ════════════════════════════════════════════════════════════════
+async function hospPreviewPDF() {
+  const btn = document.getElementById('h-preview-pdf-btn');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Building…'; }
+  try {
+    const pdfBytes = await buildHospitalPDFBytes();
+    const propName = (typeof fv === 'function' ? fv('property-name') : '') || 'Hospital';
+    const propSlug = propName.replace(/[^a-zA-Z0-9]/g,'_').replace(/_+/g,'_').replace(/^_|_$/g,'').slice(0,30);
+    const dateStr  = (typeof fv === 'function' ? fv('insp-date') : '') || (typeof todayMT === 'function' ? todayMT() : '');
+    const dateSlug = dateStr.replace(/-/g,'');
+    const filename = `FLPS_hospital_PREVIEW_${propSlug}_${dateSlug}.pdf`;
+    const blob = new Blob([pdfBytes], { type:'application/pdf' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href = url; a.download = filename; a.click();
+    URL.revokeObjectURL(url);
+    if (typeof showToast === 'function') showToast('📄 Preview downloaded — no data saved');
+  } catch(e) {
+    if (typeof showToast === 'function') showToast('✗ Preview failed: ' + e.message);
+    alert('PDF preview failed: ' + e.message);
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = '👁 Preview PDF'; }
   }
 }
 
