@@ -2069,11 +2069,29 @@ const H = {
 };
 let _profileLoadPromise = null;
 
+// If a device array is exactly doubled (first half === second half), strip the duplicate.
+// This heals profiles that were saved when the double-restore bug was present.
+function _dedupeDeviceArrays(devices) {
+  if (!devices) return devices;
+  const out = {};
+  Object.entries(devices).forEach(([key, val]) => {
+    if (!Array.isArray(val) || val.length < 2 || val.length % 2 !== 0) {
+      out[key] = val;
+      return;
+    }
+    const half = val.length / 2;
+    const first  = val.slice(0, half);
+    const second = val.slice(half);
+    out[key] = JSON.stringify(first) === JSON.stringify(second) ? first : val;
+  });
+  return out;
+}
+
 function _restoreHospFromProfile(last) {
   console.log('[_restoreHospFromProfile] devices:', !!last.devices, 'extinguishers:', last.extinguishers?.length ?? 0, 'ext-tbody:', !!document.getElementById('ext-tbody'));
   _suppressDraftSave = true;
   try {
-    if (last.devices)       restoreHospDevices(last.devices);
+    if (last.devices)       restoreHospDevices(_dedupeDeviceArrays(last.devices));
     if (last.extinguishers && last.extinguishers.length) restoreHospExtinguishers(last.extinguishers);
   } finally {
     _suppressDraftSave = false;
@@ -3708,12 +3726,15 @@ function syncKeyTableFromDeviceCounts() {
   function rowCount(tbodyId) {
     return document.getElementById(tbodyId)?.children.length || 0;
   }
-  // Count rows in a tbody whose second text input (type field) matches a value
+  // Count rows in a tbody where the [data-label="Type"] cell's select (or text input) matches typeVal
   function typeCount(tbodyId, typeVal) {
     let n = 0;
     document.querySelectorAll('#' + tbodyId + ' tr').forEach(row => {
-      const textInputs = Array.from(row.querySelectorAll('input[type="text"]'));
-      if ((textInputs[1]?.value || '').trim().toUpperCase() === typeVal) n++;
+      const typeCell = Array.from(row.cells).find(td => td.dataset.label === 'Type');
+      if (!typeCell) return;
+      const sel = typeCell.querySelector('select');
+      const val = sel ? sel.value : (typeCell.querySelector('input')?.value || '');
+      if ((val || '').trim().toUpperCase() === typeVal) n++;
     });
     return n;
   }
@@ -3723,28 +3744,30 @@ function syncKeyTableFromDeviceCounts() {
   const drTbody = 'h-door-release-tbody';
   const flTbody = 'h-flow-tbody';
   const FA_COUNTS = {
-    'SPV': rowCount('h-supervisory-tbody'),
-    'FS':  typeCount(flTbody, 'FS'),
-    'PRS': typeCount(flTbody, 'PRS'),
-    'TS':  rowCount('h-tamper-tbody'),
-    'SD':  typeCount('h-smoke-tbody', 'SD'),
-    'CBO': typeCount('h-smoke-tbody', 'CBO'),
-    'HD':  rowCount('h-heat-tbody'),
-    'PS':  rowCount('h-pull-tbody'),
-    'DD':  rowCount('h-duct-tbody'),
-    'BL':  typeCount(avTbody, 'BL'),
-    'CH':  typeCount(avTbody, 'CH'),
-    'HN':  typeCount(avTbody, 'HN'),
-    'ST':  typeCount(avTbody, 'ST'),
-    'SP':  typeCount(avTbody, 'SP'),
-    'HSC': typeCount(avTbody, 'HSC'),
-    'SSC': typeCount(avTbody, 'SSC'),
-    'MAG': typeCount(drTbody, 'MAG'),
-    'CA':  typeCount(drTbody, 'CA'),
-    'OT':  typeCount(drTbody, 'OT'),
-    'ELV': document.querySelectorAll('#h-elevator-banks > div').length,
-    'ANN': document.querySelectorAll('#h-annunciator-grid > div').length,
-    'AHU': rowCount('h-ahu-tbody'),
+    'SPV':   typeCount('h-supervisory-tbody', 'SPV'),
+    'LA/HA': typeCount('h-supervisory-tbody', 'LA') + typeCount('h-supervisory-tbody', 'HA'),
+    'FS':    typeCount(flTbody, 'FS'),
+    'PRS':   typeCount(flTbody, 'PRS'),
+    'TS':    rowCount('h-tamper-tbody'),
+    'SD':    typeCount('h-smoke-tbody', 'SD'),
+    'CBO':   typeCount('h-smoke-tbody', 'CBO'),
+    'CO2':   typeCount('h-smoke-tbody', 'CO2'),
+    'HD':    rowCount('h-heat-tbody'),
+    'PS':    rowCount('h-pull-tbody'),
+    'DD':    rowCount('h-duct-tbody'),
+    'BL':    typeCount(avTbody, 'BL'),
+    'CH':    typeCount(avTbody, 'CH'),
+    'HN':    typeCount(avTbody, 'HN'),
+    'ST':    typeCount(avTbody, 'ST'),
+    'SP':    typeCount(avTbody, 'SP'),
+    'HSC':   typeCount(avTbody, 'HSC'),
+    'SSC':   typeCount(avTbody, 'SSC'),
+    'MAG':   typeCount(drTbody, 'MAG'),
+    'CA':    typeCount(drTbody, 'CA'),
+    'OT':    typeCount(drTbody, 'OT'),
+    'ELV':   document.querySelectorAll('#h-elevator-banks > div').length,
+    'ANN':   document.querySelectorAll('#h-annunciator-grid > div').length,
+    'AHU':   rowCount('h-ahu-tbody'),
   };
 
   // SP key device key → row count
@@ -3763,7 +3786,7 @@ function syncKeyTableFromDeviceCounts() {
     const tbody = document.getElementById(tbodyId);
     if (!tbody) return;
     tbody.querySelectorAll('tr').forEach(row => {
-      const keyMatch = row.cells[0]?.textContent?.match(/\(([A-Z0-9]+)\)/);
+      const keyMatch = row.cells[0]?.textContent?.match(/\(([A-Z0-9\/]+)\)/);
       if (!keyMatch) return;
       const key = keyMatch[1];
       if (!(key in keyMap)) return;
@@ -4085,7 +4108,7 @@ function restoreTableData(data) {
   // spare heads, valves, gauges, main drain, battery, inventory, offprem,
   // subpanel, elevator banks, and annunciator cards.
   if (data.devices) {
-    restoreHospDevices(data.devices);
+    restoreHospDevices(_dedupeDeviceArrays(data.devices));
   }
   // Extinguisher units — addExtUnitRow(prefill) increments extUnitCount and
   // calls _restoreExtBtns internally when pf is set, so no extra work needed.
