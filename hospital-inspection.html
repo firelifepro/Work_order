@@ -2118,8 +2118,9 @@ function restoreRecurringMonths(months) {
   });
 }
 
-// ── Save Property Profile — persists panel/monitoring/recurring fields without
-//    completing the inspection. Safe to call mid-inspection at any time.
+// ── Save Property Profile — persists panel/monitoring/recurring fields and the
+//    full device inventory (without pass/fail) to the property profile in Drive.
+//    Safe to call mid-inspection at any time.
 async function saveHospPropertyProfile() {
   if (!accessToken) { showToast('⚠ Not connected — connect Google Drive first'); return; }
   const propName = fv('property-name');
@@ -2129,7 +2130,8 @@ async function saveHospPropertyProfile() {
   try {
     const profile = _propertyProfile || { property: propName, acct: _currentPropertyAcct, systems: [], lastInspBySystem: {} };
     if (_currentPropertyAcct) profile.acct = _currentPropertyAcct;
-    // Collect current panel / monitoring / site field values
+
+    // Collect panel / monitoring / site field values
     const fieldIds = [
       'h-cp-make','h-cp-model','h-cp-location','h-cp-year','h-cp-batt-date',
       'h-dr-make','h-dr-model','h-dr-location','h-dr-type',
@@ -2139,11 +2141,41 @@ async function saveHospPropertyProfile() {
     ];
     const fieldData = {};
     fieldIds.forEach(id => { const el = document.getElementById(id); if (el) fieldData[id] = el.value; });
-    // Merge into the hospital record's fieldData without touching the rest of the inspRecord
+
+    // Collect devices without pass/fail columns (Visual / Functional / pf / Pass/Fail)
+    const PF_LABELS = new Set(['Visual', 'Functional', 'Pass/Fail', '']);
+    function collectDevicesNoPassFail() {
+      function stripPF(rows) {
+        return rows.map(row => {
+          const out = {};
+          Object.keys(row).forEach(k => { if (!PF_LABELS.has(k) && k !== 'pf') out[k] = row[k]; });
+          return out;
+        }).filter(r => Object.keys(r).length > 0);
+      }
+      const full = collectHospDevices();
+      const result = {};
+      Object.keys(full).forEach(k => {
+        const val = full[k];
+        result[k] = Array.isArray(val) ? stripPF(val) : val;
+      });
+      return result;
+    }
+
+    // Collect extinguishers without the pf field
+    function collectExtNoPassFail() {
+      return collectHospExtinguishers().map(e => {
+        const out = Object.assign({}, e);
+        delete out.pf;
+        return out;
+      });
+    }
+
     profile.lastInspBySystem = profile.lastInspBySystem || {};
     const hosp = profile.lastInspBySystem.hospital || {};
-    hosp.fieldData = Object.assign({}, hosp.fieldData || {}, fieldData);
+    hosp.fieldData       = Object.assign({}, hosp.fieldData || {}, fieldData);
     hosp.recurringMonths = collectRecurringMonths();
+    hosp.devices         = collectDevicesNoPassFail();
+    hosp.extinguishers   = collectExtNoPassFail();
     profile.lastInspBySystem.hospital = hosp;
     profile.updatedAt = (typeof todayMT === 'function') ? todayMT() : new Date().toISOString().slice(0, 10);
     _propertyProfile = profile;
