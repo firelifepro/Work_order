@@ -3471,7 +3471,7 @@ function hospAutoSign() {
   const canvas = document.getElementById('sig-canvas');
   const ctx    = canvas.getContext('2d');
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-  const name = (document.getElementById('h-sig-name') || {}).value || 'Alan Antonio';
+  const name = ((document.getElementById('h-sig-name') || {}).value || 'Alan Antonio').split(',')[0].trim();
   ctx.font         = "italic 38px 'Dancing Script', cursive";
   ctx.fillStyle    = '#0f172a';
   ctx.textBaseline = 'middle';
