@@ -127,38 +127,51 @@ async function loadSheet(forceRefresh = false) {
 function parseRows(rows) {
   if (!rows || rows.length < 2) { toast('Sheet appears empty'); return; }
   const headers = rows[0].map(h => (h || '').trim().toLowerCase());
+  const nameKey = findKey(headers, ['property name','property','site name','site','name']);
   clientData = {};
   for (let i = 1; i < rows.length; i++) {
     const obj = {};
     headers.forEach((h, idx) => { obj[h] = (rows[i][idx] || '').trim(); });
-    const nameKey = findKey(headers, ['property name','property','site name','site','name']);
     const label = obj[nameKey] || `Row ${i + 1}`;
-    if (label.trim()) clientData[label] = obj;
+    if (!label.trim()) continue;
+    if (clientData[label]) console.warn(`[parseRows] Duplicate property name "${label}" — earlier row will be overwritten`);
+    clientData[label] = obj;
   }
   try { sessionStorage.setItem('flips_client_cache', JSON.stringify({ ts: Date.now(), data: clientData })); } catch(_) {}
   buildDropdown();
 }
 
 function parseCSV(text) {
-  return text.split(/\r?\n/).filter(l => l.trim()).map(line => {
-    const cols = [];
-    let cur = '', q = false;
-    for (let i = 0; i < line.length; i++) {
-      if (line[i] === '"' && !q) { q = true; continue; }
-      if (line[i] === '"' && q && line[i+1] === '"') { cur += '"'; i++; continue; }
-      if (line[i] === '"' && q) { q = false; continue; }
-      if (line[i] === ',' && !q) { cols.push(cur.trim()); cur = ''; continue; }
-      cur += line[i];
+  const rows = [];
+  let row = [];
+  let cur = '';
+  let q = false;
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    if (q) {
+      if (ch === '"' && text[i+1] === '"') { cur += '"'; i++; }
+      else if (ch === '"') { q = false; }
+      else { cur += ch; }
+    } else {
+      if (ch === '"') { q = true; }
+      else if (ch === ',') { row.push(cur.trim()); cur = ''; }
+      else if (ch === '\r') { /* swallow, handled by \n */ }
+      else if (ch === '\n') { row.push(cur.trim()); cur = ''; if (row.some(c => c !== '')) rows.push(row); row = []; }
+      else { cur += ch; }
     }
-    cols.push(cur.trim());
-    return cols;
-  });
+  }
+  if (cur !== '' || row.length > 0) { row.push(cur.trim()); if (row.some(c => c !== '')) rows.push(row); }
+  return rows;
 }
 
 function findKey(headers, candidates) {
   for (const c of candidates) {
-    const h = headers.find(h => h === c || h.includes(c));
-    if (h) return h;
+    const exact = headers.find(h => h === c);
+    if (exact) return exact;
+  }
+  for (const c of candidates) {
+    const partial = headers.find(h => h.includes(c));
+    if (partial) return partial;
   }
   return headers[0];
 }
@@ -434,14 +447,16 @@ function addSubRow(labelVal, expenseVal) {
     '<span style="font-size:0.8rem;color:#555;">Sub-Contractor/Vendor ' + displayNum + '</span>&nbsp;' +
     '<button id="sub-minus-' + n + '" type="button" onclick="removeSubRow(' + n + ')" title="Remove this row" ' +
     'style="background:#fde8e8;border:1px solid #e53935;color:#e53935;border-radius:3px;padding:1px 6px;cursor:pointer;font-size:0.75rem;">−</button></td>' +
-    '<td class="value-cell"><input type="text" id="sub-label-' + n + '" value="' + (labelVal||'') + '" placeholder="Sub-contractor name / description" style="width:100%;"></td>' +
+    '<td class="value-cell"><input type="text" id="sub-label-' + n + '" placeholder="Sub-contractor name / description" style="width:100%;"></td>' +
     '<td class="value-cell"></td>' +
     '<td class="value-cell"><span class="dollar-prefix">$</span>' +
-    '<input type="number" id="sub-expense-' + n + '" value="' + (expenseVal||'') + '" min="0" step="0.01" style="width:calc(100% - 14px);" oninput="onSubExpenseChange(' + n + ')"></td>' +
+    '<input type="number" id="sub-expense-' + n + '" min="0" step="0.01" style="width:calc(100% - 14px);" oninput="onSubExpenseChange(' + n + ')"></td>' +
     '<td class="value-cell"><span class="dollar-prefix">$</span>' +
     '<input type="number" id="sub-markup-' + n + '" min="0" step="0.01" style="width:calc(100% - 14px);background:#f5f5f5;" readonly tabindex="-1"></td>' +
     '<td class="value-cell"><span class="dollar-prefix">$</span>' +
     '<input type="number" id="sub-total-' + n + '" min="0" step="0.01" style="width:calc(100% - 14px);background:#f5f5f5;" readonly tabindex="-1"></td>';
+  if (labelVal)   tr.querySelector('#sub-label-'   + n).value = labelVal;
+  if (expenseVal) tr.querySelector('#sub-expense-' + n).value = expenseVal;
   const existing = [...document.querySelectorAll('[id^="sub-row-"]')];
   const anchor = existing.length > 0 ? existing[existing.length - 1] : document.getElementById('sub-add-row');
   if (anchor) anchor.insertAdjacentElement('afterend', tr);
@@ -503,14 +518,17 @@ function addMatRow(descVal, qtyVal, expenseVal) {
     '<span style="font-size:0.8rem;color:#555;">Materials ' + displayNum + '</span>&nbsp;' +
     '<button id="mat-minus-' + n + '" type="button" onclick="removeMatRow(' + n + ')" title="Remove this row" ' +
     'style="background:#fde8e8;border:1px solid #e53935;color:#e53935;border-radius:3px;padding:1px 6px;cursor:pointer;font-size:0.75rem;">−</button></td>' +
-    '<td class="value-cell"><input type="text" id="mat-desc-' + n + '" value="' + (descVal||'') + '" style="width:100%;"></td>' +
-    '<td class="value-cell" style="text-align:center;"><input type="number" id="mat-qty-' + n + '" value="' + (qtyVal||'') + '" min="0" step="1" style="text-align:center;"></td>' +
+    '<td class="value-cell"><input type="text" id="mat-desc-' + n + '" style="width:100%;"></td>' +
+    '<td class="value-cell" style="text-align:center;"><input type="number" id="mat-qty-' + n + '" min="0" step="1" style="text-align:center;"></td>' +
     '<td class="value-cell"><span class="dollar-prefix">$</span>' +
-    '<input type="number" id="mat-expense-' + n + '" value="' + (expenseVal||'') + '" min="0" step="0.01" style="width:calc(100% - 14px);" oninput="onMatExpenseChange(' + n + ')"></td>' +
+    '<input type="number" id="mat-expense-' + n + '" min="0" step="0.01" style="width:calc(100% - 14px);" oninput="onMatExpenseChange(' + n + ')"></td>' +
     '<td class="value-cell"><span class="dollar-prefix">$</span>' +
     '<input type="number" id="mat-markup-' + n + '" min="0" step="0.01" style="width:calc(100% - 14px);background:#f5f5f5;" readonly tabindex="-1"></td>' +
     '<td class="value-cell"><span class="dollar-prefix">$</span>' +
     '<input type="number" id="mat-total-' + n + '" min="0" step="0.01" style="width:calc(100% - 14px);background:#f5f5f5;" readonly tabindex="-1"></td>';
+  if (descVal)    tr.querySelector('#mat-desc-'    + n).value = descVal;
+  if (qtyVal)     tr.querySelector('#mat-qty-'     + n).value = qtyVal;
+  if (expenseVal) tr.querySelector('#mat-expense-' + n).value = expenseVal;
   const existing = [...document.querySelectorAll('[id^="mat-row-"]')];
   const anchor = existing.length > 0 ? existing[existing.length - 1] : document.getElementById('mat-add-row');
   if (anchor) anchor.insertAdjacentElement('afterend', tr);
@@ -634,47 +652,8 @@ function calcLaborRow(n) {
 
 // ─────────────────────────────────────────────────────────
 // API / DRIVE UTILITIES
+// (apiFetch, googleFetch, refreshAccessToken live in js/flips-google-fetch.js)
 // ─────────────────────────────────────────────────────────
-function apiFetch(url, method = 'GET', body = null) {
-  return googleFetch(url, method, body);
-}
-
-async function googleFetch(url, method = 'GET', body = null) {
-  const makeOpts = () => {
-    const opts = { method, headers: { 'Authorization': 'Bearer ' + accessToken, 'Content-Type': 'application/json' } };
-    if (body) opts.body = JSON.stringify(body);
-    return opts;
-  };
-  let res = await fetch(url, makeOpts());
-  if (res.status === 401) {
-    console.warn('[Google] 401 — requesting fresh token…');
-    toast('⏳ Google session expired — reconnecting…');
-    try {
-      await new Promise((resolve, reject) => {
-        if (!tokenClient) { reject(new Error('Not initialized')); return; }
-        tokenClient.callback = async (resp) => {
-          if (resp.error) { reject(new Error(resp.error)); return; }
-          accessToken = resp.access_token;
-          localStorage.setItem('flips_access_token', accessToken);
-          localStorage.setItem('flips_token_expiry', Date.now() + 55 * 60 * 1000);
-          resolve();
-        };
-        tokenClient.error_callback = (err) => {
-          accessToken = null;
-          localStorage.removeItem('flips_access_token');
-          localStorage.removeItem('flips_token_expiry');
-          setStatus('conn-status', '✗ Session expired — click Connect Google', 'err');
-          reject(new Error(err.message || err.type || 'token_refresh_failed'));
-        };
-        tokenClient.requestAccessToken({ prompt: '' });
-      });
-      res = await fetch(url, makeOpts());
-    } catch(e) {
-      throw e;
-    }
-  }
-  return res;
-}
 
 async function findTargetFolder(folderName) {
   try {
@@ -769,10 +748,12 @@ function toggleDrawer() {
   if (drawer) drawer.classList.toggle('open');
 }
 
+let _toastTimer = null;
 function toast(msg) {
   const el = document.getElementById('toast');
   if (!el) return;
   el.textContent = msg;
   el.classList.add('show');
-  setTimeout(() => el.classList.remove('show'), 3000);
+  if (_toastTimer) clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(() => { el.classList.remove('show'); _toastTimer = null; }, 3000);
 }

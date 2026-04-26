@@ -7,32 +7,61 @@
 //   QB_CLIENT_SECRET      — sandbox QB OAuth2 Client Secret
 //   QB_CLIENT_ID_PROD     — production QB OAuth2 Client ID
 //   QB_CLIENT_SECRET_PROD — production QB OAuth2 Client Secret
+//
+// (Apps Script proxy was removed — the app now writes the Inspection History
+// sheet directly via the Sheets API. APPS_SCRIPT_URL / APPS_SCRIPT_SECRET
+// env vars in the Cloudflare dashboard can be deleted.)
 // ─────────────────────────────────────────────────────────────────────────────
 
-const CORS_HEADERS = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'Content-Type',
-  'Content-Type': 'application/json',
-};
+// Origin lock: API routes are only callable from the page itself.
+// Same-origin requests from a browser send Origin = our own URL.
+// Server-to-server calls (no Origin) are allowed since they can't be CSRF.
+function allowedOrigin(request) {
+  const origin = request.headers.get('Origin');
+  if (!origin) return null;
+  const selfOrigin = new URL(request.url).origin;
+  return origin === selfOrigin ? origin : false;
+}
 
-function corsResponse(body, status = 200) {
-  return new Response(JSON.stringify(body), { status, headers: CORS_HEADERS });
+function corsHeaders(origin) {
+  const h = { 'Content-Type': 'application/json' };
+  if (origin) {
+    h['Access-Control-Allow-Origin'] = origin;
+    h['Vary'] = 'Origin';
+  }
+  return h;
+}
+
+function corsResponse(body, status, origin) {
+  return new Response(JSON.stringify(body), { status: status || 200, headers: corsHeaders(origin) });
+}
+
+function isAuthorized(request) {
+  const allowed = allowedOrigin(request);
+  return allowed !== false; // null (no Origin) and matching origin both pass
 }
 
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
+    const origin = allowedOrigin(request);
 
     // ── CORS preflight ──────────────────────────────────────────────
     if (request.method === 'OPTIONS') {
+      if (origin === false) return new Response(null, { status: 403 });
       return new Response(null, {
         status: 204,
         headers: {
-          'Access-Control-Allow-Origin': '*',
+          ...(origin ? { 'Access-Control-Allow-Origin': origin, 'Vary': 'Origin' } : {}),
           'Access-Control-Allow-Methods': 'POST, OPTIONS',
           'Access-Control-Allow-Headers': 'Content-Type',
         },
       });
+    }
+
+    // ── Cross-origin POSTs to /api/* are rejected ───────────────────
+    if (url.pathname.startsWith('/api/') && !isAuthorized(request)) {
+      return corsResponse({ error: 'Origin not allowed' }, 403, null);
     }
 
     // ── /api/qb-token — QB OAuth2 token exchange ────────────────────
@@ -116,43 +145,6 @@ export default {
         return corsResponse(data, resp.status);
       } catch (err) {
         return corsResponse({ error: 'QB API request failed', message: err.message }, 500);
-      }
-    }
-
-    // ── /api/apps-script — Apps Script proxy ────────────────────────
-    // Forwards POST body to the Apps Script web app server-side,
-    // bypassing the CORS restriction that blocks browser → Apps Script.
-    // The Apps Script URL is passed in the body as _appsScriptUrl,
-    // OR set APPS_SCRIPT_URL as an env var in the Cloudflare dashboard.
-    if (url.pathname === '/api/apps-script' && request.method === 'POST') {
-      let body;
-      try { body = await request.json(); }
-      catch (e) { return corsResponse({ error: 'Invalid JSON body' }, 400); }
-
-      const targetUrl = env.APPS_SCRIPT_URL || body._appsScriptUrl;
-      if (!targetUrl) {
-        return corsResponse({ error: 'APPS_SCRIPT_URL not set — add it as a Cloudflare env var' }, 500);
-      }
-
-      // Remove internal routing keys before forwarding; inject secret from env if set
-      const forwardBody = Object.assign({}, body);
-      delete forwardBody._appsScriptUrl;
-      if (env.APPS_SCRIPT_SECRET) forwardBody.secret = env.APPS_SCRIPT_SECRET;
-
-      try {
-        const resp = await fetch(targetUrl, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(forwardBody),
-          redirect: 'follow',   // Apps Script issues a redirect on POST — must follow it
-        });
-        const text = await resp.text();
-        let data;
-        try { data = JSON.parse(text); }
-        catch (_) { data = { raw: text }; }
-        return corsResponse(data, resp.ok ? 200 : resp.status);
-      } catch (err) {
-        return corsResponse({ error: 'Apps Script proxy failed', message: err.message }, 500);
       }
     }
 

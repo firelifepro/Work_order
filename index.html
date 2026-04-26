@@ -36,57 +36,6 @@ body {
 .conn-btn.grey { background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.25); }
 .conn-btn.grey:hover { background: rgba(255,255,255,0.25); }
 .conn-divider { width: 1px; background: rgba(255,255,255,0.15); align-self: stretch; margin: 0 4px; }
-.conn-status-pill { font-size: 0.72rem; padding: 3px 10px; border-radius: 12px; font-weight: 600; white-space: nowrap; align-self: flex-end; }
-.conn-status-pill.ok  { background: rgba(31,178,114,0.2); color: #7fffb8; border: 1px solid rgba(31,178,114,0.3); }
-.conn-status-pill.err { background: rgba(220,53,69,0.2);  color: #ff8888; border: 1px solid rgba(220,53,69,0.3); }
-.conn-status-pill.warn{ background: rgba(249,168,37,0.2); color: #ffe082; border: 1px solid rgba(249,168,37,0.3); }
-/* toggle button in top bar */
-.conn-toggle { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: rgba(255,255,255,0.8); padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 0.72rem; white-space: nowrap; }
-.conn-toggle:hover { background: rgba(255,255,255,0.18); }
-
-
-/* ── Connection drawer ── */
-#conn-drawer { background: #0f0f23; border-bottom: 1px solid rgba(255,255,255,0.1); overflow: hidden; max-height: 0; transition: max-height 0.3s ease; }
-#conn-drawer.open { max-height: 300px; }
-.conn-drawer-inner { padding: 14px 20px; display: flex; gap: 20px; flex-wrap: wrap; align-items: flex-end; }
-.conn-field { display: flex; flex-direction: column; gap: 4px; }
-.conn-field label { font-size: 0.7rem; color: #aaa; font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em; }
-.conn-field input, .conn-field select { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: white; padding: 6px 10px; border-radius: 4px; font-size: 0.78rem; font-family: inherit; width: 240px; }
-.conn-field input::placeholder { color: rgba(255,255,255,0.35); }
-.conn-field select { width: auto; cursor: pointer; }
-.conn-field select option { background: #1a1a2e; color: white; }
-.conn-btn { background: #2e6da4; color: white; border: none; padding: 7px 16px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; font-weight: 600; white-space: nowrap; align-self: flex-end; }
-.conn-btn:hover { background: #4a86e8; }
-.conn-btn.green { background: #1fb272; }
-.conn-btn.green:hover { background: #27ae60; }
-.conn-btn.grey { background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.25); }
-.conn-btn.grey:hover { background: rgba(255,255,255,0.25); }
-.conn-divider { width: 1px; background: rgba(255,255,255,0.15); align-self: stretch; margin: 0 4px; }
-.conn-status-pill { font-size: 0.72rem; padding: 3px 10px; border-radius: 12px; font-weight: 600; white-space: nowrap; align-self: center; }
-.conn-status-pill.ok   { background: rgba(31,178,114,0.2); color: #7fffb8; border: 1px solid rgba(31,178,114,0.3); }
-.conn-status-pill.err  { background: rgba(220,53,69,0.2);  color: #ff8888; border: 1px solid rgba(220,53,69,0.3); }
-.conn-status-pill.warn { background: rgba(249,168,37,0.2); color: #ffe082; border: 1px solid rgba(249,168,37,0.3); }
-.conn-toggle { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: rgba(255,255,255,0.8); padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 0.72rem; white-space: nowrap; }
-.conn-toggle:hover { background: rgba(255,255,255,0.18); }
-
-
-/* ── Connection drawer ── */
-#conn-drawer { background: #0f0f23; border-bottom: 1px solid rgba(255,255,255,0.1); overflow: hidden; max-height: 0; transition: max-height 0.3s ease; }
-#conn-drawer.open { max-height: 300px; }
-.conn-drawer-inner { padding: 14px 20px; display: flex; gap: 20px; flex-wrap: wrap; align-items: flex-end; }
-.conn-field { display: flex; flex-direction: column; gap: 4px; }
-.conn-field label { font-size: 0.7rem; color: #aaa; font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em; }
-.conn-field input, .conn-field select { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: white; padding: 6px 10px; border-radius: 4px; font-size: 0.78rem; font-family: inherit; width: 240px; }
-.conn-field input::placeholder { color: rgba(255,255,255,0.35); }
-.conn-field select { width: auto; cursor: pointer; }
-.conn-field select option { background: #1a1a2e; color: white; }
-.conn-btn { background: #2e6da4; color: white; border: none; padding: 7px 16px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; font-weight: 600; white-space: nowrap; align-self: flex-end; }
-.conn-btn:hover { background: #4a86e8; }
-.conn-btn.green { background: #1fb272; }
-.conn-btn.green:hover { background: #27ae60; }
-.conn-btn.grey { background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.25); }
-.conn-btn.grey:hover { background: rgba(255,255,255,0.25); }
-.conn-divider { width: 1px; background: rgba(255,255,255,0.15); align-self: stretch; margin: 0 4px; }
 .conn-status-pill { font-size: 0.72rem; padding: 3px 10px; border-radius: 12px; font-weight: 600; white-space: nowrap; align-self: center; }
 .conn-status-pill.ok   { background: rgba(31,178,114,0.2); color: #7fffb8; border: 1px solid rgba(31,178,114,0.3); }
 .conn-status-pill.err  { background: rgba(220,53,69,0.2);  color: #ff8888; border: 1px solid rgba(220,53,69,0.3); }
@@ -392,8 +341,6 @@ code { background: #ffe082; padding: 1px 5px; border-radius: 3px; font-size: 0.7
     </div>
     <button class="conn-btn" id="connect-btn" onclick="initGoogle()">🔗 Connect Google</button>
     <button id="refresh-props-btn" class="conn-btn grey" onclick="loadSheet(true)" style="display:none;" title="Re-fetch client list from Google Sheet">↺ Refresh Properties</button>
-    <div class="conn-divider"></div>
-    <button class="conn-btn grey" id="test-conn-btn" onclick="testScriptConnection()" title="Ping Apps Script and write a test log row">🔌 Test Schedule Connection</button>
   </div>
 </div>
 
@@ -913,6 +860,8 @@ code { background: #ffe082; padding: 1px 5px; border-radius: 3px; font-size: 0.7
 <!-- Google Identity Services only - no gapi needed -->
 <script src="https://accounts.google.com/gsi/client"></script>
 <script src="js/flips-shared.js"></script>
+<script src="js/flips-google-fetch.js"></script>
+<script src="js/flips-history.js"></script>
 
 <script>
 
@@ -932,12 +881,6 @@ document.addEventListener('click', e => {
 //          SHEET_ID, SHEET_GID — are in js/flips-shared.js)
 // ─────────────────────────────────────────────────────────
 
-// ── Apps Script (sheet logger) ───────────────────────────────────────────────
-// URL and secret are Cloudflare env vars (APPS_SCRIPT_URL, APPS_SCRIPT_SECRET).
-// The worker at /api/apps-script injects them server-side — no secrets in client code.
-
-// ── Log verbosity ────────────────────────────────────────────────────────────
-let flipsLogLevel = 'NORMAL';
 const TEMPLATE_DOC_ID = '1x96eu74Jlo-8mz8Ztah2noGc7SY-HvX1CQNQ6Vl07Sc';
 const SCOPES = 'https://www.googleapis.com/auth/drive https://www.googleapis.com/auth/documents https://www.googleapis.com/auth/spreadsheets.readonly';
 
@@ -1859,28 +1802,20 @@ function loadFromEstimate() {
 // ─────────────────────────────────────────────────────────
 // UPDATE INSPECTION SCHEDULE
 // Called after a work order is saved. Reads all checked
-// service boxes and posts updates to the Apps Script web app.
+// service boxes and appends rows directly to the Inspection History sheet
+// via flips-history.js (no Apps Script).
 // ─────────────────────────────────────────────────────────
 async function updateInspectionSchedule(data) {
   const propertyName  = data['PROPERTY NAME']     || '';
   const acctNum       = data['FLPS ACCT #']        || '';
   const dateCompleted = data['DATE COMPLETED ISO'] || data['DATE COMPLETED'] || '';
   const svcRaw        = data['SERVICES']           || '';
-  const lineNum       = data['LINE #']             || '';
 
-  logToSheet('WO_SAVE_START',
-    `Line #${lineNum} | Property: ${propertyName} | Date: ${dateCompleted} | Services: ${svcRaw.replace(/\n/g,' | ')}`,
-    'INFO');
-
-  if (!propertyName) { logToSheet('WO_SAVE_SKIP', 'No property name on work order', 'WARN'); return; }
-  if (!dateCompleted || dateCompleted === 'N/A') {
-    logToSheet('WO_SAVE_SKIP', `Property: ${propertyName} — Date Completed is blank or N/A`, 'WARN'); return;
-  }
+  if (!propertyName) return;
+  if (!dateCompleted || dateCompleted === 'N/A') return;
 
   const parsedDate = parseDisplayDate(dateCompleted);
-  if (!parsedDate) {
-    logToSheet('WO_DATE_PARSE_FAIL', `Could not parse date: "${dateCompleted}"`, 'ERROR'); return;
-  }
+  if (!parsedDate) return;
 
   const SVC_MAP = [
     { match: /^Fire Alarm\s*[–-]/i,            type: 'Fire Alarm Inspection',           freqKey: true  },
@@ -1913,30 +1848,12 @@ async function updateInspectionSchedule(data) {
     }
   }
 
-  if (updates.length === 0) {
-    logToSheet('WO_NO_TRACKABLE_SVCS', `Property: ${propertyName} — no checked services map to tracked inspection types`, 'WARN');
-    return;
-  }
+  if (updates.length === 0) return;
 
   try {
-    const resp = await fetch('/api/apps-script', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ updates })
-    });
-    if (!resp.ok) {
-      const txt = await resp.text();
-      logToSheet('WO_HTTP_ERROR', `HTTP ${resp.status}: ${txt.substring(0,200)}`, 'ERROR');
-      return;
-    }
-    const result = await resp.json();
-    if (result.success) {
-      logToSheet('WO_SAVED', `Work order saved + ${updates.length} inspection record(s) updated for ${propertyName}`, 'OK');
-    } else {
-      logToSheet('WO_SCHEDULE_FAILED', `Apps Script returned error for ${propertyName}`, 'ERROR', result.error);
-    }
+    await appendInspectionHistory(updates);
   } catch(e) {
-    logToSheet('WO_FETCH_EXCEPTION', `fetch() to Apps Script threw`, 'ERROR', e.message);
+    console.warn('[Schedule] append failed:', e.message);
   }
 }
 
@@ -1951,71 +1868,6 @@ function parseDisplayDate(str) {
   const d = new Date(str + ' 12:00:00');
   if (!isNaN(d)) return d.toISOString().slice(0, 10);
   return null;
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// TEST CONNECTION — click "Test Schedule Connection" to ping
-// the Apps Script and confirm the whole chain works.
-// ─────────────────────────────────────────────────────────
-async function testScriptConnection() {
-  const btn = document.getElementById('test-conn-btn');
-  // URL is handled by the Cloudflare Worker env var — no client-side check needed
-  btn.disabled = true;
-  btn.textContent = '⏳ Testing…';
-  try {
-    const resp = await fetch('/api/apps-script', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        action: 'log',
-        log: {
-          source: 'work-order-page',
-          action: 'CONNECTION_TEST',
-          detail: 'Manual test ping from Work Order page — ' + new Date().toLocaleString(),
-          status: 'OK',
-          error:  ''
-        }
-      })
-    });
-    if (!resp.ok) {
-      toast('✗ HTTP ' + resp.status + ' — check the URL');
-      btn.textContent = '✗ Failed';
-      return;
-    }
-    const result = await resp.json();
-    if (result.success) {
-      toast('✓ Connected! Check the FLIPS Work Order System Log sheet in Drive');
-      btn.textContent = '✓ Connected';
-    } else {
-      toast('✗ Apps Script returned: ' + (result.error || 'unknown error'));
-      btn.textContent = '✗ Error';
-    }
-  } catch(e) {
-    toast('✗ Could not reach Apps Script: ' + e.message);
-    btn.textContent = '✗ No response';
-  } finally {
-    setTimeout(() => { btn.disabled = false; btn.textContent = '🔌 Test Schedule Connection'; }, 3000);
-  }
-}
-
-// SHEET LOGGER — sends a log entry to the Apps Script web app
-// which writes it to the "Work Order System Log" sheet tab.
-// Non-blocking, never throws, silently swallows its own errors.
-// ─────────────────────────────────────────────────────────────────────────────
-function logToSheet(action, detail, status, error) {
-  // Fire-and-forget — never blocks the user-facing flow.
-  // Respects flipsLogLevel: in NORMAL mode only WARN, ERROR, and key OK events
-  // are sent to the sheet. Set flipsLogLevel = 'VERBOSE' in the browser console
-  // to temporarily enable full logging without redeploying.
-  const s = String(status || 'INFO').toUpperCase();
-  const isKeyEvent = ['WO_SAVED','INVOICE_CREATED','QB_INVOICE_CREATED'].includes(action);
-  if (flipsLogLevel !== 'VERBOSE' && s === 'INFO' && !isKeyEvent) return;
-  const entry = { source: 'work-order-page', action, detail: String(detail || ''), status: s, error: String(error || '') };
-  fetch('/api/apps-script', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ action: 'log', log: entry })
-  }).catch(() => {});
 }
 
 // Default trip charge checked and populated on load

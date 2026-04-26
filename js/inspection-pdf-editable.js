@@ -1271,58 +1271,129 @@ async function buildGenericSystemPDFBytes() {
         [{label:'Oil Pressure (PSI)',id:'fp-diesel-oil',w:180},{label:'Coolant Temp (°F)',id:'fp-diesel-temp',w:180},{label:'Engine Hours',id:'fp-diesel-hours',w:180}],
       ]},
     ]},
-    'standpipe': [
-      [{label:'Standpipe Class',id:'std-class',w:180},{label:'System Type',id:'std-type',w:180},{label:'# Standpipes',id:'std-count',w:180}],
-      [{label:'# Floors Served',id:'std-floors',w:180},{label:'# Hose Stations',id:'std-hose-stations',w:180},{label:'Last Flow Test Date',id:'std-flow-date',w:180}],
-      [{label:'PRV Static PSI',id:'std-prv-static',w:180},{label:'PRV Residual PSI',id:'std-prv-residual',w:180},{label:'Flow Test PSI',id:'std-flow-psi',w:180}],
-    ],
+    'standpipe': { sections: [
+      { title: 'SYSTEM INFORMATION', rows: [
+        [{label:'Standpipe Class',id:'std-class',w:180},{label:'System Type',id:'std-type',w:180},{label:'# Standpipes / Risers',id:'std-count',w:180}],
+        [{label:'# Floors Served',id:'std-floors',w:270},{label:'# Hose Stations',id:'std-hose-stations',w:270}],
+      ]},
+      { title: 'PRESSURE READINGS & FLOW TEST', rows: [
+        [{label:'PRV Static PSI',id:'std-prv-static',w:180},{label:'PRV Residual PSI',id:'std-prv-residual',w:180},{label:'Flow Test PSI',id:'std-flow-psi',w:180}],
+        [{label:'Flow Rate (GPM)',id:'std-flow-gpm',w:270},{label:'Last Flow Test Date',id:'std-flow-date',w:270}],
+      ]},
+    ]},
     'hood': [
       [{label:'Manufacturer',id:'hood-mfr',w:180},{label:'Model / Cylinder #',id:'hood-model',w:180},{label:'Year Installed',id:'hood-install',w:180}],
       [{label:'Agent Type',id:'hood-agent',w:180},{label:'# Nozzles',id:'hood-nozzle-count',w:180},{label:'Last Service Date',id:'hood-last-service',w:180}],
       [{label:'Cylinder Wt (actual)',id:'hood-cyl-wt-actual',w:180},{label:'Min Acceptable Wt (lbs)',id:'hood-cyl-wt-min',w:180},{label:'Next Service Due',id:'hood-next-service',w:180}],
     ],
-    'hydrant': [
-      [{label:'# Hydrants',id:'hy-count',w:180},{label:'Hydrant Type',id:'hy-type',w:180},{label:'Last Flow Test Date',id:'hy-last-flow',w:180}],
-      [{label:'Static PSI',id:'hy-flow-static',w:180},{label:'Residual PSI',id:'hy-flow-residual',w:180},{label:'Flow GPM',id:'hy-flow-gpm',w:180}],
-    ],
-    'bda': [
-      [{label:'Manufacturer',id:'bda-mfr',w:180},{label:'Model',id:'bda-model',w:180},{label:'Year Installed',id:'bda-install',w:180}],
-      [{label:'Frequencies',id:'bda-freqs',w:270},{label:'AHJ Cert / FCC License',id:'bda-ahj-cert',w:270}],
-      [{label:'Min Signal (dBm)',id:'bda-min-signal',w:180},{label:'Worst Coverage Location',id:'bda-worst-loc',w:180},{label:'Next Test Date',id:'bda-next-test',w:180}],
-    ],
-    'smoke-control': [
-      [{label:'System Type',id:'sc-type',w:180},{label:'# Zones',id:'sc-zones',w:180},{label:'Year Installed',id:'sc-year',w:180}],
-      [{label:'# Fans',id:'sc-fans',w:135},{label:'# Dampers',id:'sc-dampers',w:135},{label:'Pressure Differential',id:'sc-pressure-val',w:135},{label:'# HVAC Units',id:'sc-hvac-count',w:135}],
-    ],
-    'gas-detection': [
-      [{label:'Manufacturer',id:'gd-mfr',w:180},{label:'Model',id:'gd-model',w:180},{label:'Gas Type',id:'gd-gas-type',w:180}],
-      [{label:'# Sensors',id:'gd-sensor-count',w:135},{label:'# Zones',id:'gd-zones',w:135},{label:'Year Installed',id:'gd-install-date',w:135},{label:'Next Replacement Due',id:'gd-sensor-due',w:135}],
-      [{label:'Low Alarm Setpoint',id:'gd-alarm-setpoint-lo',w:270},{label:'High Alarm Setpoint',id:'gd-alarm-setpoint-hi',w:270}],
-    ],
-    'special-suppression': [
-      [{label:'System Type',id:'ss-type',w:180},{label:'Manufacturer',id:'ss-mfr',w:180},{label:'Protected Area',id:'ss-area',w:180}],
-      [{label:'Agent Name',id:'ss-agent',w:180},{label:'# Cylinders',id:'ss-cylinders',w:180},{label:'Year Installed',id:'ss-install',w:180}],
-      [{label:'Actual Weight (lbs)',id:'ss-actual-wt',w:180},{label:'Min. Required (lbs)',id:'ss-min-wt',w:180},{label:'Cylinder PSI',id:'ss-pressure',w:180}],
-    ],
-    'backflow': [
-      [{label:'Manufacturer',id:'bf-mfr',w:180},{label:'Model',id:'bf-model',w:180},{label:'Serial #',id:'bf-serial',w:180}],
-      [{label:'Device Type',id:'bf-type',w:180},{label:'Size',id:'bf-size',w:180},{label:'Location',id:'bf-location',w:180}],
-      [{label:'Check 1 Open PSI',id:'bf-check1-open',w:135},{label:'Check 1 Close PSI',id:'bf-check1-close',w:135},{label:'Check 2 Open PSI',id:'bf-check2-open',w:135},{label:'Check 2 Close PSI',id:'bf-check2-close',w:135}],
-      [{label:'RV Diff PSI',id:'bf-rv-open',w:180},{label:'Test Date',id:'bf-test-date',w:180},{label:"Tester's Cert #",id:'bf-cert-number',w:180}],
-    ],
+    'hydrant': { sections: [
+      { title: 'HYDRANT INVENTORY', rows: [
+        [{label:'# Private Hydrants',id:'hy-count',w:180},{label:'Hydrant Type',id:'hy-type',w:180},{label:'Last Flow Test Date',id:'hy-last-flow',w:180}],
+      ]},
+      { title: 'FLOW TEST RESULTS', rows: [
+        [{label:'Static Pressure (PSI)',id:'hy-flow-static',w:180},{label:'Residual Pressure (PSI)',id:'hy-flow-residual',w:180},{label:'Flow Rate (GPM)',id:'hy-flow-gpm',w:180}],
+      ]},
+    ]},
+    'bda': { sections: [
+      { title: 'SYSTEM INFORMATION', rows: [
+        [{label:'BDA Manufacturer',id:'bda-mfr',w:180},{label:'Model',id:'bda-model',w:180},{label:'Year Installed',id:'bda-install',w:180}],
+        [{label:'Frequencies Covered',id:'bda-freqs',w:180},{label:'Floors / Areas Covered',id:'bda-coverage-floors',w:180},{label:'AHJ Cert / FCC License',id:'bda-ahj-cert',w:180}],
+      ]},
+      { title: 'SIGNAL READINGS', rows: [
+        [{label:'Min Signal Recorded (dBm)',id:'bda-min-signal',w:270},{label:'Worst Coverage Location',id:'bda-worst-loc',w:270}],
+      ]},
+      { title: 'SCHEDULING', rows: [
+        [{label:'Next Required Test Date',id:'bda-next-test',w:540}],
+      ]},
+    ]},
+    'smoke-control': { sections: [
+      { title: 'SYSTEM CONFIGURATION', rows: [
+        [{label:'System Type',id:'sc-type',w:180},{label:'# Smoke Zones',id:'sc-zones',w:180},{label:'Year Installed',id:'sc-year',w:180}],
+        [{label:'# Supply/Exhaust Fans',id:'sc-fans',w:180},{label:'# Smoke/Fire Dampers',id:'sc-dampers',w:180},{label:'Measured ΔP (in. w.g.)',id:'sc-pressure-val',w:180}],
+      ]},
+    ]},
+    'gas-detection': { sections: [
+      { title: 'SYSTEM INFORMATION', rows: [
+        [{label:'Manufacturer',id:'gd-mfr',w:180},{label:'Model',id:'gd-model',w:180},{label:'Gas Type Monitored',id:'gd-gas-type',w:180}],
+        [{label:'# Sensors',id:'gd-sensor-count',w:180},{label:'# Zones',id:'gd-zones',w:180},{label:'Year Installed',id:'gd-install-date',w:180}],
+      ]},
+      { title: 'ALARM SETPOINTS', rows: [
+        [{label:'Low Alarm Setpoint',id:'gd-alarm-setpoint-lo',w:270},{label:'High Alarm Setpoint',id:'gd-alarm-setpoint-hi',w:270}],
+      ]},
+      { title: 'SENSOR REPLACEMENT', rows: [
+        [{label:'Sensor Age / Last Replaced',id:'gd-sensor-age',w:270},{label:'Next Replacement Due',id:'gd-sensor-due',w:270}],
+      ]},
+    ]},
+    'special-suppression': { sections: [
+      { title: 'SYSTEM INFORMATION', rows: [
+        [{label:'System Type',id:'ss-type',w:180},{label:'Manufacturer',id:'ss-mfr',w:180},{label:'Protected Hazard / Area',id:'ss-area',w:180}],
+        [{label:'Agent Name / Chemical',id:'ss-agent',w:180},{label:'# Cylinders / Containers',id:'ss-cylinders',w:180},{label:'Year Installed',id:'ss-install',w:180}],
+      ]},
+      { title: 'AGENT QUANTITY & PRESSURE', rows: [
+        [{label:'Actual Weight (lbs)',id:'ss-actual-wt',w:180},{label:'Min. Required (lbs)',id:'ss-min-wt',w:180},{label:'Cylinder PSI',id:'ss-pressure',w:180}],
+      ]},
+      { title: 'SERVICE DATES', rows: [
+        [{label:'Last Full Service',id:'ss-last-service',w:270},{label:'Next Service Due',id:'ss-next-service',w:270}],
+      ]},
+    ]},
+    'backflow': { sections: [
+      { title: 'DEVICE INFORMATION', rows: [
+        [{label:'Manufacturer',id:'bf-mfr',w:180},{label:'Model',id:'bf-model',w:180},{label:'Serial #',id:'bf-serial',w:180}],
+        [{label:'Device Type',id:'bf-type',w:180},{label:'Size',id:'bf-size',w:180},{label:'Location',id:'bf-location',w:180}],
+        [{label:'Year Installed',id:'bf-install',w:270},{label:'Service (Fire / Irrigation / Domestic)',id:'bf-purpose',w:270}],
+      ]},
+      { title: 'TEST RESULTS', rows: [
+        [{label:'Check 1 Open PSI',id:'bf-check1-open',w:135},{label:'Check 1 Close PSI',id:'bf-check1-close',w:135},{label:'Check 2 Open PSI',id:'bf-check2-open',w:135},{label:'Check 2 Close PSI',id:'bf-check2-close',w:135}],
+        [{label:'RV Diff PSI',id:'bf-rv-open',w:180},{label:'Test Date',id:'bf-test-date',w:180},{label:"Tester's Cert #",id:'bf-cert-number',w:180}],
+        [{label:'Cert. Expiration Date',id:'bf-cert-exp',w:540}],
+      ]},
+    ]},
   };
 
-  // Inspection item IDs per system
+  // Inspection item IDs per system (flat list, used for fire-pump and as fallback)
   const SYS_ITEMS = {
     'fire-pump':   ['fp-controller-cond','fp-controller-auto','fp-jockey-type','fp-jockey-cycles','fp-churn-test','fp-flow-test','fp-diesel-start','fp-diesel-fuel','fp-diesel-battery','fp-diesel-coolant','fp-diesel-run','fp-power-fail-alarm','fp-phase-alarm','fp-room-temp','fp-suction-valve'],
-    'standpipe':   ['std-fdc','std-fdc-sign','std-hose-valves','std-prv','std-check-valve','std-flow-test','std-hose-cond','std-nozzle','std-cabinet'],
     'hood':        ['hood-cylinder-wt','hood-pull-station','hood-auto-detect','hood-micro-switch','hood-nozzle-cond','hood-nozzle-coverage','hood-duct-protected','hood-gas-shutoff','hood-power-shutoff','hood-fa-integration','hood-ansul-reset','hood-grease-buildup','hood-filter-cond','hood-service-tag'],
-    'hydrant':     ['hy-caps','hy-drainage','hy-painted','hy-clearance','hy-operation','hy-gate-valve','hy-outlet-threads','hy-flow-test'],
-    'bda':         ['bda-uplink','bda-downlink','bda-coverage','bda-power','bda-backup-power','bda-donor-antenna','bda-internal-antenna','bda-alarms','bda-fa-interface','bda-permit','bda-coverage-map'],
-    'smoke-control':['sc-fans-op','sc-cfm','sc-pressure','sc-dampers-op','sc-fire-dampers','sc-damper-access','sc-control-panel','sc-fa-integration','sc-override','sc-detector-input'],
-    'gas-detection':['gd-sensor-test','gd-alarm-test','gd-gas-shutoff','gd-ventilation','gd-power','gd-backup','gd-control-panel','gd-fa-integration','gd-calibration-cert'],
-    'special-suppression':['ss-agent-wt','ss-detection','ss-pull','ss-abort','ss-discharge-time','ss-nozzles','ss-coverage','ss-room-integrity','ss-hvac-shutoff','ss-power-shutoff','ss-fa-integration','ss-recharge-cert'],
-    'backflow':    ['bf-test','bf-passed','bf-casing','bf-shutoffs','bf-clearance','bf-freeze'],
+  };
+
+  // Sectioned inspection items — when present, INSPECTION RESULTS renders with sub-section headers
+  // mirroring the structure of the input panels.
+  const SYS_ITEMS_SECTIONED = {
+    'standpipe': [
+      { title: 'HOSE CONNECTIONS & VALVES', ids: ['std-fdc','std-fdc-sign','std-hose-valves','std-prv','std-check-valve'] },
+      { title: 'FLOW TEST',                  ids: ['std-flow-test'] },
+      { title: 'HOSE EQUIPMENT (CLASS II/III)', ids: ['std-hose-cond','std-nozzle','std-cabinet'] },
+    ],
+    'hydrant': [
+      { title: 'ANNUAL INSPECTION ITEMS', ids: ['hy-caps','hy-drainage','hy-painted','hy-clearance','hy-operation','hy-gate-valve','hy-outlet-threads'] },
+      { title: 'FLOW TEST',               ids: ['hy-flow-test'] },
+    ],
+    'bda': [
+      { title: 'SIGNAL STRENGTH TESTING', ids: ['bda-uplink','bda-downlink','bda-coverage'] },
+      { title: 'EQUIPMENT CONDITION',     ids: ['bda-power','bda-backup-power','bda-donor-antenna','bda-internal-antenna','bda-alarms','bda-fa-interface'] },
+      { title: 'DOCUMENTATION',           ids: ['bda-permit','bda-coverage-map'] },
+    ],
+    'smoke-control': [
+      { title: 'FAN & EQUIPMENT TESTING', ids: ['sc-fans-op','sc-cfm','sc-pressure'] },
+      { title: 'DAMPERS',                 ids: ['sc-dampers-op','sc-fire-dampers','sc-damper-access'] },
+      { title: 'CONTROLS & INTEGRATION',  ids: ['sc-control-panel','sc-fa-integration','sc-override','sc-detector-input'] },
+    ],
+    'gas-detection': [
+      { title: 'SENSOR TESTING',     ids: ['gd-sensor-test','gd-alarm-test','gd-gas-shutoff','gd-ventilation'] },
+      { title: 'ELECTRONICS & POWER', ids: ['gd-power','gd-backup','gd-control-panel','gd-fa-integration'] },
+      { title: 'DOCUMENTATION',       ids: ['gd-calibration-cert'] },
+    ],
+    'special-suppression': [
+      { title: 'AGENT QUANTITY & PRESSURE', ids: ['ss-agent-wt'] },
+      { title: 'ACTUATION & DETECTION',     ids: ['ss-detection','ss-pull','ss-abort','ss-discharge-time'] },
+      { title: 'NOZZLES & DISTRIBUTION',    ids: ['ss-nozzles','ss-coverage','ss-room-integrity'] },
+      { title: 'INTERLOCKS & ALARMS',       ids: ['ss-hvac-shutoff','ss-power-shutoff','ss-fa-integration'] },
+      { title: 'DOCUMENTATION',             ids: ['ss-recharge-cert'] },
+    ],
+    'backflow': [
+      { title: 'TEST RESULTS',       ids: ['bf-test','bf-passed'] },
+      { title: 'PHYSICAL CONDITION', ids: ['bf-casing','bf-shutoffs','bf-clearance','bf-freeze'] },
+    ],
   };
   const NOTES_ID = {
     'standpipe':'std-notes','hood':'hood-notes','hydrant':'hy-notes',
@@ -1506,47 +1577,63 @@ async function buildGenericSystemPDFBytes() {
     gap(4);
   }
 
-  // Inspection checklist
-  const inspItems = SYS_ITEMS[sys] || [];
-  if (inspItems.length) {
+  // Inspection checklist row renderer (shared across flat and sectioned formats)
+  const drawInspRow = (id) => {
+    const row = document.getElementById('row-' + id);
+    if (!row) return;
+    const label = (row.querySelector('.inspect-label')?.childNodes[0]?.textContent?.trim() || id).replace(/≥/g, '>=').replace(/≤/g, '<=');
+    const result = (row.dataset.val || '').toUpperCase();
+    const deficTxt = document.getElementById('defic-txt-' + id)?.value?.trim() || '';
+    const labelLines = wrap(label, 7.5, PW - 50);
+    const rowH = Math.max(13, labelLines.length * 9 + 4);
+    checkPage(rowH + (result === 'FAIL' && deficTxt ? 13 : 0) + 1);
+    const bg = result === 'PASS' ? rgb(0.94, 0.99, 0.95) : result === 'FAIL' ? rgb(0.99, 0.93, 0.93) : rgb(0.97, 0.97, 0.97);
+    page.drawRectangle({ x: ML, y: ry(rowH), width: PW, height: rowH, color: bg, borderColor: sky, borderWidth: 0.3 });
+    labelLines.forEach((line, li) => {
+      page.drawText(line, { x: ML+4, y: ry(rowH) + rowH - 7 - li*9, size: 7.5, font: rFont, color: navy });
+    });
+    const bColor = result === 'PASS' ? green : result === 'FAIL' ? red : (result ? slate : lgray);
+    const bW = 36;
+    const bX = ML + PW - bW - 2;
+    page.drawRectangle({ x: bX, y: ry(rowH)+1, width: bW, height: rowH-2, color: bColor });
+    const rf = form.createTextField(fid());
+    rf.setText(result || '');
+    rf.addToPage(page, { x: bX+1, y: ry(rowH)+2, width: bW-2, height: rowH-4, font: hFont });
+    rf.setFontSize(7);
+    curY += rowH + 3;
+    if (result === 'FAIL' && deficTxt) {
+      const defH = 12;
+      checkPage(defH + 2);
+      page.drawRectangle({ x: ML+4, y: ry(defH), width: PW-4, height: defH, color: rgb(0.99, 0.93, 0.93), borderColor: red, borderWidth: 0.3 });
+      const defField = form.createTextField(fid());
+      defField.setText('Deficiency: ' + deficTxt);
+      defField.addToPage(page, { x: ML+6, y: ry(defH)+1, width: PW-10, height: defH-2, font: rFont });
+      defField.setFontSize(7);
+      curY += defH + 3;
+    }
+  };
+
+  // Inspection checklist — sectioned format takes precedence over flat list
+  const sectionedItems = SYS_ITEMS_SECTIONED[sys];
+  if (sectionedItems) {
     secHdr('INSPECTION RESULTS');
     gap(2);
-    inspItems.forEach(id => {
-      const row = document.getElementById('row-' + id);
-      if (!row) return;
-      const label = (row.querySelector('.inspect-label')?.childNodes[0]?.textContent?.trim() || id).replace(/≥/g, '>=').replace(/≤/g, '<=');
-      const result = (row.dataset.val || '').toUpperCase();
-      const deficTxt = document.getElementById('defic-txt-' + id)?.value?.trim() || '';
-      const labelLines = wrap(label, 7.5, PW - 50);
-      const rowH = Math.max(13, labelLines.length * 9 + 4);
-      checkPage(rowH + (result === 'FAIL' && deficTxt ? 13 : 0) + 1);
-      const bg = result === 'PASS' ? rgb(0.94, 0.99, 0.95) : result === 'FAIL' ? rgb(0.99, 0.93, 0.93) : rgb(0.97, 0.97, 0.97);
-      page.drawRectangle({ x: ML, y: ry(rowH), width: PW, height: rowH, color: bg, borderColor: sky, borderWidth: 0.3 });
-      labelLines.forEach((line, li) => {
-        page.drawText(line, { x: ML+4, y: ry(rowH) + rowH - 7 - li*9, size: 7.5, font: rFont, color: navy });
-      });
-      // Editable result badge with colored background
-      const bColor = result === 'PASS' ? green : result === 'FAIL' ? red : (result ? slate : lgray);
-      const bW = 36;
-      const bX = ML + PW - bW - 2;
-      page.drawRectangle({ x: bX, y: ry(rowH)+1, width: bW, height: rowH-2, color: bColor });
-      const rf = form.createTextField(fid());
-      rf.setText(result || '');
-      rf.addToPage(page, { x: bX+1, y: ry(rowH)+2, width: bW-2, height: rowH-4, font: hFont });
-      rf.setFontSize(7);
-      curY += rowH + 3;
-      if (result === 'FAIL' && deficTxt) {
-        const defH = 12;
-        checkPage(defH + 2);
-        page.drawRectangle({ x: ML+4, y: ry(defH), width: PW-4, height: defH, color: rgb(0.99, 0.93, 0.93), borderColor: red, borderWidth: 0.3 });
-        const defField = form.createTextField(fid());
-        defField.setText('Deficiency: ' + deficTxt);
-        defField.addToPage(page, { x: ML+6, y: ry(defH)+1, width: PW-10, height: defH-2, font: rFont });
-        defField.setFontSize(7);
-        curY += defH + 3;
-      }
+    sectionedItems.forEach(sec => {
+      const visibleIds = sec.ids.filter(id => document.getElementById('row-' + id));
+      if (!visibleIds.length) return;
+      subHdr(sec.title);
+      gap(2);
+      visibleIds.forEach(drawInspRow);
+      gap(4);
     });
-    gap(4);
+  } else {
+    const inspItems = SYS_ITEMS[sys] || [];
+    if (inspItems.length) {
+      secHdr('INSPECTION RESULTS');
+      gap(2);
+      inspItems.forEach(drawInspRow);
+      gap(4);
+    }
   }
 
   // Notes

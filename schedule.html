@@ -363,12 +363,14 @@ thead th.col-del:hover { background:#1a1a2e; }
 
 <div id="toast"></div>
 <script src="https://accounts.google.com/gsi/client"></script>
+<script src="js/flips-google-fetch.js"></script>
+<script src="js/flips-history.js"></script>
 <script>
 const SHEET_ID          = '1_Koq_v0RjsFbQ_c2qZh-eQpGQT2-0IkOal-I4CjSJrI';
 const HISTORY_TAB_NAME  = 'Inspection History';
 const CLIENT_LIST_GID   = '1899870347';
-const SCOPES            = 'https://www.googleapis.com/auth/spreadsheets.readonly';
-// Secret is a Cloudflare env var (APPS_SCRIPT_SECRET) — injected by the worker at /api/apps-script.
+// spreadsheets (write) — schedule page now appends/deletes Inspection History rows directly.
+const SCOPES            = 'https://www.googleapis.com/auth/spreadsheets';
 
 let accessToken = null;
 let tokenClient = null;
@@ -415,26 +417,7 @@ function initGoogle() {
   } catch(e) { setStatus('✗ ' + e.message, 'err'); }
 }
 
-async function googleFetch(url) {
-  const makeOpts = () => ({ headers: { Authorization: 'Bearer ' + accessToken } });
-  let res = await fetch(url, makeOpts());
-  if (res.status === 401) {
-    toast('⏳ Session expired — reconnecting…');
-    await new Promise((resolve, reject) => {
-      if (!tokenClient) { reject(new Error('Not initialized')); return; }
-      tokenClient.callback = async (resp) => {
-        if (resp.error) { reject(new Error(resp.error)); return; }
-        accessToken = resp.access_token;
-        localStorage.setItem('flips_access_token', accessToken);
-        localStorage.setItem('flips_token_expiry', Date.now() + 55 * 60 * 1000);
-        resolve();
-      };
-      tokenClient.requestAccessToken({ prompt: '' });
-    });
-    res = await fetch(url, makeOpts());
-  }
-  return res;
-}
+// googleFetch / refreshAccessToken live in js/flips-google-fetch.js
 
 
 // ── Load schedule ──────────────────────────────────────────
@@ -572,38 +555,11 @@ function addFreqMonths(date, freq) {
   return d;
 }
 
-// Show empty-state with optional one-time migration CTA
 function showSetupPrompt() {
   const el = document.getElementById('empty-state');
-  el.innerHTML =
-    'No inspection history found. Complete a work order or inspection to start tracking automatically, ' +
-    'or import your existing data:' +
-    '<br><br>' +
-    '<button onclick="migrateOldData()" style="background:#2e6da4;color:white;border:none;padding:6px 16px;border-radius:4px;cursor:pointer;font-size:0.82rem;font-weight:600;">' +
-    '⬆ Import from old Inspection Schedule tab</button>' +
-    '<div style="font-size:0.72rem;color:#aaa;margin-top:6px;">Copies all rows with a Last Done date into Inspection History as Work Order entries.</div>';
+  el.innerHTML = 'No inspection history found. Complete a work order or inspection to start tracking automatically.';
   el.style.display = 'block';
   document.getElementById('sched-table').style.display = 'none';
-}
-
-// One-time migration: calls Apps Script to copy old Schedule tab → History tab
-async function migrateOldData() {
-  if (!confirm('Import all dated rows from "Inspection Schedule" into "Inspection History" as Work Order entries?\n\nThis runs once. The old tab is not deleted.')) return;
-  toast('⏳ Importing…');
-  try {
-    const resp = await fetch('/api/apps-script', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'migrate_schedule' })
-    });
-    if (!resp.ok) throw new Error('HTTP ' + resp.status);
-    const result = await resp.json();
-    if (!result.success) throw new Error(result.error || 'Unknown error');
-    toast(`✓ Imported ${result.migrated} record(s). Loading…`);
-    setTimeout(() => loadSchedule(true), 1200);
-  } catch(e) {
-    toast('✗ Import failed: ' + e.message);
-  }
 }
 
 function stripTime(str) {
@@ -930,23 +886,15 @@ async function saveLastDone(idx) {
   if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = '…'; }
 
   try {
-    const resp = await fetch('/api/apps-script', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        updates: [{
-          propertyName:   row.property,
-          acctNum:        row.acct,
-          inspectionType: row.type,
-          dateCompleted:  input.value,
-          frequency:      row.freq,
-          source:         'Manual',
-        }]
-      })
-    });
-    if (!resp.ok) throw new Error('HTTP ' + resp.status);
-    const result = await resp.json();
-    if (!result.success) throw new Error(result.error || 'Apps Script error');
+    await appendInspectionHistory([{
+      propertyName:   row.property,
+      acctNum:        row.acct,
+      inspectionType: row.type,
+      dateCompleted:  input.value,
+      frequency:      row.freq,
+      source:         'Manual',
+      address:        row.address,
+    }]);
 
     try { sessionStorage.removeItem('flips_schedule_cache'); } catch(_) {}
     toast('✓ Date saved');
@@ -1000,16 +948,10 @@ async function saveNewEntry() {
   saveBtn.disabled = true; saveBtn.textContent = '…';
 
   try {
-    const resp = await fetch('/api/apps-script', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        updates: [{ propertyName: propName, acctNum: acct, inspectionType: type, dateCompleted: date, frequency: freq, source: 'Manual' }]
-      })
-    });
-    if (!resp.ok) throw new Error('HTTP ' + resp.status);
-    const result = await resp.json();
-    if (!result.success) throw new Error(result.error || 'Apps Script error');
+    await appendInspectionHistory([{
+      propertyName: propName, acctNum: acct, inspectionType: type,
+      dateCompleted: date, frequency: freq, source: 'Manual',
+    }]);
 
     try { sessionStorage.removeItem('flips_schedule_cache'); } catch(_) {}
     toast('✓ Entry added');
@@ -1029,17 +971,9 @@ async function confirmDelete(idx) {
   if (!confirm(`Delete all inspection history for:\n\n"${row.property}"\n${row.type}\n\nThis removes every history row for this property + inspection type and cannot be undone. Continue?`)) return;
 
   try {
-    const resp = await fetch('/api/apps-script', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'delete_schedule_entry', acctNum: row.acct, propertyName: row.property, inspectionType: row.type })
-    });
-    if (!resp.ok) throw new Error('HTTP ' + resp.status);
-    const result = await resp.json();
-    if (!result.success) throw new Error(result.error || 'Apps Script error');
-
+    const result = await deleteInspectionHistoryEntries(row.acct, row.property, row.type);
     try { sessionStorage.removeItem('flips_schedule_cache'); } catch(_) {}
-    toast('✓ Entry deleted');
+    toast(`✓ Deleted ${result.deleted} row(s)`);
     await loadSchedule(true);
   } catch(e) {
     toast('✗ Delete failed: ' + e.message);

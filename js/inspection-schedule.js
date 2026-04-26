@@ -1,7 +1,8 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // INSPECTION SCHEDULE UPDATE
-// Called after the inspection PDF is saved and downloaded. Posts the completed
-// inspection to the Apps Script web app so the schedule sheet is kept current.
+// Called after the inspection PDF is saved and downloaded. Appends a row
+// directly to the Inspection History sheet via flips-history.js
+// (appendInspectionHistory).
 // ─────────────────────────────────────────────────────────────────────────────
 
 // Maps activeInspectionSystem keys → inspection type names used in the schedule sheet
@@ -62,28 +63,12 @@ async function updateInspectionSchedule(data) {
 
   const updates = [{ propertyName, acctNum, inspectionType, dateCompleted, frequency, source: 'Inspection' }];
 
-  console.log(`[Schedule] Posting update → ${propertyName} | ${inspectionType} | ${frequency} | ${dateCompleted}`);
+  console.log(`[Schedule] Appending → ${propertyName} | ${inspectionType} | ${frequency} | ${dateCompleted}`);
 
   try {
-    const resp = await fetch('/api/apps-script', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ updates })
-    });
-
-    if (!resp.ok) {
-      const txt = await resp.text();
-      console.warn('[Schedule] HTTP error', resp.status, txt.substring(0, 200));
-      return;
-    }
-
-    const result = await resp.json();
-    if (result.success) {
-      console.log(`[Schedule] ✓ Schedule updated: ${inspectionType} for ${propertyName}`);
-    } else {
-      console.warn('[Schedule] Apps Script error:', result.error);
-    }
+    await appendInspectionHistory(updates);
+    console.log(`[Schedule] ✓ History row appended: ${inspectionType} for ${propertyName}`);
   } catch(e) {
-    console.warn('[Schedule] Could not reach Apps Script:', e.message);
+    console.warn('[Schedule] History append failed:', e.message);
   }
 }

@@ -3,11 +3,10 @@
 // ─────────────────────────────────────────────────────────────────────────────
 const SHEET_ID  = '1_Koq_v0RjsFbQ_c2qZh-eQpGQT2-0IkOal-I4CjSJrI';
 
-// ── Inspection Schedule Apps Script integration ──────────────────────────────
-// URL and secret are set as Cloudflare env vars (APPS_SCRIPT_URL, APPS_SCRIPT_SECRET).
-// The worker at /api/apps-script injects them server-side — no secrets in client code.
+// Inspection pages append directly to the Inspection History tab (see js/flips-history.js)
+// after the report PDF saves, so we need write scope on Sheets.
 const SHEET_GID = '1899870347';
-const SCOPES    = 'https://www.googleapis.com/auth/spreadsheets.readonly https://www.googleapis.com/auth/drive';
+const SCOPES    = 'https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/drive';
 
 let accessToken = null;
 let tokenClient = null;

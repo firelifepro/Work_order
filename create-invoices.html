@@ -488,16 +488,6 @@ document.addEventListener('click', e => {
 
 let accessToken = null;
 let tokenClient = null;
-// ── INSPECTION SCHEDULE / SYSTEM LOG ────────────────────────────────────────
-// URL and secret are Cloudflare env vars (APPS_SCRIPT_URL, APPS_SCRIPT_SECRET).
-// The worker at /api/apps-script injects them server-side — no secrets in client code.
-
-// ── Log verbosity ────────────────────────────────────────────────────────────
-// 'NORMAL'  — only logs WO/invoice creation and errors (production default)
-// 'VERBOSE' — logs every step (use when debugging a specific issue)
-// Change this constant and redeploy, or use browser console to override:
-//   flipsLogLevel = 'VERBOSE'  /  flipsLogLevel = 'NORMAL'
-let flipsLogLevel = 'NORMAL';
 
 let allDocs = [];        // { id, name, modifiedTime, amount, client }
 let sourceFolderId = null; // Drive folder ID for '2 - Ready to Invoice'
@@ -626,21 +616,6 @@ async function loadDocs() {
   }
 }
 
-// ─────────────────────────────────────────────────────────
-// SHEET LOGGER
-// ─────────────────────────────────────────────────────────
-function logToSheet(action, detail, status, error) {
-  const s = String(status || 'INFO').toUpperCase();
-  const isKeyEvent = ['WO_SAVED','INVOICE_CREATED','QB_INVOICE_CREATED'].includes(action);
-  if (flipsLogLevel !== 'VERBOSE' && s === 'INFO' && !isKeyEvent) return;
-  const entry = { source: 'create-invoices-page', action, detail: String(detail || ''), status: s, error: String(error || '') };
-  fetch('/api/apps-script', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ action: 'log', log: entry })
-  }).catch(() => {});
-}
-
 async function enrichDocsInBackground() {
   const docList = allDocs.filter(d =>
     d.mimeType === 'application/vnd.google-apps.document' &&
@@ -653,7 +628,6 @@ async function enrichDocsInBackground() {
   }
 
   console.log(`[enrich] Fetching content for ${docList.length} doc(s) without metadata`);
-  logToSheet('ENRICH_START', `Fetching content for ${docList.length} doc(s) missing metadata`, 'INFO');
   let enriched = 0, failed = 0;
 
   for (let doc of docList) {
@@ -695,9 +669,6 @@ async function enrichDocsInBackground() {
     }
   }
 
-  if (enriched > 0) {
-    logToSheet('ENRICH_COMPLETE', `Fetched ${enriched} doc(s), back-filled Drive metadata`, 'OK');
-  }
 }
 
 function extractText(docData) {
@@ -1079,14 +1050,11 @@ async function createInvoices() {
       const invoiceResult = await createQBInvoice(doc);
       const qbLinks = buildQBLink(invoiceResult.Id);
       results.push({ doc, status: 'ok', invoiceId: invoiceResult.Id, invoiceNum: invoiceResult.DocNumber, link: qbLinks.invoice, linkHome: qbLinks.home });
-      logToSheet('INVOICE_CREATED', `Invoice #${invoiceResult.DocNumber} created for ${doc.client || doc.name} — $${doc.amount}`, 'OK');
       toast(`✅ Invoice created: ${doc.name}`);
       try {
         await moveDocToInvoiceSent(doc.id);
         allDocs = allDocs.filter(d => d.id !== doc.id);
-        logToSheet('DRIVE_MOVE', `Moved "${doc.name}" to ${FOLDER_NAME_SENT}`, 'OK');
       } catch(moveErr) {
-        logToSheet('DRIVE_MOVE', `Failed to move "${doc.name}": ${moveErr.message}`, 'WARN');
         toast(`⚠ Invoice created but file not moved: ${moveErr.message}`);
       }
     } catch(e) {
@@ -1103,8 +1071,6 @@ async function createInvoices() {
 }
 
 async function createQBInvoice(doc) {
-  logToSheet('QB_INVOICE_START',
-    `Doc: ${doc.name} | Client: ${doc.client || '(none)'} | Amount: ${doc.amount || '(none)'}`, 'INFO');
   const env     = document.getElementById('qb-env').value;
   const dueDays = parseInt(document.getElementById('qb-due-days').value) || 30;
 
@@ -1189,37 +1155,27 @@ async function getServicesItemRef(env) {
     const items = data?.QueryResponse?.Item || [];
     if (items.length) {
       _servicesItemRef = { value: items[0].Id, name: items[0].Name };
-      logToSheet('QB_ITEM_LOOKUP', `Found Services item: ID ${items[0].Id}`, 'OK');
       return _servicesItemRef;
     }
-  } catch(e) {
-    logToSheet('QB_ITEM_LOOKUP', `Services item lookup failed: ${e.message} — using ID 1`, 'WARN');
-  }
+  } catch(_) {}
   return { value: '1', name: 'Services' };
 }
 
 function refreshQBCustomers() {
   delete findOrCreateCustomer._cache;
   toast('↺ QB customer list will refresh on next invoice creation');
-  logToSheet('QB_CUSTOMER_CACHE_CLEARED', 'Manual cache clear requested', 'INFO');
 }
 
 async function findOrCreateCustomer(customerName, env, acctNum) {
   if (!customerName) customerName = 'Unknown Customer';
-
-  logToSheet('QB_CUSTOMER_LOOKUP',
-    `Looking up QB customer: acct#${acctNum || 'n/a'}, name="${customerName}"`, 'INFO');
 
   if (!findOrCreateCustomer._cache) {
     try {
       const q    = `SELECT * FROM Customer MAXRESULTS 1000`;
       const data = await qbProxy('GET', `/query?query=${encodeURIComponent(q)}&minorversion=70`, env);
       findOrCreateCustomer._cache = data?.QueryResponse?.Customer || [];
-      logToSheet('QB_CUSTOMER_LOOKUP',
-        `Loaded ${findOrCreateCustomer._cache.length} QB customers into cache`, 'INFO');
-    } catch(e) {
+    } catch(_) {
       findOrCreateCustomer._cache = [];
-      logToSheet('QB_CUSTOMER_LOOKUP', `Failed to load QB customers: ${e.message}`, 'WARN');
     }
   }
   const all = findOrCreateCustomer._cache;
@@ -1231,16 +1187,12 @@ async function findOrCreateCustomer(customerName, env, acctNum) {
       String(c.AlternatePhone?.FreeFormNumber || '').trim() === acctStr
     );
     if (match) {
-      logToSheet('QB_CUSTOMER_FOUND',
-        `Found by AcctNum "${acctNum}": "${match.DisplayName}" (ID: ${match.Id})`, 'OK');
       return { value: match.Id, name: match.DisplayName, notes: match.Notes || '', companyName: match.CompanyName || '', billAddr: match.BillAddr || null };
     }
   }
 
   const exact = all.find(c => c.DisplayName === customerName);
   if (exact) {
-    logToSheet('QB_CUSTOMER_FOUND',
-      `Found by exact name: "${exact.DisplayName}" (ID: ${exact.Id})`, 'OK');
     return { value: exact.Id, name: exact.DisplayName, notes: exact.Notes || '', companyName: exact.CompanyName || '', billAddr: exact.BillAddr || null };
   }
 
@@ -1248,7 +1200,6 @@ async function findOrCreateCustomer(customerName, env, acctNum) {
     ? `No QB customer found with Account No. "${acctNum}" or name "${customerName}". ` +
       `In QuickBooks, open the customer → Additional info tab → set "Account no." to ${acctNum}.`
     : `No QB customer found matching "${customerName}". Please add this customer in QuickBooks first.`;
-  logToSheet('QB_CUSTOMER_NOT_FOUND', hint, 'WARN');
   throw new Error(hint);
 }
 
@@ -1417,30 +1368,7 @@ async function findFolder(name) {
   return folder?.id || null;
 }
 
-async function apiFetch(url, method = 'GET', body = null) {
-  const makeOpts = () => {
-    const opts = { method, headers: { 'Authorization': 'Bearer ' + accessToken, 'Content-Type': 'application/json' } };
-    if (body) opts.body = JSON.stringify(body);
-    return opts;
-  };
-  let res = await fetch(url, makeOpts());
-  if (res.status === 401) {
-    console.warn('[Google] 401 received — requesting fresh token…');
-    toast('⏳ Google session expired — reconnecting…');
-    await new Promise((resolve, reject) => {
-      if (!tokenClient) { reject(new Error('Not initialized')); return; }
-      tokenClient.callback = async (resp) => {
-        if (resp.error) { reject(new Error(resp.error)); return; }
-        accessToken = resp.access_token;
-        gapi.client.setToken({ access_token: accessToken });
-        resolve();
-      };
-      tokenClient.requestAccessToken({ prompt: '' });
-    });
-    res = await fetch(url, makeOpts());
-  }
-  return res;
-}
+// apiFetch / refreshAccessToken live in js/flips-google-fetch.js
 
 function setActionStatus(msg, cls) {
   const el = document.getElementById('action-status');
@@ -1527,5 +1455,6 @@ window.addEventListener('load', () => {
   updateSelectedCount();
 });
 </script>
+<script src="js/flips-google-fetch.js"></script>
 </body>
 </html>

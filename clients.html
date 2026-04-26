@@ -295,6 +295,7 @@ tbody td { padding: 9px 12px; vertical-align: middle; }
 </div>
 
 <script src="https://accounts.google.com/gsi/client"></script>
+<script src="js/flips-google-fetch.js"></script>
 <script>
 // ─────────────────────────────────────────────────────────────────────────────
 // CONFIG
@@ -344,26 +345,7 @@ function initGoogle() {
   } catch(e) { setGoogleStatus('✗ ' + e.message, 'err'); }
 }
 
-async function googleFetch(url) {
-  if (!accessToken) throw new Error('Not authenticated');
-  const makeOpts = () => ({ headers: { Authorization: 'Bearer ' + accessToken } });
-  let res = await fetch(url, makeOpts());
-  if (res.status === 401 && tokenClient) {
-    toast('⏳ Google session expired — reconnecting…');
-    await new Promise((resolve, reject) => {
-      tokenClient.callback = async (resp) => {
-        if (resp.error) { reject(new Error(resp.error)); return; }
-        accessToken = resp.access_token;
-        localStorage.setItem('flips_access_token', accessToken);
-        localStorage.setItem('flips_token_expiry', Date.now() + 55 * 60 * 1000);
-        resolve();
-      };
-      tokenClient.requestAccessToken({ prompt: '' });
-    });
-    res = await fetch(url, makeOpts());
-  }
-  return res;
-}
+// googleFetch / refreshAccessToken live in js/flips-google-fetch.js
 
 // ── QB Auth ─────────────────────────────────────────────────────────────────
 function connectQuickBooks() {

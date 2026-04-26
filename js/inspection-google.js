@@ -56,6 +56,24 @@ function initGoogle() {
   } catch(e) { setStatus('✗ ' + e.message, 'err'); }
 }
 
+let _tokenRefreshPromise = null;
+function _refreshAccessTokenInspection() {
+  if (_tokenRefreshPromise) return _tokenRefreshPromise;
+  _tokenRefreshPromise = new Promise((resolve, reject) => {
+    tokenClient.callback = (resp) => {
+      if (resp.error) { reject(new Error(resp.error)); return; }
+      accessToken = resp.access_token;
+      localStorage.setItem('flips_access_token', accessToken);
+      localStorage.setItem('flips_token_expiry', Date.now() + 55 * 60 * 1000);
+      _updateConnStatus('ok', '✓ Connected');
+      _scheduleTokenRefresh();
+      resolve();
+    };
+    tokenClient.requestAccessToken({ prompt: '' });
+  }).finally(() => { _tokenRefreshPromise = null; });
+  return _tokenRefreshPromise;
+}
+
 async function googleFetch(url, method = 'GET', body = null) {
   if (!accessToken) throw new Error('Not authenticated — connect Google first');
   const makeOpts = () => {
@@ -71,18 +89,7 @@ async function googleFetch(url, method = 'GET', body = null) {
       throw new Error('Session expired — please reconnect Google');
     }
     if (typeof toast === 'function') toast('⏳ Reconnecting…');
-    await new Promise((resolve, reject) => {
-      tokenClient.callback = async (resp) => {
-        if (resp.error) { reject(new Error(resp.error)); return; }
-        accessToken = resp.access_token;
-        localStorage.setItem('flips_access_token', accessToken);
-        localStorage.setItem('flips_token_expiry', Date.now() + 55 * 60 * 1000);
-        _updateConnStatus('ok', '✓ Connected');
-        _scheduleTokenRefresh();
-        resolve();
-      };
-      tokenClient.requestAccessToken({ prompt: '' });
-    });
+    await _refreshAccessTokenInspection();
     res = await fetch(url, makeOpts());
   }
   return res;

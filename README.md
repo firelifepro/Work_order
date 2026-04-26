@@ -39,42 +39,19 @@ code { background: #ffe082; padding: 1px 5px; border-radius: 3px; font-size: 0.7
     <div class="step"><div class="step-n">💡</div><div><strong>Running locally?</strong> Open Terminal and run: <code>python3 -m http.server 8080</code> in the folder containing this file, then open <code>http://localhost:8080/FireLifeProtection_WorkOrder_Master.html</code>. Add <code>http://localhost:8080</code> as an authorized origin in your OAuth Client ID.</div></div>
   </div>
 </details>
-## How the Apps Script connection works
+## Inspection History writes
 
-All pages communicate with Google Sheets/Drive through a two-hop chain:
+The Inspection History tab in Google Sheets is the single source of truth for "when was this property last inspected and what's due next." It's written from three places:
 
-```
-Browser → Cloudflare Worker (/api/apps-script) → Google Apps Script Web App → Google Sheet
-```
+- `index.html` (work-order page) — appends a row per tracked service when a work order saves
+- `inspection.html` / `hospital-inspection.html` — appends a row when an inspection PDF saves
+- `schedule.html` — manual edits, Add Entry modal, and the per-row Delete button
 
-**Why the proxy?** Browsers can't POST directly to Apps Script — Google returns a CORS error. The Cloudflare Worker acts as a server-side relay that has no CORS restriction.
+All three call `appendInspectionHistory(updates)` (or `deleteInspectionHistoryEntries(...)`) in `js/flips-history.js`, which talks to the Sheets API directly. There is no Apps Script and no Cloudflare proxy in this path — pages just need write scope on Sheets (`https://www.googleapis.com/auth/spreadsheets`, not `.readonly`).
 
-**How secrets stay out of the browser:**
-`APPS_SCRIPT_URL` and `APPS_SCRIPT_SECRET` are set as environment variables in the Cloudflare Workers dashboard (Settings → Variables). The worker reads them from `env` and injects them into every forwarded request. No secrets live in the HTML/JS files or this repo.
+`schedule.html` reads the same tab, groups by property+type, keeps the most recent date per group, and computes Next Due from `Frequency`.
 
-**What the Apps Script does:**
-- `action: 'log'` — appends a row to the "Work Order System Log" sheet (called after saving a work order or creating an invoice)
-- `action: 'update_schedule'` (via `updates` array) — writes or updates inspection completion dates and frequencies in the "Inspection History" sheet. Called by `inspection-schedule.js` immediately after an inspection is saved/downloaded.
-- `action: 'migrate_schedule'` — one-time migration utility used by schedule.html
-
-**When you redeploy Apps Script:**
-Each new deployment gets a new `/exec` URL. After redeploying:
-1. Copy the new URL from Apps Script → Deploy → Manage Deployments
-2. Update `APPS_SCRIPT_URL` in the Cloudflare Workers dashboard (Settings → Variables)
-3. No code changes needed — the URL is no longer hardcoded anywhere
-
-**`setSecret()` in Apps Script:**
-Run this once after first deployment (or after changing the secret). It stores the secret in Apps Script's PropertiesService so the script can verify requests came through your worker.
-
-
-
-Log Verbosity — Two Switches
-Browser side (HTML pages): There's now a let flipsLogLevel = 'NORMAL' constant near the top of each page. In NORMAL mode, only WARN, ERROR, and the two key OK events (WO_SAVED, INVOICE_CREATED) are sent to the sheet — maybe 2-3 rows per work order instead of 10+. To turn it up temporarily without redeploying, open browser DevTools console and type:
-flipsLogLevel = 'VERBOSE'
-Set it back to 'NORMAL' the same way, or just refresh the page.
-Apps Script side: The same logic lives in maybeLog() — INFO rows are suppressed in NORMAL mode, WARN/ERROR always write. To switch the Apps Script verbosity without editing code, go to Project Settings → Script Properties and add/change LOG_LEVEL to VERBOSE or NORMAL. No re-deploy needed since it's read at runtime via PropertiesService.
-
-
+---
 
 Done. Here's the summary:
 

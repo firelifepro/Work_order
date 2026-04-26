@@ -418,6 +418,7 @@
 <div id="toast"></div>
 
 <script src="https://accounts.google.com/gsi/client"></script>
+<script src="js/flips-google-fetch.js"></script>
 <script>
 // ─────────────────────────────────────────────────────
 // CONFIG — property DB (same sheet as work order app)
@@ -481,30 +482,7 @@ async function initGoogle() {
 // ─────────────────────────────────────────────────────
 // API FETCH (with 401 token refresh)
 // ─────────────────────────────────────────────────────
-async function apiFetch(url, method = 'GET', body = null) {
-  const opts = () => {
-    const o = { method, headers: { 'Authorization': 'Bearer ' + accessToken, 'Content-Type': 'application/json' } };
-    if (body !== null) o.body = JSON.stringify(body);
-    return o;
-  };
-  let res = await fetch(url, opts());
-  if (res.status === 401) {
-    toast('⏳ Re-authenticating…');
-    await new Promise((resolve, reject) => {
-      if (!tokenClient) { reject(new Error('Not initialized')); return; }
-      tokenClient.callback = (resp) => {
-        if (resp.error) { reject(new Error(resp.error)); return; }
-        accessToken = resp.access_token;
-        localStorage.setItem('flips_access_token', accessToken);
-        localStorage.setItem('flips_token_expiry', Date.now() + 55 * 60 * 1000);
-        resolve();
-      };
-      tokenClient.requestAccessToken({ prompt: '' });
-    });
-    res = await fetch(url, opts());
-  }
-  return res;
-}
+// apiFetch / refreshAccessToken live in js/flips-google-fetch.js
 
 // ─────────────────────────────────────────────────────
 // LOAD PROPERTY LIST (for dropdowns)
