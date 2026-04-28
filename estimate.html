@@ -211,7 +211,7 @@ body { font-family: 'Inter', Arial, sans-serif; font-size: 10pt; background: #e8
     </tr>
     <!-- Labor 1 -->
     <tr>
-      <td class="exp-label">Labor 1 <span class="pdf-pill">PDF</span></td>
+      <td class="exp-label">Labor 1 </td>
       <td class="value-cell">
         <div style="display:flex;align-items:center;gap:4px;">
           <span style="font-size:0.78rem;color:#555;">$</span>
@@ -219,14 +219,14 @@ body { font-family: 'Inter', Arial, sans-serif; font-size: 10pt; background: #e8
           <span style="font-size:0.78rem;color:#555;">/hr</span>
         </div>
       </td>
-      <td class="value-cell" style="text-align:center;"><input type="number" id="labor1-qty" min="0" step="0.5" placeholder="hrs" style="text-align:center;" oninput="calcLaborRow(1)"></td>
+      <td class="value-cell" style="text-align:center;"><span class="pdf-pill">PDF</span><input type="number" id="labor1-qty" min="0" step="0.5" placeholder="hrs" style="text-align:center;" oninput="calcLaborRow(1)"></td>
       <td class="value-cell"><span class="dollar-prefix">$</span><input type="number" id="labor1-expense" min="0" step="0.01" style="width:calc(100% - 14px);background:#f5f5f5;" readonly tabindex="-1"></td>
       <td class="value-cell"><span class="dollar-prefix">$</span><input type="number" id="labor1-markup" min="0" step="0.01" style="width:calc(100% - 14px);" oninput="onLaborMarkupChange(1)" placeholder="0"></td>
       <td class="value-cell"><span class="dollar-prefix">$</span><input type="number" id="labor1-total" min="0" step="0.01" style="width:calc(100% - 14px);background:#f5f5f5;" readonly tabindex="-1"></td>
     </tr>
     <!-- Labor 2 -->
     <tr>
-      <td class="exp-label">Labor 2 <span class="pdf-pill">PDF</span></td>
+      <td class="exp-label">Labor 2 </td>
       <td class="value-cell">
         <div style="display:flex;align-items:center;gap:4px;">
           <span style="font-size:0.78rem;color:#555;">$</span>
@@ -234,7 +234,7 @@ body { font-family: 'Inter', Arial, sans-serif; font-size: 10pt; background: #e8
           <span style="font-size:0.78rem;color:#555;">/hr</span>
         </div>
       </td>
-      <td class="value-cell" style="text-align:center;"><input type="number" id="labor2-qty" min="0" step="0.5" placeholder="hrs" style="text-align:center;" oninput="calcLaborRow(2)"></td>
+      <td class="value-cell" style="text-align:center;"><span class="pdf-pill">PDF</span><input type="number" id="labor2-qty" min="0" step="0.5" placeholder="hrs" style="text-align:center;" oninput="calcLaborRow(2)"></td>
       <td class="value-cell"><span class="dollar-prefix">$</span><input type="number" id="labor2-expense" min="0" step="0.01" style="width:calc(100% - 14px);background:#f5f5f5;" readonly tabindex="-1"></td>
       <td class="value-cell"><span class="dollar-prefix">$</span><input type="number" id="labor2-markup" min="0" step="0.01" style="width:calc(100% - 14px);" oninput="onLaborMarkupChange(2)" placeholder="0"></td>
       <td class="value-cell"><span class="dollar-prefix">$</span><input type="number" id="labor2-total" min="0" step="0.01" style="width:calc(100% - 14px);background:#f5f5f5;" readonly tabindex="-1"></td>
