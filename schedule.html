@@ -409,6 +409,7 @@ function initGoogle() {
         localStorage.setItem('flips_access_token', accessToken);
         localStorage.setItem('flips_token_expiry', Date.now() + 55 * 60 * 1000);
         setStatus('✓ Connected', 'ok');
+        _scheduleTokenRefresh();
         loadClientList();
         loadSchedule();
       },
@@ -1032,40 +1033,42 @@ window.addEventListener('load', () => {
   if (k && c) {
     const cachedToken = localStorage.getItem('flips_access_token');
     const tokenExpiry = parseInt(localStorage.getItem('flips_token_expiry') || '0');
+    try {
+      tokenClient = google.accounts.oauth2.initTokenClient({
+        client_id: c, scope: SCOPES,
+        callback: async (resp) => {
+          if (resp.error) {
+            setStatus('⚠ Session expired', 'err');
+            document.getElementById('conn-drawer').classList.add('open');
+            return;
+          }
+          accessToken = resp.access_token;
+          localStorage.setItem('flips_access_token', accessToken);
+          localStorage.setItem('flips_token_expiry', Date.now() + 55 * 60 * 1000);
+          setStatus('✓ Connected', 'ok');
+          _scheduleTokenRefresh();
+          loadClientList();
+          loadSchedule();
+        },
+        error_callback: () => {
+          setStatus('⚠ Session expired', 'err');
+          document.getElementById('conn-drawer').classList.add('open');
+        }
+      });
+    } catch(e) {
+      setStatus('⚠ Session expired', 'err');
+      document.getElementById('conn-drawer').classList.add('open');
+    }
+
     if (cachedToken && Date.now() < tokenExpiry) {
       accessToken = cachedToken;
       setStatus('✓ Connected', 'ok');
+      _scheduleTokenRefresh();
       loadClientList();
       loadSchedule();
     } else {
-      // Token expired — try silent reconnect before falling back to the drawer.
       setStatus('⏳ Reconnecting…', '');
-      try {
-        tokenClient = google.accounts.oauth2.initTokenClient({
-          client_id: c, scope: SCOPES,
-          callback: async (resp) => {
-            if (resp.error) {
-              setStatus('⚠ Session expired', 'err');
-              document.getElementById('conn-drawer').classList.add('open');
-              return;
-            }
-            accessToken = resp.access_token;
-            localStorage.setItem('flips_access_token', accessToken);
-            localStorage.setItem('flips_token_expiry', Date.now() + 55 * 60 * 1000);
-            setStatus('✓ Connected', 'ok');
-            loadClientList();
-            loadSchedule();
-          },
-          error_callback: () => {
-            setStatus('⚠ Session expired', 'err');
-            document.getElementById('conn-drawer').classList.add('open');
-          }
-        });
-        tokenClient.requestAccessToken({ prompt: '' });
-      } catch(e) {
-        setStatus('⚠ Session expired', 'err');
-        document.getElementById('conn-drawer').classList.add('open');
-      }
+      tokenClient.requestAccessToken({ prompt: '' });
     }
   }
 });

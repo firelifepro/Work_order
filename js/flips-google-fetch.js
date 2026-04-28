@@ -8,6 +8,28 @@
 // Load AFTER the script that declares accessToken/tokenClient.
 // ─────────────────────────────────────────────────────────────────────────────
 
+// Schedules a silent token refresh 5 min before the current token expires.
+// Requires tokenClient to be initialized; silently no-ops if it isn't yet.
+function _scheduleTokenRefresh() {
+  const expiry = Number(localStorage.getItem('flips_token_expiry')) || 0;
+  const delay  = expiry - Date.now() - 5 * 60 * 1000;
+  if (delay <= 0 || !tokenClient) return;
+  setTimeout(() => {
+    if (!tokenClient) return;
+    const savedCb = tokenClient.callback;
+    tokenClient.callback = (resp) => {
+      tokenClient.callback = savedCb;
+      if (resp.error) return;
+      accessToken = resp.access_token;
+      localStorage.setItem('flips_access_token', accessToken);
+      localStorage.setItem('flips_token_expiry', Date.now() + 55 * 60 * 1000);
+      try { setStatus('conn-status', '✓ Connected', 'ok'); } catch(_) {}
+      _scheduleTokenRefresh();
+    };
+    tokenClient.requestAccessToken({ prompt: '' });
+  }, delay);
+}
+
 let _tokenRefreshPromise = null;
 
 function refreshAccessToken() {
@@ -25,6 +47,7 @@ function refreshAccessToken() {
         try { gapi.client.setToken({ access_token: accessToken }); } catch(_) {}
       }
       resolve();
+      _scheduleTokenRefresh();
     };
     tokenClient.error_callback = (err) => {
       accessToken = null;

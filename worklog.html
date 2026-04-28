@@ -470,6 +470,7 @@ async function initGoogle() {
         localStorage.setItem('flips_access_token', accessToken);
         localStorage.setItem('flips_token_expiry', Date.now() + 55 * 60 * 1000);
         setConnStatus('✓ Connected', 'ok');
+        _scheduleTokenRefresh();
         document.getElementById('conn-drawer').classList.remove('open');
         await Promise.all([loadClientSheet(), loadWorkLog()]);
       },
@@ -954,38 +955,40 @@ window.addEventListener('load', () => {
   if (k && c) {
     const cached = localStorage.getItem('flips_access_token');
     const expiry = Number(localStorage.getItem('flips_token_expiry')) || 0;
+    try {
+      tokenClient = google.accounts.oauth2.initTokenClient({
+        client_id: c, scope: SCOPES,
+        callback: async (resp) => {
+          if (resp.error) {
+            setConnStatus('⚠ Session expired — click Connect', '');
+            document.getElementById('conn-drawer').classList.add('open');
+            return;
+          }
+          accessToken = resp.access_token;
+          localStorage.setItem('flips_access_token', accessToken);
+          localStorage.setItem('flips_token_expiry', Date.now() + 55 * 60 * 1000);
+          setConnStatus('✓ Connected', 'ok');
+          _scheduleTokenRefresh();
+          Promise.all([loadClientSheet(), loadWorkLog()]);
+        },
+        error_callback: () => {
+          setConnStatus('⚠ Session expired — click Connect', '');
+          document.getElementById('conn-drawer').classList.add('open');
+        }
+      });
+    } catch(e) {
+      setConnStatus('⚠ Session expired — click Connect', '');
+      document.getElementById('conn-drawer').classList.add('open');
+    }
+
     if (cached && Date.now() < expiry) {
       accessToken = cached;
       setConnStatus('✓ Connected', 'ok');
+      _scheduleTokenRefresh();
       Promise.all([loadClientSheet(), loadWorkLog()]);
     } else {
-      // Token expired — try silent reconnect before falling back to the drawer.
       setConnStatus('⏳ Reconnecting…', '');
-      try {
-        tokenClient = google.accounts.oauth2.initTokenClient({
-          client_id: c, scope: SCOPES,
-          callback: async (resp) => {
-            if (resp.error) {
-              setConnStatus('⚠ Session expired — click Connect', '');
-              document.getElementById('conn-drawer').classList.add('open');
-              return;
-            }
-            accessToken = resp.access_token;
-            localStorage.setItem('flips_access_token', accessToken);
-            localStorage.setItem('flips_token_expiry', Date.now() + 55 * 60 * 1000);
-            setConnStatus('✓ Connected', 'ok');
-            Promise.all([loadClientSheet(), loadWorkLog()]);
-          },
-          error_callback: () => {
-            setConnStatus('⚠ Session expired — click Connect', '');
-            document.getElementById('conn-drawer').classList.add('open');
-          }
-        });
-        tokenClient.requestAccessToken({ prompt: '' });
-      } catch(e) {
-        setConnStatus('⚠ Session expired — click Connect', '');
-        document.getElementById('conn-drawer').classList.add('open');
-      }
+      tokenClient.requestAccessToken({ prompt: '' });
     }
   } else {
     document.getElementById('conn-drawer').classList.add('open');

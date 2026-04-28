@@ -15,6 +15,9 @@ let API_KEY_VAL = '';
 // ─────────────────────────────────────────────────────────
 // GOOGLE AUTH
 // ─────────────────────────────────────────────────────────
+// _scheduleTokenRefresh() lives in flips-google-fetch.js (loaded after this file)
+// so it is available at call time even though it is not defined here.
+
 async function initGoogle() {
   const apiKey   = document.getElementById('api-key').value.trim();
   const clientId = document.getElementById('client-id').value.trim();
@@ -39,6 +42,7 @@ async function initGoogle() {
         localStorage.setItem('flips_access_token', accessToken);
         localStorage.setItem('flips_token_expiry', Date.now() + 55 * 60 * 1000);
         setStatus('conn-status', '✓ Connected', 'ok');
+        _scheduleTokenRefresh();
         const refreshBtn = document.getElementById('refresh-props-btn');
         if (refreshBtn) refreshBtn.style.display = 'inline-block';
         await loadSheet();

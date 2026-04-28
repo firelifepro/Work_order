@@ -410,6 +410,7 @@ window.addEventListener('load', () => {
           localStorage.setItem('flips_access_token', accessToken);
           localStorage.setItem('flips_token_expiry', Date.now() + 55 * 60 * 1000);
           setStatus('conn-status', '✓ Connected', 'ok');
+          _scheduleTokenRefresh();
           if (typeof onAfterAuth === 'function') onAfterAuth();
         },
         error_callback: (err) => setStatus('conn-status', '✗ ' + (err.message || err.type), 'err')
@@ -421,6 +422,7 @@ window.addEventListener('load', () => {
     if (cachedToken && Date.now() < tokenExpiry) {
       accessToken = cachedToken;
       setStatus('conn-status', '✓ Connected', 'ok');
+      _scheduleTokenRefresh();
       if (typeof onAfterAuth === 'function') onAfterAuth();
     } else if (tokenClient) {
       setStatus('conn-status', '⏳ Reconnecting…', '');

@@ -69,6 +69,9 @@ body { font-family: 'Inter', Arial, sans-serif; font-size: 10pt; background: #e8
 #prop-search-clear { cursor: pointer; color: #c0392b; font-weight: 700; font-size: 1.1rem; display: none; background: none; border: none; padding: 0 4px; }
 #prop-loading { display: none; color: #888; font-size: 0.8rem; padding: 4px 6px; }
 
+/* ── PDF pill badge ── */
+.pdf-pill { display: inline-block; font-size: 0.6rem; font-weight: 700; background: #dbeafe; color: #1d4ed8; border: 1px solid #93c5fd; border-radius: 3px; padding: 0 4px; vertical-align: middle; margin-left: 4px; letter-spacing: 0.03em; line-height: 1.5; }
+
 /* ── Actions ── */
 #generate-btn { background: #c0392b; color: white; border: none; padding: 10px 24px; border-radius: 5px; cursor: pointer; font-size: 0.95rem; font-weight: 700; margin-top: 8px; }
 #generate-btn:hover { background: #a93226; }
@@ -130,13 +133,13 @@ body { font-family: 'Inter', Arial, sans-serif; font-size: 10pt; background: #e8
   <table class="wo-table">
     <tr><td colspan="4" class="section-header">ESTIMATE INFORMATION</td></tr>
     <tr>
-      <td class="label-cell">Estimate Date:</td>
+      <td class="label-cell">Estimate Date:<span class="pdf-pill">PDF</span></td>
       <td class="value-cell"><input type="date" id="est-date"></td>
       <td class="label-cell">Requested By:</td>
       <td class="value-cell"><input type="text" id="requested-by" placeholder="Contact or manager name"></td>
     </tr>
     <tr>
-      <td class="label-cell">Property:</td>
+      <td class="label-cell">Property:<span class="pdf-pill">PDF</span></td>
       <td class="value-cell" colspan="3">
         <div id="prop-loading">Loading properties…</div>
         <div class="prop-search-wrap">
@@ -150,7 +153,7 @@ body { font-family: 'Inter', Arial, sans-serif; font-size: 10pt; background: #e8
       </td>
     </tr>
     <tr>
-      <td class="label-cell">Property Contact:</td>
+      <td class="label-cell">Property Contact:<span class="pdf-pill">PDF</span></td>
       <td class="value-cell"><input type="text" id="property-contact" placeholder="Contact name"></td>
       <td class="label-cell">Contact Email:</td>
       <td class="value-cell"><input type="email" id="contact-email" placeholder="email@example.com"></td>
@@ -158,18 +161,18 @@ body { font-family: 'Inter', Arial, sans-serif; font-size: 10pt; background: #e8
     <tr>
       <td class="label-cell">Contact Phone:</td>
       <td class="value-cell"><input type="text" id="contact-phone" placeholder="(720) 555-1234"></td>
-      <td class="label-cell">Service Address:</td>
+      <td class="label-cell">Service Address:<span class="pdf-pill">PDF</span></td>
       <td class="value-cell"><input type="text" id="service-address"></td>
     </tr>
     <tr>
-      <td class="label-cell">City / State / Zip:</td>
+      <td class="label-cell">City / State / Zip:<span class="pdf-pill">PDF</span></td>
       <td class="value-cell" colspan="3"><input type="text" id="city-state-zip" style="max-width:300px;"></td>
     </tr>
   </table>
 
   <!-- ══ DESCRIPTION ══ -->
   <table class="wo-table">
-    <tr><td colspan="2" class="section-header">DESCRIPTION OF WORK REQUESTED</td></tr>
+    <tr><td colspan="2" class="section-header">DESCRIPTION OF WORK REQUESTED <span class="pdf-pill">PDF</span></td></tr>
     <tr>
       <td colspan="2" class="value-cell">
         <textarea id="work-description" style="width:100%;min-height:80px;resize:vertical;" placeholder="Describe the work to be performed…"></textarea>
@@ -199,7 +202,7 @@ body { font-family: 'Inter', Arial, sans-serif; font-size: 10pt; background: #e8
     </tr>
     <!-- Materials first/permanent row -->
     <tr id="mat-add-row">
-      <td class="exp-label" style="white-space:nowrap;">Materials&nbsp;<button type="button" onclick="addMatRow()" title="Add Materials Line" style="font-size:0.9rem;padding:1px 8px;background:#e8f4ff;border:1px solid #2e6da4;color:#2e6da4;border-radius:3px;cursor:pointer;font-weight:700;">+</button></td>
+      <td class="exp-label" style="white-space:nowrap;">Materials <span class="pdf-pill">PDF</span>&nbsp;<button type="button" onclick="addMatRow()" title="Add Materials Line" style="font-size:0.9rem;padding:1px 8px;background:#e8f4ff;border:1px solid #2e6da4;color:#2e6da4;border-radius:3px;cursor:pointer;font-weight:700;">+</button></td>
       <td class="value-cell"><input type="text" id="mat-head-desc" style="width:100%;"></td>
       <td class="value-cell" style="text-align:center;"><input type="number" id="mat-head-qty" min="0" step="1" style="text-align:center;"></td>
       <td class="value-cell"><span class="dollar-prefix">$</span><input type="number" id="mat-head-expense" min="0" step="0.01" style="width:calc(100% - 14px);" oninput="onMatHeadExpenseChange()"></td>
@@ -208,7 +211,7 @@ body { font-family: 'Inter', Arial, sans-serif; font-size: 10pt; background: #e8
     </tr>
     <!-- Labor 1 -->
     <tr>
-      <td class="exp-label">Labor 1</td>
+      <td class="exp-label">Labor 1 <span class="pdf-pill">PDF</span></td>
       <td class="value-cell">
         <div style="display:flex;align-items:center;gap:4px;">
           <span style="font-size:0.78rem;color:#555;">$</span>
@@ -223,7 +226,7 @@ body { font-family: 'Inter', Arial, sans-serif; font-size: 10pt; background: #e8
     </tr>
     <!-- Labor 2 -->
     <tr>
-      <td class="exp-label">Labor 2</td>
+      <td class="exp-label">Labor 2 <span class="pdf-pill">PDF</span></td>
       <td class="value-cell">
         <div style="display:flex;align-items:center;gap:4px;">
           <span style="font-size:0.78rem;color:#555;">$</span>
@@ -238,7 +241,7 @@ body { font-family: 'Inter', Arial, sans-serif; font-size: 10pt; background: #e8
     </tr>
     <!-- Trip Charge -->
     <tr>
-      <td class="exp-label">Trip Charge</td>
+      <td class="exp-label">Trip Charge <span class="pdf-pill">PDF</span></td>
       <td class="value-cell">
         <div style="display:flex;align-items:center;gap:6px;">
           <label><input type="checkbox" id="trip-cb" onchange="onTripChange()" checked> $90.00</label>
@@ -251,7 +254,7 @@ body { font-family: 'Inter', Arial, sans-serif; font-size: 10pt; background: #e8
     </tr>
     <!-- Misc -->
     <tr>
-      <td class="exp-label">Misc:</td>
+      <td class="exp-label">Misc <span class="pdf-pill">PDF</span></td>
       <td class="value-cell"><input type="text" id="misc-desc"></td>
       <td class="value-cell" style="text-align:center;"><input type="number" id="misc-qty" min="0" step="1" style="text-align:center;"></td>
       <td class="value-cell"><span class="dollar-prefix">$</span><input type="number" id="misc-expense" min="0" step="0.01" style="width:calc(100% - 14px);" oninput="onExpenseChange('misc')"></td>
@@ -261,12 +264,13 @@ body { font-family: 'Inter', Arial, sans-serif; font-size: 10pt; background: #e8
     <!-- Grand Total -->
     <tr>
       <td colspan="4"></td>
-      <td class="total-label">Total Estimate =</td>
+      <td class="total-label">Total Estimate <span class="pdf-pill">PDF</span> =</td>
       <td class="value-cell" style="font-weight:700;"><span class="dollar-prefix">$</span><input type="number" id="grand-total" style="width:calc(100% - 14px);font-weight:700;" readonly tabindex="-1"></td>
     </tr>
   </table>
 
   <!-- ══ ACTIONS ══ -->
+  <div style="margin-top:10px;margin-bottom:4px;font-size:0.75rem;color:#666;"><span class="pdf-pill">PDF</span> fields appear in the generated estimate PDF</div>
   <div style="margin-top:8px;">
     <button id="generate-btn" onclick="generateEstimate()">🚀 Do Everything</button>
   </div>
@@ -276,7 +280,7 @@ body { font-family: 'Inter', Arial, sans-serif; font-size: 10pt; background: #e8
     <button class="action-btn" id="btn-log" onclick="btnLog()">📋 Log to Work Requests</button>
     <button class="action-btn" id="btn-drive" onclick="btnDrive()">☁ Save to Drive</button>
     <button class="action-btn" id="btn-email" onclick="createEmailDraft()">✉ Email Draft</button>
-    <button class="action-btn" onclick="location.href='estimate-tracker.html'" style="background:#1a1a2e;">📊 View All</button>
+    <button class="action-btn" onclick="location.href='estimate-tracker.html'" style="background:#1a1a2e;">📊 View All other Estimates</button>
   </div>
   <div style="margin-top:6px;font-size:0.78rem;color:#888;" id="est-num-wrap" hidden>Estimate #<span id="est-num-display"></span></div>
   <div id="save-status" style="margin-top:8px;font-size:0.85rem;line-height:1.7;"></div>
@@ -914,6 +918,7 @@ window.addEventListener('load', () => {
           localStorage.setItem('flips_access_token', accessToken);
           localStorage.setItem('flips_token_expiry', Date.now() + 55 * 60 * 1000);
           setStatus('conn-status', '✓ Connected', 'ok');
+          _scheduleTokenRefresh();
           document.getElementById('refresh-props-btn').style.display = 'inline-block';
           await loadSheet();
           if (typeof onAfterAuth === 'function') onAfterAuth();
@@ -927,6 +932,7 @@ window.addEventListener('load', () => {
     if (cachedToken && Date.now() < tokenExpiry) {
       accessToken = cachedToken;
       setStatus('conn-status', '✓ Connected', 'ok');
+      _scheduleTokenRefresh();
       document.getElementById('refresh-props-btn').style.display = 'inline-block';
       loadSheet().then(() => { if (typeof onAfterAuth === 'function') onAfterAuth(); });
     } else if (tokenClient) {

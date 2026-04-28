@@ -336,6 +336,7 @@ function initGoogle() {
         localStorage.setItem('flips_access_token', accessToken);
         localStorage.setItem('flips_token_expiry', Date.now() + 55 * 60 * 1000);
         setGoogleStatus('✓ Google connected', 'ok');
+        _scheduleTokenRefresh();
         await loadSheetClients();
         if (qbAccessToken) reconcile();
       },
@@ -1287,40 +1288,42 @@ window.addEventListener('load', async () => {
   if (k && c) {
     const tok    = localStorage.getItem('flips_access_token');
     const expiry = parseInt(localStorage.getItem('flips_token_expiry') || '0');
+    try {
+      tokenClient = google.accounts.oauth2.initTokenClient({
+        client_id: c,
+        scope: 'https://www.googleapis.com/auth/spreadsheets.readonly',
+        callback: async (resp) => {
+          if (resp.error) {
+            setGoogleStatus('⚠ Session expired', 'err');
+            document.getElementById('conn-drawer').classList.add('open');
+            return;
+          }
+          accessToken = resp.access_token;
+          localStorage.setItem('flips_access_token', accessToken);
+          localStorage.setItem('flips_token_expiry', Date.now() + 55 * 60 * 1000);
+          setGoogleStatus('✓ Google connected', 'ok');
+          _scheduleTokenRefresh();
+          await loadSheetClients();
+          if (qbAccessToken) reconcile();
+        },
+        error_callback: () => {
+          setGoogleStatus('⚠ Session expired', 'err');
+          document.getElementById('conn-drawer').classList.add('open');
+        }
+      });
+    } catch(e) {
+      setGoogleStatus('⚠ Session expired', 'err');
+      document.getElementById('conn-drawer').classList.add('open');
+    }
+
     if (tok && Date.now() < expiry) {
       accessToken = tok;
       setGoogleStatus('✓ Google connected', 'ok');
+      _scheduleTokenRefresh();
       await loadSheetClients();
     } else {
-      // Token expired — try silent reconnect before falling back to the drawer.
       setGoogleStatus('⏳ Reconnecting…', '');
-      try {
-        tokenClient = google.accounts.oauth2.initTokenClient({
-          client_id: c,
-          scope: 'https://www.googleapis.com/auth/spreadsheets.readonly',
-          callback: async (resp) => {
-            if (resp.error) {
-              setGoogleStatus('⚠ Session expired', 'err');
-              document.getElementById('conn-drawer').classList.add('open');
-              return;
-            }
-            accessToken = resp.access_token;
-            localStorage.setItem('flips_access_token', accessToken);
-            localStorage.setItem('flips_token_expiry', Date.now() + 55 * 60 * 1000);
-            setGoogleStatus('✓ Google connected', 'ok');
-            await loadSheetClients();
-            if (qbAccessToken) reconcile();
-          },
-          error_callback: () => {
-            setGoogleStatus('⚠ Session expired', 'err');
-            document.getElementById('conn-drawer').classList.add('open');
-          }
-        });
-        tokenClient.requestAccessToken({ prompt: '' });
-      } catch(e) {
-        setGoogleStatus('⚠ Session expired', 'err');
-        document.getElementById('conn-drawer').classList.add('open');
-      }
+      tokenClient.requestAccessToken({ prompt: '' });
     }
   }
 

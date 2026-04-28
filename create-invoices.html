@@ -530,7 +530,10 @@ function startGapi(apiKey, clientId) {
         if (resp.error) { setConnStatus('❌ Auth error: ' + resp.error, '#ff7777'); return; }
         accessToken = resp.access_token;
         gapi.client.setToken({ access_token: accessToken });
+        localStorage.setItem('flips_access_token', accessToken);
+        localStorage.setItem('flips_token_expiry', Date.now() + 55 * 60 * 1000);
         setConnStatus('✓ Connected', '#7fff7f');
+        _scheduleTokenRefresh();
         loadDocs();
       }
     });
@@ -1415,10 +1418,12 @@ window.addEventListener('load', () => {
                 localStorage.setItem('flips_access_token', accessToken);
                 localStorage.setItem('flips_token_expiry', Date.now() + 55 * 60 * 1000);
                 setConnStatus('✓ Connected', '#7fff7f');
+                _scheduleTokenRefresh();
                 loadDocs();
               }
             });
             setConnStatus('✓ Connected', '#7fff7f');
+            _scheduleTokenRefresh();
             loadDocs();
           });
         });
