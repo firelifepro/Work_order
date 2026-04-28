@@ -308,15 +308,15 @@ document.addEventListener('click', e => {
 
 // ── Config ──────────────────────────────────────────────
 const SCOPES = 'https://www.googleapis.com/auth/drive https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/gmail.compose email';
-const WR_SHEET_ID  = '1-DBErY57b1Avl6UHvuaZeYKkWlyEOLhrNBz6Cozvaik';
-const EST_FOLDER_ID = '1Ma-hUFL3t4l6NsWdmPRB45JJMaaK1Oc1';
+const WR_SHEET_ID       = '1-DBErY57b1Avl6UHvuaZeYKkWlyEOLhrNBz6Cozvaik';
+const EST_FOLDER_ID     = '1Ma-hUFL3t4l6NsWdmPRB45JJMaaK1Oc1';   // PDF folder
+const EST_JSON_FOLDER_ID = '1pCvXgW6XvQub-TYHpzyNvkoWdnqPjB1q';  // FLPS Estimates (JSON)
 
 let authedUserEmail = '';
 let currentEstFileId = null;  // set when editing an existing estimate
 let lastEstData = null;       // stored after save for email draft
 let lastPdfBytes = null;
 let _logoPngDataUrl = null;
-let _estJsonFolderId = null;
 
 // ── Page hooks called by flips-shared ──────────────────
 async function onAfterAuth() {
@@ -483,19 +483,6 @@ async function _loadLogoPng() {
     img.onerror = () => resolve(null);
     img.src = 'logo.svg';
   });
-}
-
-async function _getEstJsonFolderId() {
-  if (_estJsonFolderId) return _estJsonFolderId;
-  try {
-    const q = "name='FLPS Estimates' and mimeType='application/vnd.google-apps.folder' and trashed=false";
-    const res = await googleFetch(`https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q)}&fields=files(id,name)&pageSize=5`);
-    if (res.ok) {
-      const data = await res.json();
-      if (data.files?.length > 0) { _estJsonFolderId = data.files[0].id; return _estJsonFolderId; }
-    }
-  } catch(_) {}
-  return null;
 }
 
 function _fmtDateMMDDYYYY(isoDate) {
@@ -787,8 +774,7 @@ async function _stepDrive(est, pdfBuf, addMsg) {
   let pdfFileId = null, jsonFileId = null;
   try {
     addMsg('Saving estimate JSON to Drive…', '#888');
-    const jsonFolderId = await _getEstJsonFolderId() || EST_FOLDER_ID;
-    const jsonRes = await driveUploadFile(jsonName, 'application/json', JSON.stringify(est, null, 2), jsonFolderId, currentEstFileId || null);
+    const jsonRes = await driveUploadFile(jsonName, 'application/json', JSON.stringify(est, null, 2), EST_JSON_FOLDER_ID, currentEstFileId || null);
     jsonFileId = jsonRes.id;
     if (!currentEstFileId) currentEstFileId = jsonFileId;
     addMsg('✓ JSON saved to Drive', 'green');
