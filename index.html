@@ -399,6 +399,11 @@ code { background: #ffe082; padding: 1px 5px; border-radius: 3px; font-size: 0.7
       <td class="label-cell">Scheduled Date:</td>
       <td colspan="3" class="value-cell"><input type="date" id="scheduled-date"></td>
     </tr>
+    <tr id="est-source-row" style="display:none;">
+      <td colspan="4" style="background:#fffbeb;border-left:4px solid #f59e0b;color:#78350f;font-size:0.82rem;font-weight:600;padding:7px 10px;">
+        📋 Work Order Generated from Estimate #<span id="est-source-num"></span>
+      </td>
+    </tr>
   </table>
 
   <!-- ══ CLIENT & PROPERTY INFORMATION ══ -->
@@ -1797,6 +1802,12 @@ function loadFromEstimate() {
     // Line # from Work Requests sheet row
     const woNumEl = document.getElementById('wo-number');
     if (woNumEl && est.estNum) woNumEl.value = est.estNum;
+
+    // Estimate source banner
+    if (est.estNum) {
+      document.getElementById('est-source-num').textContent = est.estNum;
+      document.getElementById('est-source-row').style.display = '';
+    }
 
     // Default Date Completed to today
     const dcEl = document.getElementById('date-requested');
