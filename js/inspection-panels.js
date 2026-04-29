@@ -691,11 +691,9 @@ function buildHoodPanel() {
   const div = document.createElement('div');
   div.id = 'hood-section';
   div.innerHTML = `
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
-      <div style="font-size:0.82rem;font-weight:700;color:var(--navy);">🍳 Kitchen Hoods — add all hoods at this property</div>
-      <button class="add-row-btn" onclick="addHoodCard('',null,false)" style="white-space:nowrap;">+ Add Hood</button>
-    </div>
-    <div id="hood-cards-container"></div>`;
+    <div style="font-size:0.82rem;font-weight:700;color:var(--navy);margin-bottom:12px;">🍳 Kitchen Hoods — add all hoods at this property</div>
+    <div id="hood-cards-container"></div>
+    <button class="add-row-btn" onclick="addHoodCard('',null,false)" style="white-space:nowrap;margin-top:10px;">+ Add Hood</button>`;
   return div;
 }
 

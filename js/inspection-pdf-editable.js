@@ -2760,7 +2760,7 @@ async function buildHoodPDFBytes() {
   curY += 23;
 
   // Info block: left = logo + company (315pt), right = report type + fields (225pt)
-  const iH = 88;
+  const iH = 100;
   const divX = ML + 315;
   const rcW  = ML + PW - divX;
 
@@ -2827,13 +2827,13 @@ async function buildHoodPDFBytes() {
   ];
   let jY = ry(iH) + iH - rtBoxH - 3;
   jFields.forEach(([lbl, val]) => {
-    jY -= 7;
+    jY -= 6;
     page.drawText(lbl, { x: divX+2, y: jY, size: 5.5, font: hFont, color: navy });
-    jY -= 10;
-    page.drawRectangle({ x: divX, y: jY, width: rcW, height: 10, color: gold, borderColor: sky, borderWidth: 0.3 });
+    jY -= 12;
+    page.drawRectangle({ x: divX, y: jY, width: rcW, height: 12, color: gold, borderColor: sky, borderWidth: 0.3 });
     const jf = form.createTextField(fid());
     jf.setText(val);
-    jf.addToPage(page, { x: divX+1, y: jY+1, width: rcW-2, height: 8, font: rFont });
+    jf.addToPage(page, { x: divX+1, y: jY+1, width: rcW-2, height: 10, font: rFont });
     jf.setFontSize(7);
     jY -= 2;
   });
@@ -3131,6 +3131,7 @@ async function buildHoodPDFBytes() {
     // Replace Fusible Links — title bar, then label row, then field row
     checkPage(42);
     subHdr('REPLACE FUSIBLE LINKS (SEMI-ANNUAL)');
+    gap(3);
     const fusGroups = [
       { label:'COUNT 1', val:dv(`h${hid}-fusible-count1`) },
       { label:'COUNT 2', val:dv(`h${hid}-fusible-count2`) },
@@ -3155,7 +3156,12 @@ async function buildHoodPDFBytes() {
     });
     curY += fusFldH + 4;
 
-    // System Dimensions
+    // System Dimensions — always starts on a new page with a continuation header
+    addPage();
+    const contBarH = 14;
+    page.drawRectangle({ x: ML, y: ry(contBarH), width: PW, height: contBarH, color: amber });
+    page.drawText(`HOOD: ${hood.identifier || '(not specified)'} (continued)`, { x: ML+8, y: ty(contBarH, 4), size: 8, font: hFont, color: white });
+    curY += contBarH + 4;
     secHdr('SYSTEM DIMENSIONS');
     gap(2);
     const dimFields = [
