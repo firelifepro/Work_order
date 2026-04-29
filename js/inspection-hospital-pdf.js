@@ -494,7 +494,7 @@ async function buildHospPDF() {
   // Company info box
   page.drawRectangle({ x: infoX, y: ry(logoAreaH), width: infoW, height: logoAreaH, color: lgray, borderColor: sky, borderWidth: 0.5 });
   const compLines = [
-    { text: 'Fire Life Protection System, Inc.', bold: true, sz: 7.5 },
+    { text: 'Fire Life Protection Systems, Inc.', bold: true, sz: 7.5 },
     { text: '8201 Shaffer Parkway Suite B',       bold: false, sz: 7 },
     { text: 'Littleton, CO 80127',                bold: false, sz: 7 },
     { text: 'Cellular: (303) 726-8847',           bold: false, sz: 7 },

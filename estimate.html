@@ -547,7 +547,7 @@ async function buildEstimatePDF(est, estNum) {
   const textX = logoPng ? margin + 56 : margin;
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(13);
-  doc.text('Fire Life Protection System, Inc.', textX, y);
+  doc.text('Fire Life Protection Systems, Inc.', textX, y);
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(9);
   y += 15;
@@ -684,7 +684,7 @@ async function buildEstimatePDF(est, estNum) {
   doc.text('CUSTOMER AUTHORIZATION', bx, by); by += 18;
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(9);
-  doc.text('By signing below you authorize Fire Life Protection System, Inc. to perform the work described above.', bx, by); by += 18;
+  doc.text('By signing below you authorize Fire Life Protection Systems, Inc. to perform the work described above.', bx, by); by += 18;
 
   const lineEndX = W - margin - 20;
   const halfW = (lineEndX - bx) / 2 - 10;
@@ -863,7 +863,7 @@ async function createEmailDraft() {
   const cc   = 'alan.antonio@firelifeprotectionsystems.com,amy.lineberry@firelifeprotectionsystems.com';
   const subj = `Estimate #${lastEstData.estNum} - ${lastEstData.serviceAddress || lastEstData.propertyName} - Please Sign and Return`;
   const returnTo = authedUserEmail || 'office@firelifeprotectionsystems.com';
-  const body = `Dear ${lastEstData.propertyContact || 'Valued Customer'},\n\nPlease review the attached estimate and sign and return at your earliest convenience.\n\nYou may return the signed estimate to: ${returnTo}\n\nThank you for your business. Please don't hesitate to reach out with any questions.\n\nFire Life Protection System, Inc.\nOffice: (720) 974-1570`;
+  const body = `Dear ${lastEstData.propertyContact || 'Valued Customer'},\n\nPlease review the attached estimate and sign and return at your earliest convenience.\n\nYou may return the signed estimate to: ${returnTo}\n\nThank you for your business. Please don't hesitate to reach out with any questions.\n\nFire Life Protection Systems, Inc.\nOffice: (720) 974-1570`;
 
   // Build RFC 2822 MIME with PDF attachment
   const propSlug = buildEstSlug(lastEstData);

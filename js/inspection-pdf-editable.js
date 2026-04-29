@@ -118,7 +118,7 @@ async function buildExtinguisherPDFBytes() {
   // Company info box
   page.drawRectangle({ x: infoX, y: ry(logoAreaH), width: infoW, height: logoAreaH, color: lgray, borderColor: sky, borderWidth: 0.5 });
   const compLines = [
-    { text: 'Fire Life Protection System, Inc.', bold: true,  sz: 7.5 },
+    { text: 'Fire Life Protection Systems, Inc.', bold: true,  sz: 7.5 },
     { text: '8201 Shaffer Parkway Suite B',       bold: false, sz: 7   },
     { text: 'Littleton, CO 80127',                bold: false, sz: 7   },
     { text: 'Cellular: (303) 726-8847',           bold: false, sz: 7   },
@@ -726,7 +726,7 @@ async function buildSprinklerPDFBytes() {
   // Company info box
   page.drawRectangle({ x: infoX, y: ry(logoAreaH), width: infoW, height: logoAreaH, color: lgray, borderColor: sky, borderWidth: 0.5 });
   const compLines = [
-    { text: 'Fire Life Protection System, Inc.', bold: true, sz: 7.5 },
+    { text: 'Fire Life Protection Systems, Inc.', bold: true, sz: 7.5 },
     { text: '8201 Shaffer Parkway Suite B', bold: false, sz: 7 },
     { text: 'Littleton, CO 80127', bold: false, sz: 7 },
     { text: 'Cellular: (303) 726-8847', bold: false, sz: 7 },
@@ -1451,7 +1451,7 @@ async function buildGenericSystemPDFBytes() {
   // Company info box
   page.drawRectangle({ x: infoX, y: ry(logoAreaH), width: infoW, height: logoAreaH, color: lgray, borderColor: sky, borderWidth: 0.5 });
   const compLines = [
-    { text: 'Fire Life Protection System, Inc.', bold: true,  sz: 9   },
+    { text: 'Fire Life Protection Systems, Inc.', bold: true,  sz: 9   },
     { text: '8201 Shaffer Parkway Suite B',       bold: false, sz: 8   },
     { text: 'Littleton, CO 80127',                bold: false, sz: 8   },
     { text: 'Cell: (303) 726-8847  |  Office: (720) 974-1570', bold: false, sz: 7.5 },
@@ -1835,7 +1835,7 @@ async function buildExitSignLightingPDFBytes() {
 
   page.drawRectangle({ x: infoX, y: ry(logoAreaH), width: infoW, height: logoAreaH, color: lgray, borderColor: sky, borderWidth: 0.5 });
   const compLines2 = [
-    { text: 'Fire Life Protection System, Inc.', bold: true, sz: 7.5 },
+    { text: 'Fire Life Protection Systems, Inc.', bold: true, sz: 7.5 },
     { text: '8201 Shaffer Parkway Suite B',       bold: false, sz: 7 },
     { text: 'Littleton, CO 80127',                bold: false, sz: 7 },
     { text: 'Cell: (303) 726-8847  |  Office: (720) 974-1570', bold: false, sz: 6.5 },
@@ -2244,7 +2244,7 @@ async function buildEditablePDFBytes() {
     // Company info text
     const compX = ML + 65;
     const compInfo = [
-      { t: 'Fire Life Protection System, Inc.', sz: 8.5, f: hFont },
+      { t: 'Fire Life Protection Systems, Inc.', sz: 8.5, f: hFont },
       { t: '8201 Shaffer Parkway Suite B',        sz: 7.5, f: rFont },
       { t: 'Littleton, CO 80127',                sz: 7.5, f: rFont },
       { t: 'Cell: (303) 726-8847  |  Office: (720) 974-1570', sz: 7, f: rFont },
@@ -2799,7 +2799,7 @@ async function buildHoodPDFBytes() {
   // Company info
   const compX = ML + 70;
   const compInfo = [
-    { t: 'Fire Life Protection System, Inc.', sz: 8, f: hFont },
+    { t: 'Fire Life Protection Systems, Inc.', sz: 8, f: hFont },
     { t: '8201 Shaffer Parkway Suite B',       sz: 7.5, f: rFont },
     { t: 'Littleton, CO 80127',                sz: 7.5, f: rFont },
     { t: 'Cell: (303) 726-8847  |  Office: (720) 974-1570', sz: 7, f: rFont },
