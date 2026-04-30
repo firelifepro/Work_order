@@ -70,6 +70,15 @@ body {
   cursor: pointer; font-size: .78rem; font-family: inherit;
 }
 
+/* ── NAV HAMBURGER ── */
+.nav-hamburger { position: relative; }
+.hamburger-btn { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: white; padding: 5px 9px; border-radius: 6px; cursor: pointer; font-size: 1rem; line-height: 1; }
+.nav-menu { display: none; position: absolute; top: calc(100% + 6px); left: 0; background: #162235; border: 1px solid rgba(255,255,255,0.15); border-radius: 8px; min-width: 210px; box-shadow: 0 8px 24px rgba(0,0,0,0.4); z-index: 300; overflow: hidden; }
+.nav-menu.open { display: block; }
+.nav-menu a { display: block; padding: 10px 16px; color: rgba(255,255,255,0.85); text-decoration: none; font-size: 0.82rem; border-bottom: 1px solid rgba(255,255,255,0.07); }
+.nav-menu a:hover { background: rgba(255,255,255,0.08); color: white; }
+.nav-menu a.active { color: var(--hosp2); font-weight: 600; }
+
 /* ── CONNECTION DRAWER ── */
 #conn-drawer {
   display: none; background: #f0fdf4;
@@ -570,12 +579,16 @@ input.no-spin{-moz-appearance:textfield;appearance:textfield;}
 ══════════════════════════════════════════════════ -->
 <div id="top-bar">
   <div class="nav-hamburger">
-    <button class="conn-toggle" onclick="toggleNav()" style="font-size:1.1rem;padding:5px 10px;">☰</button>
-    <div class="nav-menu" id="nav-menu" style="display:none;position:absolute;top:52px;left:0;background:white;border:1.5px solid var(--border);border-radius:8px;padding:8px;z-index:300;min-width:200px;box-shadow:0 4px 20px rgba(0,0,0,.15);">
-      <a href="index.html" style="display:block;padding:8px 12px;text-decoration:none;color:var(--navy);font-weight:600;font-size:.85rem;">📋 Work Order</a>
-      <a href="schedule.html" style="display:block;padding:8px 12px;text-decoration:none;color:var(--navy);font-weight:600;font-size:.85rem;">📅 Inspection Schedule</a>
-      <a href="inspection.html" style="display:block;padding:8px 12px;text-decoration:none;color:var(--navy);font-weight:600;font-size:.85rem;">🔥 Fire Inspection</a>
-      <a href="hospital-inspection.html" style="display:block;padding:8px 12px;text-decoration:none;color:var(--hosp);font-weight:700;font-size:.85rem;" class="active">🏥 Hospital TJC/CMS</a>
+    <button class="hamburger-btn" onclick="toggleNav()">☰</button>
+    <div class="nav-menu" id="nav-menu">
+      <a href="index.html">📋 Work Order</a>
+      <a href="schedule.html">📅 Inspection Schedule</a>
+      <a href="create-invoices.html">🧾 Create QB Invoices</a>
+      <a href="clients.html">👥 Client Management</a>
+      <a href="inspection.html">🔥 Fire Inspection</a>
+      <a href="hospital-inspection.html" class="active">🏥 Hospital TJC/CMS</a>
+      <a href="estimate.html">📝 Estimate</a>
+      <a href="estimate-tracker.html">📊 Estimate Tracker</a>
     </div>
   </div>
   <h1>🏥 Hospital TJC/CMS Inspection</h1>
@@ -2405,8 +2418,7 @@ const _origSetSpYNA = window.setSpYNA;
 // setSpYNA — defined fully below with dataset.val sync
 
 function toggleNav() {
-  const m = document.getElementById('nav-menu');
-  m.style.display = m.style.display === 'none' ? 'block' : 'none';
+  document.getElementById('nav-menu').classList.toggle('open');
 }
 function toggleDrawer() {
   const d = document.getElementById('conn-drawer');
@@ -4761,8 +4773,8 @@ document.addEventListener('DOMContentLoaded', () => {
   // Close nav on outside click
   document.addEventListener('click', e => {
     const nav = document.getElementById('nav-menu');
-    if (nav && nav.style.display === 'block' && !nav.contains(e.target) && !e.target.closest('.nav-hamburger')) {
-      nav.style.display = 'none';
+    if (nav && nav.classList.contains('open') && !nav.contains(e.target) && !e.target.closest('.nav-hamburger')) {
+      nav.classList.remove('open');
     }
   });
 });
