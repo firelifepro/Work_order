@@ -774,7 +774,7 @@ function renderTable() {
       <td class="td-note">${workCell(r.notes, 'n' + r._rowNum)}</td>
       <td class="td-datecomp">${workCell(r.dateComp, 'd' + r._rowNum)}</td>
       <td class="td-inv">${esc(r.invoiced)}</td>
-      <td class="td-date">${esc(r.paid)}</td>
+      <td class="td-datecomp">${workCell(r.paid, 'p' + r._rowNum)}</td>
       <td style="text-align:center;white-space:nowrap;">
         <span class="badge ${STATUS_BADGE[r._status]}">${STATUS_LABEL[r._status]}</span>
       </td>
