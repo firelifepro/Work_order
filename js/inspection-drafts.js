@@ -693,6 +693,7 @@ async function updatePropertyProfileAfterSave(data, sysKey) {
 
   _propertyProfile = profile;
   await savePropertyProfile(propName, profile);
+  saveProfileCache(propName, profile);
 }
 
 // Collect FA device rows without pass/fail for property profile persistence

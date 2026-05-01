@@ -284,7 +284,22 @@ function onPropertySelect() {
     document.querySelectorAll('.sys-toggle').forEach(el => el.classList.remove('active'));
   }
 
-  // Render cards immediately with local data (no prev info yet)
+  // Load from cache immediately — provides prev inspection data even when offline
+  const cachedProfile = loadProfileCache(propName);
+  if (cachedProfile) {
+    _propertyProfile = cachedProfile;
+    const sysList = Object.keys(cachedProfile.lastInspBySystem || {});
+    if (sysList.length > 0) {
+      const banner  = document.getElementById('prev-insp-banner');
+      const summary = document.getElementById('prev-insp-summary');
+      if (banner && summary) {
+        summary.textContent = ` ${sysList.length} system${sysList.length !== 1 ? 's' : ''} with prior inspection data on file`;
+        banner.style.display = 'block';
+      }
+    }
+  }
+
+  // Render cards immediately (with cache data if available)
   renderInspectionStartCards();
 
   // Load property profile from Drive for per-system history
@@ -297,6 +312,8 @@ function onPropertySelect() {
       _propertyProfile = profile;
 
       if (profile) {
+        saveProfileCache(propName, profile);
+
         // Restore systems from profile if nothing saved locally
         if (profile.systems && profile.systems.length > 0 &&
             (!saved || !saved.systems || saved.systems.length === 0)) {
@@ -345,6 +362,16 @@ function saveBuildingConfig() {
 }
 function loadBuildingConfig(propName) {
   try { return JSON.parse(localStorage.getItem(buildingConfigKey(propName)) || 'null'); } catch(_) { return null; }
+}
+
+function profileCacheKey(propName) {
+  return 'flips_profile_' + propName.replace(/[^a-zA-Z0-9]/g, '_').slice(0, 80);
+}
+function saveProfileCache(propName, profile) {
+  try { localStorage.setItem(profileCacheKey(propName), JSON.stringify(profile)); } catch(_) {}
+}
+function loadProfileCache(propName) {
+  try { return JSON.parse(localStorage.getItem(profileCacheKey(propName)) || 'null'); } catch(_) { return null; }
 }
 
 async function saveBuildingSystemsToDrive() {
