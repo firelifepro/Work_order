@@ -238,7 +238,7 @@ function saveDraft() {
     photos,
     sigData,
     custSigData,
-    counters:    { faSubpanelCount, faDetectionCount, faFlowCount, faTamperCount, faBatteryCount, faDeficCount, faNoteCount, spDeficCount, spNoteCount, spDrainCount, genericDeficCount, extUnitCount, extDeficCount, elCount, esCount },
+    counters:    { faSubpanelCount, faDetectionCount, faFlowCount, faTamperCount, faBatteryCount, faDeficCount, faNoteCount, spDeficCount, spNoteCount, spDrainCount, genericDeficCount, extUnitCount, extDeficCount, extNoteCount, elCount, esCount },
     overallStatus,
     onsiteUnsat: Object.assign({}, _onsiteUnsat),
     currentFAStep,
@@ -312,6 +312,7 @@ function restoreDraft(draft) {
   genericDeficCount = draft.counters?.genericDeficCount || 0;
   extUnitCount = draft.counters?.extUnitCount || 0;
   extDeficCount = draft.counters?.extDeficCount || 0;
+  extNoteCount = draft.counters?.extNoteCount || 0;
   elCount = draft.counters?.elCount || 0;
   esCount = draft.counters?.esCount || 0;
   // Restore general notes tbody (lives in step-4, outside faSteps)

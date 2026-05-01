@@ -899,7 +899,7 @@ const EXT_QA_QUESTIONS = [
   'All internal maintenance and pressure testing is up to date on all units / or have been swapped out?',
   'Up-to-date certification tags have been attached to all units?',
 ];
-let extUnitCount = 0, extDeficCount = 0;
+let extUnitCount = 0, extDeficCount = 0, extNoteCount = 0;
 
 function buildExtinguisherPanel() {
   const extTable = `
@@ -927,7 +927,14 @@ function buildExtinguisherPanel() {
     <button class="add-row-btn" onclick="addExtUnitRow()">+ Add Extinguisher</button>
     <div class="field-group" style="margin-top:8px;">
       <label>Extinguisher General Notes</label>
-      <textarea id="ext-notes" rows="2"></textarea>
+      <table class="dyn-table">
+        <thead><tr><th style="width:32px;">#</th><th>Note</th><th style="width:32px;"></th></tr></thead>
+        <tbody id="ext-notes-tbody"></tbody>
+      </table>
+      <div style="display:flex;gap:8px;margin-top:4px;flex-wrap:wrap;">
+        <button class="add-row-btn" onclick="addExtNoteRow()">+ Add Note</button>
+        <button class="add-row-btn" onclick="addExtGenericNote()">+ Add Generic Note</button>
+      </div>
     </div>`;
   const panel = makePanel('extinguisher', '🧯', 'Portable Fire Extinguishers (NFPA 10)', extTable);
   setTimeout(() => {

@@ -643,6 +643,32 @@ function addFANoteRow() {
     </tr>`);
 }
 
+const EXT_GENERIC_NOTE = 'Our team observed that the inspection tags were not initialed and dated on the back. Buildings and offices must conduct a monthly visual inspection of fire extinguishers, including expiration dates. I strongly recommend that employees receive training and assist in identifying deficiencies early.';
+
+function addExtNoteRow(prefill) {
+  extNoteCount++;
+  const n = extNoteCount;
+  document.getElementById('ext-notes-tbody').insertAdjacentHTML('beforeend', `
+    <tr id="ext-note-row-${n}">
+      <td style="text-align:center;font-weight:700;color:var(--slate);vertical-align:top;padding-top:6px;">${n}</td>
+      <td><textarea id="ext-note-desc-${n}" rows="3" placeholder="Note or observation…"></textarea></td>
+      <td style="vertical-align:top;padding-top:4px;"><button class="del-btn" onclick="document.getElementById('ext-note-row-${n}').remove()">✕</button></td>
+    </tr>`);
+  if (prefill) {
+    const ta = document.getElementById('ext-note-desc-' + n);
+    if (ta) ta.value = prefill;
+  }
+}
+
+function addExtGenericNote() {
+  const tbody = document.getElementById('ext-notes-tbody');
+  if (!tbody) return;
+  for (const ta of tbody.querySelectorAll('textarea')) {
+    if (ta.value.trim() === EXT_GENERIC_NOTE) return;
+  }
+  addExtNoteRow(EXT_GENERIC_NOTE);
+}
+
 // ─── ONSITE CONDITION BUTTONS ─────────────────────────────────────────────────
 // Tracks which onsite rows are currently marked Unsatisfactory
 const _onsiteUnsat = {};  // rowNum → defic-tbody row id

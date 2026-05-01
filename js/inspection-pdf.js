@@ -656,7 +656,7 @@ async function buildPDFDoc() {
     'fire-alarm':'fa-notes','sprinkler':'sp-notes','fire-pump':'fp-notes',
     'standpipe':'std-notes','hood':'hood-notes','hydrant':'hy-notes',
     'bda':'bda-notes','smoke-control':'sc-notes','gas-detection':'gd-notes',
-    'special-suppression':'ss-notes','backflow':'bf-notes','extinguisher':'ext-notes',
+    'special-suppression':'ss-notes','backflow':'bf-notes',
     'exit-sign-lighting':'esl-notes',
   };
 
@@ -1074,17 +1074,47 @@ async function buildPDFDoc() {
           inspRow(label, result, defic);
         });
       }
-      const notesId  = notesIds[sys];
-      const notesVal = notesId ? document.getElementById(notesId)?.value?.trim() : '';
-      if (notesVal) {
-        checkPage(10);
-        setFill([255,253,235]); setDraw([254,215,0]);
-        const nl = doc.splitTextToSize('Notes: ' + notesVal, usableW - 6);
-        const nh = nl.length * 4 + 5;
-        doc.rect(ML, y, usableW, nh, 'FD');
-        setFont(FS.small,'italic'); setTxt([92,70,0]);
-        doc.text(nl, ML + 3, y + 4.5);
-        y += nh + 3;
+      if (sys === 'extinguisher') {
+        const extNotesTbody = document.getElementById('ext-notes-tbody');
+        if (extNotesTbody) {
+          const noteTexts = [];
+          extNotesTbody.querySelectorAll('textarea').forEach(ta => {
+            const txt = ta.value.trim();
+            if (txt) noteTexts.push(txt);
+          });
+          if (noteTexts.length > 0) {
+            checkPage(10);
+            setFill([240,244,252]); doc.rect(ML, y, usableW, 5.5, 'F');
+            setFont(FS.tiny,'bold'); setTxt([50,80,130]);
+            doc.text('GENERAL NOTES', ML + 2, y + 4); y += 7;
+            noteTexts.forEach((ntxt, idx) => {
+              const nl = doc.splitTextToSize(ntxt, usableW - 12);
+              const rowH = nl.length * 4 + 5;
+              checkPage(rowH + 5);
+              setFill(C.light); doc.rect(ML, y, usableW, rowH, 'F');
+              setDraw(C.border); doc.line(ML, y + rowH, ML + usableW, y + rowH);
+              setFont(FS.tiny,'bold'); setTxt(C.slate);
+              doc.text(String(idx + 1), ML + 3, y + 4.2, { align:'center' });
+              setFont(FS.small,'normal'); setTxt([30,30,30]);
+              doc.text(nl, ML + 9, y + 4.2);
+              y += rowH + 1;
+            });
+            y += 2;
+          }
+        }
+      } else {
+        const notesId  = notesIds[sys];
+        const notesVal = notesId ? document.getElementById(notesId)?.value?.trim() : '';
+        if (notesVal) {
+          checkPage(10);
+          setFill([255,253,235]); setDraw([254,215,0]);
+          const nl = doc.splitTextToSize('Notes: ' + notesVal, usableW - 6);
+          const nh = nl.length * 4 + 5;
+          doc.rect(ML, y, usableW, nh, 'FD');
+          setFont(FS.small,'italic'); setTxt([92,70,0]);
+          doc.text(nl, ML + 3, y + 4.5);
+          y += nh + 3;
+        }
       }
     }
 

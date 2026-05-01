@@ -423,11 +423,19 @@ async function buildExtinguisherPDFBytes() {
 
   // ── GENERAL NOTES ─────────────────────────────────────────────────────────────
   secHdr('GENERAL NOTES & RECOMMENDATIONS');
-  const extNotesVal = dv('ext-notes');
+  // Collect general notes from dynamic rows
+  const extNotesTbody = document.getElementById('ext-notes-tbody');
+  const generalNotes = [];
+  if (extNotesTbody) {
+    extNotesTbody.querySelectorAll('textarea').forEach(ta => {
+      const txt = ta.value.trim();
+      if (txt) generalNotes.push(txt);
+    });
+  }
   // Collect unit notes
   const unitNotes = (data.extinguishers || []).filter(e => e.noteTxt).map(e => 'Unit #' + e.rowNum + (e.location ? ' – ' + e.location : '') + ': ' + e.noteTxt);
   const allNotes = [];
-  if (extNotesVal) allNotes.push(extNotesVal);
+  generalNotes.forEach(n => allNotes.push(n));
   unitNotes.forEach(n => allNotes.push(n));
   const noteRowCount = Math.max(allNotes.length, 3);
   for (let i = 0; i < noteRowCount; i++) {
