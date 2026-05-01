@@ -434,7 +434,7 @@ function extractRowColor(rowData) {
 
 function classifyColor(bg) {
   if (!bg) return 'open';
-  const r = bg.red ?? 1, g = bg.green ?? 1, b = bg.blue ?? 1;
+  const r = bg.red ?? 0, g = bg.green ?? 0, b = bg.blue ?? 0;
   // White / near-white
   if (r > 0.88 && g > 0.88 && b > 0.88) return 'open';
   // Yellow: both red and green high, blue low
@@ -643,10 +643,7 @@ async function loadWorkLog() {
     if (fmtRes.ok) {
       const fmtData = await fmtRes.json();
       const rawRows = fmtData.sheets?.[0]?.data?.[0]?.rowData || [];
-      // Log first few rows so we can see exactly what the API returns
-      console.log('[worklog] raw rowData sample (rows 0-5):', JSON.stringify(rawRows.slice(0, 6), null, 2));
       rowColors = rawRows.map(rd => extractRowColor(rd));
-      console.log('[worklog] extracted colors (rows 0-5):', rowColors.slice(0, 6));
     } else {
       console.warn('[worklog] color fetch failed:', fmtRes.status, await fmtRes.text().catch(()=>''));
     }
