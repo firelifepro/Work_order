@@ -766,7 +766,7 @@ function renderTable() {
   tbody.innerHTML = filtered.map(r => `
     <tr class="${STATUS_ROW[r._status] || 'row-open'}" onclick="openModal(${r._rowNum})" title="Click to edit">
       <td class="td-rownum">${r._rowNum}</td>
-      <td class="td-date">${esc(r.dateReq)}</td>
+      <td class="td-datecomp">${workCell(r.dateReq, 'dr' + r._rowNum)}</td>
       <td class="td-by">${esc(r.reqBy)}</td>
       <td class="td-prop">${esc(r.property)}</td>
       <td class="td-work">${workCell(r.workReq, 'w' + r._rowNum)}</td>
