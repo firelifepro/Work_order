@@ -745,7 +745,7 @@ function renderTable() {
       <td class="td-by">${esc(r.reqBy)}</td>
       <td class="td-prop">${esc(r.property)}</td>
       <td class="td-work">${workCell(r.workReq, 'w' + r._rowNum)}</td>
-      <td class="td-comp">${compDisplay(r.compliance)}</td>
+      <td class="td-comp">${workCell(r.compliance, 'c' + r._rowNum)}</td>
       <td class="td-note">${workCell(r.notes, 'n' + r._rowNum)}</td>
       <td class="td-date">${esc(r.dateComp)}</td>
       <td class="td-inv">${esc(r.invoiced)}</td>
