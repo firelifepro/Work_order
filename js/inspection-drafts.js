@@ -250,7 +250,12 @@ function saveDraft() {
   const key = draftKey();
   try {
     localStorage.setItem(key, JSON.stringify(draft));
-    toast('Draft saved');
+    if (!accessToken) {
+      toast('Draft saved locally — connect Google to sync to Drive');
+      document.getElementById('conn-drawer')?.classList.add('open');
+    } else {
+      toast('Draft saved');
+    }
   } catch(e) {
     toast('Save failed — storage full?');
   }

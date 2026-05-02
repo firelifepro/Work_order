@@ -29,8 +29,9 @@ function startNewInspection() {
 async function saveAndDownload() {
   // ── 0. Google Drive connection check ──────────────────────────────────────────
   if (!accessToken) {
-    const proceed = confirm('⚠ Not connected to Google Drive — the PDF will download locally but will NOT be saved to Drive, and the property profile will NOT be updated.\n\nConnect via the top bar for full save, or click OK to download locally only.');
-    if (!proceed) return;
+    toast('⚠ Connect Google before saving your inspection');
+    document.getElementById('conn-drawer')?.classList.add('open');
+    return;
   }
 
   // ── 1. Signature check — BOTH drawn signature AND printed name required ───────
